@@ -1,9 +1,9 @@
 <?php
 
-include '../lib/Qless/Worker.php';
-include '../lib/Qless/Queue.php';
-include '../lib/Qless/Client.php';
-require 'TestWorkerImpl.php';
+require_once '../lib/Qless/Worker.php';
+require_once '../lib/Qless/Queue.php';
+require_once '../lib/Qless/Client.php';
+require_once 'TestWorkerImpl.php';
 
 $queues = ['testQueue1','testQueue2'];
 $client = new Qless\Client('localhost',6380);

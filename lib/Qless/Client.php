@@ -8,7 +8,7 @@
 
 namespace Qless;
 
-include 'Lua.php';
+require_once 'Lua.php';
 
 use \Redis;
 

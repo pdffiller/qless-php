@@ -17,6 +17,8 @@ class Worker {
     private $workerName;
     private $child = 0;
 
+    private $paused = false;
+
     public function __construct($queues, $client, $interval=60){
         $this->workerName = 'workerTest_1';
         $this->queues = [];
@@ -35,13 +37,22 @@ class Worker {
         $this->startup();
 
         while (true){
+            pcntl_signal_dispatch();
             if ($this->shutdown){
+                echo "shutting down.";
                 break;
             }
             echo "checking for some work. \n";
 
             // Attempt to find and reserve a job
-            $job = $this->reserve();
+            $job = false;
+            if (!$this->paused){
+                $job = $this->reserve();
+            }
+            else {
+                echo "paused, skipping jobs.";
+            }
+
             if (!$job){
                 if ($this->interval == 0){
                     break;
@@ -118,7 +129,7 @@ class Worker {
     }
 
     public function startup(){
-
+        $this->registerSigHandlers();
     }
 
     /**
@@ -152,6 +163,7 @@ class Worker {
     public function pauseProcessing()
     {
         //$this->logger->log(Psr\Log\LogLevel::NOTICE, 'USR2 received; pausing job processing');
+        echo "signal URS2, pausing processing";
         $this->paused = true;
     }
 
@@ -161,6 +173,7 @@ class Worker {
      */
     public function unPauseProcessing()
     {
+        echo "signal CONT, unpause";
         //$this->logger->log(Psr\Log\LogLevel::NOTICE, 'CONT received; resuming job processing');
         $this->paused = false;
     }
@@ -171,6 +184,7 @@ class Worker {
      */
     public function shutdown()
     {
+        echo "signal QUIT, shutdown.";
         $this->shutdown = true;
         //$this->logger->log(Psr\Log\LogLevel::NOTICE, 'Shutting down');
     }
@@ -181,6 +195,7 @@ class Worker {
      */
     public function shutdownNow()
     {
+        echo "signal INT, shutdown NOW!";
         $this->shutdown();
         $this->killChild();
     }

@@ -8,8 +8,8 @@
 
 namespace Qless;
 
-include 'Qless.php';
-include 'Job.php';
+require_once 'Qless.php';
+require_once 'Job.php';
 
 
 class Queue {

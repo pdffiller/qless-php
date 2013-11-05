@@ -6,8 +6,8 @@
  * Time: 4:50 PM
  */
 
-include '../lib/Qless/Client.php';
-include '../lib/Qless/Queue.php';
+require_once '../lib/Qless/Client.php';
+require_once '../lib/Qless/Queue.php';
 
 class QueueTest extends \PHPUnit_Framework_TestCase {
 
