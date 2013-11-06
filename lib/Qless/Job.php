@@ -17,25 +17,37 @@ class Job {
     private $queue_name;
     private $klass_name;
     private $state;
-    private $worker;
+    private $worker_name;
     private $instance;
 
-    public function __construct($client, $jid, $worker, $klass_name, $queue_name, $state, $data){
+    public function __construct($client, $jid, $worker_name, $klass_name, $queue_name, $state, $data){
         $this->jid = $jid;
         $this->client = $client;
         $this->klass_name = $klass_name;
         $this->queue_name = $queue_name;
         $this->state = $state;
         $this->data = json_decode($data,true);
-        $this->worker = $worker;
+        $this->worker_name = $worker_name;
     }
 
+    public function getId(){
+        return $this->jid;
+    }
+
+    public function getData(){
+        return $this->data;
+    }
+
+    /**
+     * @return bool
+     * return values -
+     *
+     */
     public function complete(){
-        //$jsonDepends = json_encode($depends,JSON_UNESCAPED_SLASHES);
-        $jsonData = json_encode($this->data,JSON_UNESCAPED_SLASHES);
+        $jsonData = json_encode($this->data, JSON_UNESCAPED_SLASHES);
         $return = $this->client->complete(
             $this->jid,
-            $this->worker,
+            $this->worker_name,
             $this->queue_name,
             $jsonData
         );
@@ -44,19 +56,82 @@ class Job {
 
     }
 
+    /**
+     * @param $group
+     * @param $message
+     *
+     * @return bool
+     * return values -
+     */
     public function fail($group, $message){
-        $jsonData = json_encode($this->data);
+        $jsonData = json_encode($this->data, JSON_UNESCAPED_SLASHES);
         $return =  $this->client->fail(
             $this->jid,
-            $this->worker,
+            $this->worker_name,
             $group,
             $message,
             $jsonData
         );
-        if (!$return){
-            $return = false;
+
+        return $return ? $return : false;
+    }
+
+    /**
+     * @param $delay
+     * @param $group
+     * @param $message
+     *
+     * @return bool
+     * can return an error if
+     * job does not exist
+     * job is not currently running
+     * job has already been given to another worker
+     * TODO: figure out how to check these conditions and define what to do in the job.
+     */
+    public function retry($delay, $group, $message){
+        // (now, jid, queue, worker, delay, group, message)
+        $return = $this->client->retry(
+            $this->jid,
+            $this->queue_name,
+            $this->worker_name,
+            $delay,
+            $group,
+            $message
+        );
+
+        return $return ? $return : false;
+    }
+
+    /**
+     * @param null $data
+     *
+     * @return bool
+     * job does not exist
+     * job is not currently running
+     * job has already been given to another worker
+     *
+     */
+    public function heartbeat($data=null){
+        // (now, jid, worker, data)
+        $jsonData = null;
+        if ($data){
+            $jsonData = json_encode($data, JSON_UNESCAPED_SLASHES);
         }
-        return $return;
+        $return = $this->client->heartbeat(
+            $this->jid,
+            $this->worker_name,
+            $jsonData
+        );
+
+        return $return ? $return : false;
+    }
+
+    public function cancel(){
+        $return = $this->client->cancel(
+            $this->jid
+        );
+
+        return $return ? $return : false;
     }
 
     /**

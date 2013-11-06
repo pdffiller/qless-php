@@ -17,6 +17,8 @@ class Worker {
     private $workerName;
     private $child = 0;
 
+    private $jobPerformClass = null;
+
     private $paused = false;
 
     public function __construct($queues, $client, $interval=60){
@@ -27,6 +29,22 @@ class Worker {
         foreach ($queues as $queue){
             $this->queues[] = $this->client->getQueue($queue);
         }
+    }
+
+    public function registerJobPerformHandler($klass){
+        if(!class_exists($klass)) {
+            throw new \Exception(
+                'Could not find job perform class ' . $klass . '.'
+            );
+        }
+
+        if(!method_exists($klass, 'perform')) {
+            throw new \Exception(
+                'Job class ' . $klass . ' does not contain perform method '
+            );
+        }
+
+        $this->jobPerformClass = $klass;
     }
 
     /**
@@ -115,8 +133,14 @@ class Worker {
     public function perform(Job $job)
     {
         try {
+            if ($this->jobPerformClass){
+                $performClass = new $this->jobPerformClass;
+                $performClass->perform($job);
+            }
+            else{
+                $job->perform();
+            }
             //Resque_Event::trigger('afterFork', $job);
-            $job->perform();
         }
         catch(\Exception $e) {
             //$this->logger->log(Psr\Log\LogLevel::CRITICAL, '{job} has failed {stack}', array('job' => $job, 'stack' => $e->getMessage()));
