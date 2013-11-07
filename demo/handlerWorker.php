@@ -17,7 +17,7 @@ class JobHandler {
 
 $queues = ['testQueue1','testQueue2'];
 $client = new Qless\Client('localhost',6380);
-$worker = new Qless\Worker($queues,$client,5);
+$worker = new Qless\Worker("WorkerTest_1", $queues, $client, 5);
 $worker->registerJobPerformHandler("JobHandler");
 
 $worker->run();

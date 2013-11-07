@@ -21,8 +21,8 @@ class Worker {
 
     private $paused = false;
 
-    public function __construct($queues, $client, $interval=60){
-        $this->workerName = 'workerTest_1';
+    public function __construct($name, $queues, $client, $interval=60){
+        $this->workerName = $name;
         $this->queues = [];
         $this->client = $client;
         $this->interval = $interval;
