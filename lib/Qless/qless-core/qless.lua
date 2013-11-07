@@ -1,4 +1,4 @@
--- Current SHA: 02753500f59bd9c10ea81d4656a4ae27545cafe8
+-- Current SHA: 5fb22273637caa493205e73be86f1ee9dd5d4535
 -- This is a generated file
 local Qless = {
   ns = 'ql:'
@@ -2048,6 +2048,7 @@ QlessAPI.depends = function(now, jid, command, ...)
 end
 
 QlessAPI.heartbeat = function(now, jid, worker, data)
+  if data == '' then data = nil end
   return Qless.job(jid):heartbeat(now, worker, data)
 end
 
@@ -2121,6 +2122,7 @@ QlessAPI.timeout = function(now, ...)
 end
 
 QlessAPI.put = function(now, me, queue, jid, klass, data, delay, ...)
+  if data == '' then data = nil end
   return Qless.queue(queue):put(now, me, jid, klass, data, delay, unpack(arg))
 end
 
@@ -2129,6 +2131,7 @@ QlessAPI.unfail = function(now, queue, group, count)
 end
 
 QlessAPI.recur = function(now, queue, jid, klass, data, spec, ...)
+  if data == '' then data = nil end
   return Qless.queue(queue):recur(now, jid, klass, data, spec, unpack(arg))
 end
 
