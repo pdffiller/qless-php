@@ -1,4 +1,4 @@
--- Current SHA: f7ef735105ade320fef8f621bf264851f246924a
+-- Current SHA: 02753500f59bd9c10ea81d4656a4ae27545cafe8
 -- This is a generated file
 local Qless = {
   ns = 'ql:'
@@ -23,7 +23,7 @@ local QlessRecurringJob = {}
 QlessRecurringJob.__index = QlessRecurringJob
 
 local QlessResource = {
-    ns = Qless.ns .. 'r:'
+    ns = Qless.ns .. 'rs:'
 }
 QlessResource.__index = QlessResource;
 
@@ -1895,7 +1895,7 @@ end
 
 function QlessResource:data(...)
   local res = redis.call(
-      'hmget', QlessResource.ns .. self.rid, 'rid', 'count')
+      'hmget', QlessResource.ns .. self.rid, 'rid', 'max')
 
   if not res[1] then
     return nil
@@ -1903,7 +1903,7 @@ function QlessResource:data(...)
 
   local data = {
     rid          = res[1],
-    count        = tonumber(res[2] or 0),
+    max          = tonumber(res[2] or 0),
     pending      = redis.call('zrevrange', self:prefix('pending'), 0, -1),
     locks        = redis.call('smembers', self:prefix('locks')),
   }
@@ -1911,10 +1911,10 @@ function QlessResource:data(...)
   return data
 end
 
-function QlessResource:set(count)
-  count = assert(tonumber(count), 'Set(): Arg "count" not a number: ' .. tostring(count))
+function QlessResource:set(max)
+  local max = assert(tonumber(max), 'Set(): Arg "max" not a number: ' .. tostring(max))
 
-  redis.call('hmset', QlessResource.ns .. self.rid, 'rid', self.rid, 'count', count);
+  redis.call('hmset', QlessResource.ns .. self.rid, 'rid', self.rid, 'max', max);
 
   return self.rid
 end
@@ -1937,7 +1937,7 @@ function QlessResource:acquire(now, priority, jid)
   assert(data, 'Acquire(): resource ' .. self.rid .. ' does not exist')
   assert(type(jid) ~= 'table', 'Acquire(): invalid jid')
 
-  local remaining = data['count'] - redis.pcall('scard', keyLocks)
+  local remaining = data['max'] - redis.pcall('scard', keyLocks)
 
   if remaining > 0 then
     redis.call('sadd', keyLocks, jid)
@@ -2168,8 +2168,8 @@ QlessAPI['queue.forget'] = function(now, ...)
   QlessQueue.deregister(unpack(arg))
 end
 
-QlessAPI['resource.set'] = function(now, rid, count)
-  return Qless.resource(rid):set(count)
+QlessAPI['resource.set'] = function(now, rid, max)
+  return Qless.resource(rid):set(max)
 end
 
 QlessAPI['resource.get'] = function(now, rid)
