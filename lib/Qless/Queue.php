@@ -107,4 +107,27 @@ class Queue
 
         return $this->client->stats($this->name, $date);
     }
+
+    /**
+     * Pauses the queue so it will not process any more jobs
+     */
+    public function pause() {
+        $this->client->pause($this->name);
+    }
+
+    /**
+     * Resumes the queue so it will continue processing jobs
+     */
+    public function resume() {
+        $this->client->unpause($this->name);
+    }
+
+    /**
+     * Specifies whether the queue is paused
+     *
+     * @return bool
+     */
+    public function isPaused() {
+        return $this->client->paused($this->name) === 1;
+    }
 } 
