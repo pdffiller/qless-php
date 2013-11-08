@@ -34,9 +34,9 @@ class Queue
      * argument should be in how many seconds the instance should be considered
      * actionable.
      *
-     * @param        $klass     - The class with the 'performMethod' specified in the data.
-     * @param        $jid       - specified job id, if null, will be generated.
-     * @param        $data      - array of parameters for job.
+     * @param string $klass     - The class with the 'performMethod' specified in the data.
+     * @param string $jid       - specified job id, if null, will be generated.
+     * @param mixed  $data      - array of parameters for job.
      * @param int    $delay     - specify delay to run job.
      * @param int    $retries   - number of retries allowed.
      * @param int    $priority
@@ -45,7 +45,7 @@ class Queue
      * @param array  $tags
      * @param array  $depends
      *
-     * @return mixed
+     * @return string the job identifier
      */
     public function put($klass, $jid, $data, $delay = 0, $retries = 5, $priority = 0, $resources = [], $tags = [], $depends = []) {
         $useJID = empty($jid) ? Qless::guidv4() : $jid;

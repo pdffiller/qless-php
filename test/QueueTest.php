@@ -9,7 +9,7 @@ class QueueTest extends QlessTest {
         $queue = new Qless\Queue("testQueue", $this->client);
 
         $testData = ["performMethod"=>'myPerformMethod',"payload"=>"otherData"];
-        $queue->put("Sample\\TestWorkerImpl", "jid", $testData);
+        $res = $queue->put("Sample\\TestWorkerImpl", "jid", $testData);
         $job = $queue->pop("worker");
         $this->assertNotNull($job);
         $this->assertEquals('jid', $job->getId());
@@ -30,6 +30,44 @@ class QueueTest extends QlessTest {
         $len = $queue->length();
         $this->assertEquals(10, $len);
     }
+
+    public function testCorrectOrderOfPushingAndPoppingJobs() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+        $testData = ["performMethod"=>'myPerformMethod',"payload"=>"otherData"];
+        $jids = array_map(function($i) {
+            return "jid-$i";
+        }, range(1, 10));
+
+        foreach ($jids as $jid) {
+            $queue->put("Sample\\TestWorkerImpl", $jid, $testData);
+        }
+
+        $results = array_map(function () use ($queue) {
+            return $queue->pop('worker')->getId();
+        }, $jids);
+
+        $this->assertEquals($jids, $results);
+    }
+
+    public function testHigherPriorityJobsArePoppedSooner() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+        $testData = ["performMethod"=>'myPerformMethod',"payload"=>"otherData"];
+        $jids = array_map(function($i) {
+            return "jid-$i";
+        }, range(1, 10));
+
+        foreach ($jids as $k => $jid) {
+            $queue->put("Sample\\TestWorkerImpl", $jid, $testData, 0, 5, $k);
+        }
+
+        $results = array_map(function () use ($queue) {
+            return $queue->pop('worker')->getId();
+        }, $jids);
+
+        $this->assertEquals(array_reverse($jids), $results);
+    }
+
+
 
     public function testPausedQueueDoesNotReturnJobs() {
         $queue = new Qless\Queue("testQueue", $this->client);
@@ -59,6 +97,18 @@ class QueueTest extends QlessTest {
         $queue->resume();
         $job = $queue->pop("worker");
         $this->assertNotNull($job);
+    }
+
+    public function testHighPriorityJobPoppedBeforeLowerPriorityJobs() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+
+        $queue->put("Sample\\TestWorkerImpl", "jid-1", ["performMethod"=>'myPerformMethod',"payload"=>"otherData"]);
+        $queue->put("Sample\\TestWorkerImpl", "jid-2", ["performMethod"=>'myPerformMethod',"payload"=>"otherData"]);
+        $queue->put("Sample\\TestWorkerImpl", "jid-high", ["performMethod"=>'myPerformMethod',"payload"=>"otherData"], 0, 0, 1);
+        $queue->put("Sample\\TestWorkerImpl", "jid-3", ["performMethod"=>'myPerformMethod',"payload"=>"otherData"]);
+
+        $job = $queue->pop('worker');
+        $this->assertEquals('jid-high', $job->getId());
     }
 
 }

@@ -46,7 +46,7 @@ class Lua
         if (empty($this->sha)) {
             $this->reload();
         }
-        $luaArgs  = [$command, time()];
+        $luaArgs  = [$command, microtime(true)];
         $argArray = array_merge($luaArgs, $args);
         $result = $this->redisCli->evalSha($this->sha, $argArray);
         $error  = $this->redisCli->getLastError();
