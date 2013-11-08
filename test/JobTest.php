@@ -18,5 +18,65 @@ class JobTest extends QlessTest
         $queue->pop("worker-2");
         $job1->heartbeat();
     }
+
+    public function testCompleteJob() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jobTestDEF", $testData);
+        $job1 = $queue->pop("worker-1");
+        $res = $job1->complete();
+        $this->assertEquals('complete', $res);
+    }
+
+    public function testFailJobCannotBePopped() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jid", $testData);
+        $job1 = $queue->pop("worker-1");
+        $res = $job1->fail('account', 'failed to connect');
+        $this->assertEquals('jid', $res);
+
+        $job1 = $queue->pop("worker-1");
+        $this->assertNull($job1);
+    }
+
+    public function testRetryDoesReturnJobAndDefaultsToFiveRetries() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jid", $testData);
+        $job1 = $queue->pop("worker-1");
+
+        $remaining = $job1->retry('account', 'failed to connect');
+        $this->assertEquals(4, $remaining);
+
+        $job1 = $queue->pop("worker-1");
+        $this->assertEquals('jid', $job1->getId());
+    }
+
+    public function testRetryDoesRespectRetryParameterWithOneRetry() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jid", $testData, 0, 1);
+        $job1 = $queue->pop("worker-1");
+
+        $remaining = $job1->retry('account', 'failed to connect');
+        $this->assertEquals(0, $remaining);
+
+        $job1 = $queue->pop("worker-1");
+        $this->assertEquals('jid', $job1->getId());
+    }
+
+    public function testRetryDoesReturnNegativeWhenNoMoreAvailable() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jid", $testData, 0, 0);
+        $job1 = $queue->pop("worker-1");
+
+        $remaining = $job1->retry('account', 'failed to connect');
+        $this->assertEquals(-1, $remaining);
+
+        $job1 = $queue->pop("worker-1");
+        $this->assertNull($job1);
+    }
 }
  

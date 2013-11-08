@@ -20,7 +20,7 @@ use Redis;
  * @method int heartbeat() heartbeat()
  * @method int retry() retry(\string $jid, \string $queue, \string $worker, \int $delay = 0, \string $group, \string $message)
  * @method int cancel() cancel(\string $jid)
- * @method int fail() fail(\string $jid, \string $worker, \string $group, \string $message, \string $data=null)
+ * @method int fail() fail(\string $jid, \string $worker, \string $group, \string $message, \string $data = null)
  */
 class Client
 {
@@ -46,7 +46,7 @@ class Client
         $this->redis['host']  = $host;
         $this->redis['port']  = $port;
 
-        $this->lua = new Lua($this->redis);
+        $this->lua    = new Lua($this->redis);
         $this->config = new Config($this);
     }
 

@@ -6,34 +6,29 @@ require_once __DIR__ . '/QlessTest.php';
 class QueueTest extends QlessTest {
 
     public function testPutAndPop(){
-
         $queue = new Qless\Queue("testQueue", $this->client);
 
-        //$queue->runDirect();
-
-        //$queue->stats();
-//        $testData = ["test1"=>"testdata1", "test2"=>"testdata2"];
         $testData = ["performMethod"=>'myPerformMethod',"payload"=>"otherData"];
-        $queue->put("Sample\\TestWorkerImpl", "jobTestDEF", $testData);
-        $len = $queue->length();
+        $queue->put("Sample\\TestWorkerImpl", "jid", $testData);
         $job = $queue->pop("worker");
-
- //       $result = $queue->pop();
+        $this->assertNotNull($job);
+        $this->assertEquals('jid', $job->getId());
     }
 
-    public function testHeartbeatForInvalidJob() {
+    public function testPopWithNoJobs() {
         $queue = new Qless\Queue("testQueue", $this->client);
+        $job = $queue->pop("worker");
+        $this->assertNull($job);
+    }
 
-
-        $val = $this->client->config->get('heartbeat');
-        $this->client->config->set('heartbeat', -10);
-        $this->client->config->set('grace-period', 0);
-
+    public function testQueueLength() {
+        $queue = new Qless\Queue("testQueue", $this->client);
         $testData = ["performMethod"=>'myPerformMethod',"payload"=>"otherData"];
-        $queue->put("Sample\\TestWorkerImpl", "jobTestDEF", $testData);
-        $job1 = $queue->pop("worker-1");
-        $job2 = $queue->pop("worker-2");
-        $res = $job1->heartbeat();
+        foreach (range(1, 10) as $i) {
+            $queue->put("Sample\\TestWorkerImpl", "jid-" . $i, $testData);
+        }
+        $len = $queue->length();
+        $this->assertEquals(10, $len);
     }
 
 

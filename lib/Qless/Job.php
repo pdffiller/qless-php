@@ -59,16 +59,13 @@ class Job
     }
 
     /**
+     * Return the job to the work queue for processing
+     *
      * @param string $group
      * @param string $message
      * @param int $delay
      *
-     * @return bool
-     * can return an error if
-     * job does not exist
-     * job is not currently running
-     * job has already been given to another worker
-     * TODO: figure out how to check these conditions and define what to do in the job.
+     * @return int remaining retries available
      */
     public function retry($group, $message, $delay = 0) {
         return $this->client
