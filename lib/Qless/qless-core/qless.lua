@@ -2120,6 +2120,10 @@ QlessAPI.unpause = function(now, ...)
   return QlessQueue.unpause(unpack(arg))
 end
 
+QlessAPI.paused = function(now, queue)
+  return Qless.queue(queue):paused()
+end
+
 QlessAPI.cancel = function(now, ...)
   return Qless.cancel(unpack(arg))
 end
