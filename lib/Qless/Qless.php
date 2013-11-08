@@ -4,6 +4,8 @@ namespace Qless;
 
 class Qless {
 
+    const VERSION = '1.0.0';
+
     /**
      * @return int
      * @throws \RuntimeException

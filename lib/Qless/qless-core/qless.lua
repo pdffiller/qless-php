@@ -1,4 +1,4 @@
--- Current SHA: 5fb22273637caa493205e73be86f1ee9dd5d4535
+-- Current SHA: 1f7a24cb9dd8d81ea3ad408afe5c5f1987f8297f
 -- This is a generated file
 local Qless = {
   ns = 'ql:'
@@ -1987,6 +1987,10 @@ function QlessResource:exists()
 end-------------------------------------------------------------------------------
 local QlessAPI = {}
 
+local function tonil(value)
+  if (value == '') then return nil else return value end
+end
+
 function QlessAPI.get(now, jid)
   local data = Qless.job(jid):data()
   if not data then
@@ -2004,6 +2008,7 @@ function QlessAPI.multiget(now, ...)
 end
 
 QlessAPI['config.get'] = function(now, key)
+  key = tonil(key)
   if not key then
     return cjson.encode(Qless.config.get(key))
   else
@@ -2012,10 +2017,12 @@ QlessAPI['config.get'] = function(now, key)
 end
 
 QlessAPI['config.set'] = function(now, key, value)
+  key = tonil(key)
   return Qless.config.set(key, value)
 end
 
 QlessAPI['config.unset'] = function(now, key)
+  key = tonil(key)
   return Qless.config.unset(key)
 end
 
@@ -2024,6 +2031,7 @@ QlessAPI.queues = function(now, queue)
 end
 
 QlessAPI.complete = function(now, jid, worker, queue, data, ...)
+  data = tonil(data)
   return Qless.job(jid):complete(now, worker, queue, data, unpack(arg))
 end
 
@@ -2032,6 +2040,7 @@ QlessAPI.failed = function(now, group, start, limit)
 end
 
 QlessAPI.fail = function(now, jid, worker, group, message, data)
+  data = tonil(data)
   return Qless.job(jid):fail(now, worker, group, message, data)
 end
 
@@ -2048,7 +2057,7 @@ QlessAPI.depends = function(now, jid, command, ...)
 end
 
 QlessAPI.heartbeat = function(now, jid, worker, data)
-  if data == '' then data = nil end
+  data = tonil(data)
   return Qless.job(jid):heartbeat(now, worker, data)
 end
 
@@ -2122,7 +2131,7 @@ QlessAPI.timeout = function(now, ...)
 end
 
 QlessAPI.put = function(now, me, queue, jid, klass, data, delay, ...)
-  if data == '' then data = nil end
+  data = tonil(data)
   return Qless.queue(queue):put(now, me, jid, klass, data, delay, unpack(arg))
 end
 
@@ -2131,7 +2140,7 @@ QlessAPI.unfail = function(now, queue, group, count)
 end
 
 QlessAPI.recur = function(now, queue, jid, klass, data, spec, ...)
-  if data == '' then data = nil end
+  data = tonil(data)
   return Qless.queue(queue):recur(now, jid, klass, data, spec, unpack(arg))
 end
 

@@ -247,4 +247,9 @@ class Worker {
         }
     }
 
+    protected function updateProcLine($status) {
+        $processTitle = 'qless-' . Qless::VERSION . ': ' . $status;
+        cli_set_process_title($processTitle);
+    }
+
 }

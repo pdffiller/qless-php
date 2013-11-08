@@ -1,18 +1,17 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: paul
- * Date: 10/31/13
- * Time: 2:10 PM
- */
 
 namespace Qless;
 
+require_once __DIR__ . '/QlessException.php';
 
-class Job {
+class Job
+{
 
     private $jid;
     private $data;
+    /**
+     * @var Client
+     */
     private $client;
     private $queue_name;
     private $klass_name;
@@ -20,66 +19,49 @@ class Job {
     private $worker_name;
     private $instance;
 
-    public function __construct($client, $jid, $worker_name, $klass_name, $queue_name, $state, $data){
-        $this->jid = $jid;
-        $this->client = $client;
-        $this->klass_name = $klass_name;
-        $this->queue_name = $queue_name;
-        $this->state = $state;
-        $this->data = json_decode($data,true);
+    public function __construct(Client $client, $jid, $worker_name, $klass_name, $queue_name, $state, $data) {
+        $this->jid         = $jid;
+        $this->client      = $client;
+        $this->klass_name  = $klass_name;
+        $this->queue_name  = $queue_name;
+        $this->state       = $state;
+        $this->data        = json_decode($data, true);
         $this->worker_name = $worker_name;
     }
 
-    public function getId(){
+    public function getId() {
         return $this->jid;
     }
 
-    public function getData(){
+    /**
+     * Return the job data
+     *
+     * @return mixed
+     */
+    public function getData() {
         return $this->data;
     }
 
     /**
-     * @return bool
-     * return values -
+     * Change the status of this job to complete
      *
+     * @return bool
      */
-    public function complete(){
+    public function complete() {
         $jsonData = json_encode($this->data, JSON_UNESCAPED_SLASHES);
-        $return = $this->client->complete(
-            $this->jid,
-            $this->worker_name,
-            $this->queue_name,
-            $jsonData
-        );
-
-        return $return ? $return : false;
+        return $this->client
+            ->complete($this->jid,
+                $this->worker_name,
+                $this->queue_name,
+                $jsonData
+            );
 
     }
 
     /**
-     * @param $group
-     * @param $message
-     *
-     * @return bool
-     * return values -
-     */
-    public function fail($group, $message){
-        $jsonData = json_encode($this->data, JSON_UNESCAPED_SLASHES);
-        $return =  $this->client->fail(
-            $this->jid,
-            $this->worker_name,
-            $group,
-            $message,
-            $jsonData
-        );
-
-        return $return ? $return : false;
-    }
-
-    /**
-     * @param $delay
-     * @param $group
-     * @param $message
+     * @param string $group
+     * @param string $message
+     * @param int $delay
      *
      * @return bool
      * can return an error if
@@ -88,58 +70,42 @@ class Job {
      * job has already been given to another worker
      * TODO: figure out how to check these conditions and define what to do in the job.
      */
-    public function retry($delay, $group, $message){
-        // (now, jid, queue, worker, delay, group, message)
-        $return = $this->client->retry(
-            $this->jid,
-            $this->queue_name,
-            $this->worker_name,
-            $delay,
-            $group,
-            $message
-        );
-
-        return $return ? $return : false;
+    public function retry($group, $message, $delay = 0) {
+        return $this->client
+            ->retry($this->jid,
+                $this->queue_name,
+                $this->worker_name,
+                $delay,
+                $group,
+                $message
+            );
     }
 
     /**
-     * @param null $data
+     * @param bool|null $data
      *
+     * @throws QlessException
      * @return bool
-     * job does not exist
-     * job is not currently running
-     * job has already been given to another worker
-     *
      */
-    public function heartbeat($data=null){
+    public function heartbeat($data = null) {
         // (now, jid, worker, data)
-        $jsonData = null;
-        if ($data){
-            $jsonData = json_encode($data, JSON_UNESCAPED_SLASHES);
+        if (is_array($data)) {
+            $data = json_encode($data, JSON_UNESCAPED_SLASHES);
         }
-        $return = $this->client->heartbeat(
-            $this->jid,
-            $this->worker_name,
-            $jsonData
-        );
 
-        return $return ? $return : false;
+        return $this->client
+            ->heartbeat($this->jid, $this->worker_name, $data);
     }
 
-    public function cancel(){
-        $return = $this->client->cancel(
-            $this->jid
-        );
-
-        return $return ? $return : false;
+    public function cancel() {
+        return $this->client->cancel($this->jid);
     }
 
     /**
      * Creates the instance to perform the job and calls the method on the Instance specified in the payload['performMethod'];
      * @return bool
      */
-    public function perform()
-    {
+    public function perform() {
 
         try {
             $instance = $this->getInstance();
@@ -154,9 +120,9 @@ class Job {
 //            if(method_exists($instance, 'tearDown')) {
 //                $instance->tearDown();
 //            }
-        }
-        catch(\Exception $e) {
-            $this->fail("job exception",$e->getMessage());
+        } catch (\Exception $e) {
+            $this->fail("job exception", $e->getMessage());
+
             return false;
         }
 
@@ -169,29 +135,43 @@ class Job {
      * @return mixed
      * @throws \Exception
      */
-    public function getInstance()
-    {
+    public function getInstance() {
         if (!is_null($this->instance)) {
             return $this->instance;
         }
 
-        if(!class_exists($this->klass_name)) {
+        if (!class_exists($this->klass_name)) {
             throw new \Exception(
                 'Could not find job class ' . $this->klass_name . '.'
             );
         }
 
-        if(!method_exists($this->klass_name, $this->data['performMethod'])) {
+        if (!method_exists($this->klass_name, $this->data['performMethod'])) {
             throw new \Exception(
                 'Job class ' . $this->klass_name . ' does not contain perform method ' . $this->data['performMethod']
             );
         }
 
         $this->instance = new $this->klass_name;
+
         //$this->instance->job = $this;
         //$this->instance->args = $this->getArguments();
         //$this->instance->queue = $this->queue;
         return $this->instance;
+    }
+
+    /**
+     * @param $group
+     * @param $message
+     *
+     * @return bool
+     * return values -
+     */
+    public function fail($group, $message) {
+        $jsonData = json_encode($this->data, JSON_UNESCAPED_SLASHES);
+
+        return $this->client
+            ->fail($this->jid, $this->worker_name, $group, $message, $jsonData);
     }
 
 } 

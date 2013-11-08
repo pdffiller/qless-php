@@ -1,87 +1,84 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: paul
- * Date: 10/30/13
- * Time: 2:58 PM
- */
 
 namespace Qless;
 
-require_once 'Qless.php';
-require_once 'Job.php';
+require_once __DIR__ . '/Qless.php';
+require_once __DIR__ . '/Job.php';
 
 
-class Queue {
-
+class Queue
+{
+    /**
+     * @var string
+     */
     private $name;
+    /**
+     * @var Client
+     */
     private $client;
-    private $workerName;
 
-    public function __construct($name, $client){
-        $this->name = $name;
+    public function __construct($name, Client $client) {
+        $this->name   = $name;
         $this->client = $client;
     }
 
     /**
      *  * Either create a new job in the provided queue with the provided attributes,
-    or move that job into that queue. If the job is being serviced by a worker,
-    subsequent attempts by that worker to either `heartbeat` or `complete` the
-    job should fail and return `false`.
-
-    The `priority` argument should be negative to be run sooner rather than
-    later, and positive if it's less important. The `tags` argument should be
-    a JSON array of the tags associated with the instance and the `valid after`
-    argument should be in how many seconds the instance should be considered
-    actionable.'''
-     * @param        $worker - the name for the worker or null.
-     * @param        $klass - The class with the 'performMethod' specified in the data.
-     * @param        $jid - specified job id, if null, will be generated.
-     * @param        $data - array of parameters for job.
+     * or move that job into that queue. If the job is being serviced by a worker,
+     * subsequent attempts by that worker to either `heartbeat` or `complete` the
+     * job should fail and return `false`.
+     *
+     * The `priority` argument should be negative to be run sooner rather than
+     * later, and positive if it's less important. The `tags` argument should be
+     * a JSON array of the tags associated with the instance and the `valid after`
+     * argument should be in how many seconds the instance should be considered
+     * actionable.
+     *
+     * @param        $klass     - The class with the 'performMethod' specified in the data.
+     * @param        $jid       - specified job id, if null, will be generated.
+     * @param        $data      - array of parameters for job.
      * @param int    $priority
      * @param array  $tags
-     * @param string $delay - specify delay to run job.
-     * @param string $retries - number of retries allowed.
+     * @param int    $delay     - specify delay to run job.
+     * @param int    $retries   - number of retries allowed.
      * @param array  $depends
+     * @param array  $resources a list of resource identifiers this job must acquire before being processed
      *
      * @return mixed
      */
-    public function put($worker, $klass, $jid, $data, $priority=0, $tags=[], $delay="0", $retries="5", $depends=[]){
+    public function put($klass, $jid, $data, $priority = 0, $tags = [], $delay = 0, $retries = 5, $depends = [], $resources = []) {
         $useJID = empty($jid) ? Qless::guidv4() : $jid;
-        $jsonData = json_encode($data,JSON_UNESCAPED_SLASHES);
-        $jsonTags = json_encode($tags,JSON_UNESCAPED_SLASHES);
-        $jsonDepends = json_encode($depends,JSON_UNESCAPED_SLASHES);
-        return $this->client->put($worker,
+
+        return $this->client->put(null,
             $this->name,
             $useJID,
             $klass,
-            $jsonData,
+            json_encode($data, JSON_UNESCAPED_SLASHES),
             $delay,
             'priority', $priority,
-            'tags', $jsonTags,
+            'tags', json_encode($tags, JSON_UNESCAPED_SLASHES),
             'retries', $retries,
-            'depends', $jsonDepends
+            'depends', json_encode($depends, JSON_UNESCAPED_SLASHES),
+            'resources', json_encode($resources, JSON_UNESCAPED_SLASHES)
         );
     }
 
     /**
      * Get the next job on this queue.
-     * @param $worker - worker name poping the job.
+     *
+     * @param $worker - worker name popping the job.
      *
      * @return null|Job
      */
-    public function pop($worker){
-        $results = $this->client->pop(
-            $this->name,
-            $worker,
-            1
-        );
+    public function pop($worker) {
+        $results = $this->client
+            ->pop($this->name, $worker, 1);
 
-        $jobs = json_decode($results,true);
+        $jobs = json_decode($results, true);
 
         $returnJob = null;
-        if (!empty($jobs)){
-            $job = $jobs[0];
+        if (!empty($jobs)) {
+            $job       = $jobs[0];
             $returnJob = new Job($this->client, $job['jid'], $job['worker'], $job['klass'], $job['queue'], $job['state'], $job['data']);
         }
 
@@ -90,17 +87,23 @@ class Queue {
 
     /**
      * Get the length of the queue.
+     *
+     * @return int
      */
-    public function length(){
-        $result = $this->client->length($this->name);
-        //self.client('length', self.name)
+    public function length() {
+        return $this->client->length($this->name);
     }
 
     /**
-     * Get the stats on the queue.
+     * Retrieve stats from the queue
+     *
+     * @param int $date The date for which stats to retrieve as a unix timestamp
+     *
+     * @return array
      */
-    public function stats(){
-        $result = $this->client->stats($this->name, time());
-        //self.client('stats', self.name, date or repr(time.time())))
+    public function stats($date = null) {
+        $date = $date ? : time();
+
+        return $this->client->stats($this->name, $date);
     }
 } 
