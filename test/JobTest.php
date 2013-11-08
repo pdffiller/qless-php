@@ -95,7 +95,21 @@ class JobTest extends QlessTest
 
         $job1 = $queue->pop("worker-1");
         $this->assertNull($job1);
-
     }
+
+    public function testCancelRemovesJob() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0);
+        $queue->put("Sample\\TestWorkerImpl", "jid-2", $testData, 0, 0);
+
+        $job1 = $queue->pop("worker-1");
+        $res = $job1->cancel();
+
+        $this->assertEquals(['jid-1'], $res);
+    }
+
+
 }
  

@@ -1,4 +1,4 @@
--- Current SHA: 1f7a24cb9dd8d81ea3ad408afe5c5f1987f8297f
+-- Current SHA: d02305a9ca49466a996e1aebbde01a86a785648a
 -- This is a generated file
 local Qless = {
   ns = 'ql:'
@@ -236,11 +236,15 @@ function Qless.cancel(...)
     end
   end
 
-  for _, jid in ipairs(arg) do
-    local state, queue, failure, worker = unpack(redis.call(
-      'hmget', QlessJob.ns .. jid, 'state', 'queue', 'failure', 'worker'))
+  local cancelled_jids = {}
 
-    if state ~= 'complete' then
+  for _, jid in ipairs(arg) do
+    local real_jid, state, queue, failure, worker = unpack(redis.call(
+      'hmget', QlessJob.ns .. jid, 'jid', 'state', 'queue', 'failure', 'worker'))
+
+    if state ~= false and state ~= 'complete' then
+      table.insert(cancelled_jids, jid)
+
       local encoded = cjson.encode({
         jid    = jid,
         worker = worker,
@@ -300,7 +304,7 @@ function Qless.cancel(...)
     end
   end
   
-  return arg
+  return cancelled_jids
 end
 
 
