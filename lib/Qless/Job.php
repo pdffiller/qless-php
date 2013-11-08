@@ -81,8 +81,8 @@ class Job
     /**
      * @param bool|null $data
      *
-     * @throws QlessException
-     * @return bool
+     * @throws QlessException If the heartbeat fails
+     * @return int timestamp of the heartbeat
      */
     public function heartbeat($data = null) {
         // (now, jid, worker, data)
@@ -94,6 +94,11 @@ class Job
             ->heartbeat($this->jid, $this->worker_name, $data);
     }
 
+    /**
+     * Cancels the specified job, removing it from the queue
+     *
+     * @return int
+     */
     public function cancel() {
         return $this->client->cancel($this->jid);
     }
