@@ -9,8 +9,14 @@ namespace Qless;
  */
 class Worker {
 
+    /**
+     * @var Queue[]
+     */
     private $queues = array();
     private $interval = 0;
+    /**
+     * @var Client
+     */
     private $client;
 
     private $shutdown = false;
@@ -21,7 +27,7 @@ class Worker {
 
     private $paused = false;
 
-    public function __construct($name, $queues, $client, $interval=60){
+    public function __construct($name, $queues, Client $client, $interval=60){
         $this->workerName = $name;
         $this->queues = [];
         $this->client = $client;
@@ -115,6 +121,9 @@ class Worker {
         }
     }
 
+    /**
+     * @return bool|Job
+     */
     public function reserve(){
         foreach($this->queues as $queue) {
             $job = $queue->pop($this->workerName);
