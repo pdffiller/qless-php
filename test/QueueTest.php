@@ -67,8 +67,6 @@ class QueueTest extends QlessTest {
         $this->assertEquals(array_reverse($jids), $results);
     }
 
-
-
     public function testPausedQueueDoesNotReturnJobs() {
         $queue = new Qless\Queue("testQueue", $this->client);
         $queue->pause();
@@ -110,6 +108,5 @@ class QueueTest extends QlessTest {
         $job = $queue->pop('worker');
         $this->assertEquals('jid-high', $job->getId());
     }
-
 }
  
