@@ -1,0 +1,16 @@
+{
+    "name": "contatta/qless-php",
+    "description": "qless client implementation for PHP",
+    "minimum-stability": "dev",
+    "authors": [
+        {
+            "name": "contatta",
+            "email": "dev@contatta.com"
+        }
+    ],
+    "autoload": {
+        "psr0": {
+            "Qless": "lib"
+        }
+    }
+}
