@@ -38,10 +38,6 @@ class Lua
         $this->redisCli->connect($this->redisHost, $this->redisPort);
     }
 
-    function __destruct() {
-        $this->redisCli->close();
-    }
-
     public function run($command, $args) {
         if (empty($this->sha)) {
             $this->reload();
@@ -51,11 +47,16 @@ class Lua
         $result = $this->redisCli->evalSha($this->sha, $argArray);
         $error  = $this->redisCli->getLastError();
         if ($error) {
-            $this->redisCli->clearLastError();
-            throw QlessException::createException($error);
+            $this->handleError($error);
+            return null;
         }
 
         return $result;
+    }
+
+    private function handleError($error) {
+        $this->redisCli->clearLastError();
+        throw QlessException::createException($error);
     }
 
     private function reload() {
@@ -76,4 +77,11 @@ class Lua
         $this->redisCli->flushDB();
     }
 
+    /**
+     * Reconnect to the Redis server
+     */
+    public function reconnect() {
+        $this->redisCli->close();
+        $this->redisCli->connect($this->redisHost, $this->redisPort);
+    }
 } 

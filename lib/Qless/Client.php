@@ -58,4 +58,10 @@ class Client
         return new Queue($name, $this);
     }
 
+    /**
+     * Call to reconnect to Redis server
+     */
+    public function reconnect() {
+        $this->lua->reconnect();
+    }
 } 

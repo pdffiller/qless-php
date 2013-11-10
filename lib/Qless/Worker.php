@@ -90,8 +90,8 @@ class Worker {
 
             // Forked and we're the child. Run the job.
             if ($this->child === 0 || $this->child === false) {
-                //$status = 'Processing ' . $job->queue . ' since ' . strftime('%F %T');
-                //$this->updateProcLine($status);
+                $status = 'Processing ' . $job->getId() . ' since ' . strftime('%F %T');
+                $this->updateProcLine($status);
                 //$this->logger->log(Psr\Log\LogLevel::INFO, $status);
                 echo "child job performing\n";
                 $this->perform($job);
@@ -103,13 +103,19 @@ class Worker {
 
             if($this->child > 0) {
                 // Parent process, sit and wait
-                //$status = 'Forked ' . $this->child . ' at ' . strftime('%F %T');
-                //$this->updateProcLine($status);
+                $status = 'Forked ' . $this->child . ' at ' . strftime('%F %T');
+                $this->updateProcLine($status);
                 //$this->logger->log(Psr\Log\LogLevel::INFO, $status);
 
                 // Wait until the child process finishes before continuing
                 pcntl_wait($status);
                 $exitStatus = pcntl_wexitstatus($status);
+
+                // workaround for a but in phpredis issuing a QUIT command when the child terminates
+                // which causes Redis to terminate the connection even though the parent process still
+                // has a reference to the socket
+                $this->client->reconnect();
+
                 echo "continuing after child with child exit status: " . $exitStatus . "\n";
                 if($exitStatus !== 0) {
                     // Q:  When is this not going to be 0?  If I kill it, it returns 0, other cases?
