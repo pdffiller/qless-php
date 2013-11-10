@@ -87,6 +87,17 @@ class Queue
     }
 
     /**
+     * Cancels a job using the specified identifier
+     *
+     * @param $jid
+     *
+     * @return int
+     */
+    public function cancel($jid) {
+        return $this->client->cancel($jid);
+    }
+
+    /**
      * Get the length of the queue.
      *
      * @return int
