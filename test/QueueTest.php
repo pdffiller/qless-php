@@ -57,7 +57,7 @@ class QueueTest extends QlessTest {
         }, range(1, 10));
 
         foreach ($jids as $k => $jid) {
-            $queue->put("Sample\\TestWorkerImpl", $jid, $testData, 0, 5, $k);
+            $queue->put("Sample\\TestWorkerImpl", $jid, $testData, 0, 5, true, $k);
         }
 
         $results = array_map(function () use ($queue) {
@@ -65,6 +65,24 @@ class QueueTest extends QlessTest {
         }, $jids);
 
         $this->assertEquals(array_reverse($jids), $results);
+    }
+
+    public function testRunningJobIsNotReplaced() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+        $res = $queue->put("Sample\\TestWorkerImpl", "jid-1", []);
+        $this->assertEquals('jid-1', $res);
+        $job = $queue->pop("worker");
+        $res = $queue->put("Sample\\TestWorkerImpl", "jid-1", [], 0, 5, false);
+        $this->assertGreaterThan(0, $res);
+    }
+
+    public function testRunningJobIsReplaced() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+        $res = $queue->put("Sample\\TestWorkerImpl", "jid-1", []);
+        $this->assertEquals('jid-1', $res);
+        $job = $queue->pop("worker");
+        $res = $queue->put("Sample\\TestWorkerImpl", "jid-1", [], 0, 5, true);
+        $this->assertEquals('jid-1', $res);
     }
 
     public function testPausedQueueDoesNotReturnJobs() {
@@ -102,7 +120,7 @@ class QueueTest extends QlessTest {
 
         $queue->put("Sample\\TestWorkerImpl", "jid-1", ["performMethod"=>'myPerformMethod',"payload"=>"otherData"]);
         $queue->put("Sample\\TestWorkerImpl", "jid-2", ["performMethod"=>'myPerformMethod',"payload"=>"otherData"]);
-        $queue->put("Sample\\TestWorkerImpl", "jid-high", ["performMethod"=>'myPerformMethod',"payload"=>"otherData"], 0, 0, 1);
+        $queue->put("Sample\\TestWorkerImpl", "jid-high", ["performMethod"=>'myPerformMethod',"payload"=>"otherData"], 0, 0, true, 1);
         $queue->put("Sample\\TestWorkerImpl", "jid-3", ["performMethod"=>'myPerformMethod',"payload"=>"otherData"]);
 
         $job = $queue->pop('worker');

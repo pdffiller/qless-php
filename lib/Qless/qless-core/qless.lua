@@ -1,4 +1,4 @@
--- Current SHA: d02305a9ca49466a996e1aebbde01a86a785648a
+-- Current SHA: 99aef181c6a01168da59049ec35dca9c5e5636d6
 -- This is a generated file
 local Qless = {
   ns = 'ql:'
@@ -1036,6 +1036,8 @@ function Qless.queue(name)
       else
         return redis.call('zcard', queue:prefix('locks'))
       end
+    end, job_time_left = function(now, jid)
+      return tonumber(redis.call('zscore', queue:prefix('locks'), jid) or 0) - now
     end
   }
 
@@ -1301,6 +1303,16 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
   local priority, tags, oldqueue, state, failure, retries, oldworker =
     unpack(redis.call('hmget', QlessJob.ns .. jid, 'priority', 'tags',
       'queue', 'state', 'failure', 'retries', 'worker'))
+
+  local replace = assert(tonumber(options['replace'] or 1) ,
+    'Put(): Arg "replace" not a number: ' .. tostring(options['replace']))
+
+  if replace == 0 and state == 'running' then
+    local time_left = self.locks.job_time_left(now, jid)
+    if time_left > 0 then
+      return time_left
+    end
+  end
 
   if tags then
     Qless.tag(now, 'remove', jid, unpack(cjson.decode(tags)))

@@ -39,15 +39,16 @@ class Queue
      * @param mixed  $data      - array of parameters for job.
      * @param int    $delay     - specify delay to run job.
      * @param int    $retries   - number of retries allowed.
+     * @param bool   $replace   - false to prevent the job from being replaced if it is already running
      * @param int    $priority
      * @param array  $resources a list of resource identifiers this job must acquire before being processed
      *
      * @param array  $tags
      * @param array  $depends
      *
-     * @return string the job identifier
+     * @return string|float the job identifier or the time remaining before the job expires if the job is already running
      */
-    public function put($klass, $jid, $data, $delay = 0, $retries = 5, $priority = 0, $resources = [], $tags = [], $depends = []) {
+    public function put($klass, $jid, $data, $delay = 0, $retries = 5, $replace = true, $priority = 0, $resources = [], $tags = [], $depends = []) {
         $useJID = empty($jid) ? Qless::guidv4() : $jid;
 
         return $this->client->put(null,
@@ -60,7 +61,8 @@ class Queue
             'tags', json_encode($tags, JSON_UNESCAPED_SLASHES),
             'retries', $retries,
             'depends', json_encode($depends, JSON_UNESCAPED_SLASHES),
-            'resources', json_encode($resources, JSON_UNESCAPED_SLASHES)
+            'resources', json_encode($resources, JSON_UNESCAPED_SLASHES),
+            'replace', $replace ? 1 : 0
         );
     }
 
