@@ -2,6 +2,9 @@
 
 namespace Qless;
 
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
+
 /**
  * Class Worker
  *
@@ -21,11 +24,13 @@ class Worker {
 
     private $shutdown = false;
     private $workerName;
-    private $child = 0;
+    private $child = null;
 
     private $jobPerformClass = null;
 
     private $paused = false;
+
+    private $logger;
 
     public function __construct($name, $queues, Client $client, $interval=60){
         $this->workerName = $name;
@@ -35,6 +40,11 @@ class Worker {
         foreach ($queues as $queue){
             $this->queues[] = $this->client->getQueue($queue);
         }
+        $this->logger = new NullLogger();
+    }
+
+    public function setLogger(LoggerInterface $logger) {
+        $this->logger = $logger;
     }
 
     public function registerJobPerformHandler($klass){
@@ -58,26 +68,27 @@ class Worker {
      */
     public function run() {
 
+        declare(ticks=1);
+
         $this->startup();
+        $this->logger->info('Worker started', ['pid' => posix_getpid()]);
 
         while (true){
-            pcntl_signal_dispatch();
             if ($this->shutdown){
-                echo "shutting down.";
+                $this->logger->info('Shutting down', ['pid' => posix_getpid()]);
                 break;
             }
-            echo "checking for some work. \n";
+
+            while ($this->paused) {
+                usleep(250000);
+            }
 
             // Attempt to find and reserve a job
-            $job = false;
-            if (!$this->paused){
-                $job = $this->reserve();
-            }
-            else {
-                echo "paused, skipping jobs.";
-            }
+            $this->logger->debug('Looking for work', ['pid' => posix_getpid()]);
+            $this->updateProcLine('Waiting for ' . implode(',', $this->queues) . ' with interval ' . $this->interval);
+            $job = $this->reserve();
 
-            if (!$job){
+            if (!$job) {
                 if ($this->interval == 0){
                     break;
                 }
@@ -86,17 +97,14 @@ class Worker {
             }
 
             $this->child = Qless::fork();
-            //$this->child = 0;
 
             // Forked and we're the child. Run the job.
             if ($this->child === 0 || $this->child === false) {
                 $status = 'Processing ' . $job->getId() . ' since ' . strftime('%F %T');
                 $this->updateProcLine($status);
-                //$this->logger->log(Psr\Log\LogLevel::INFO, $status);
-                echo "child job performing\n";
+                $this->logger->info($status, ['pid' => posix_getpid()]);
                 $this->perform($job);
                 if ($this->child === 0) {
-                    echo "child job done, exiting. \n";
                     exit(0);
                 }
             }
@@ -105,25 +113,32 @@ class Worker {
                 // Parent process, sit and wait
                 $status = 'Forked ' . $this->child . ' at ' . strftime('%F %T');
                 $this->updateProcLine($status);
-                //$this->logger->log(Psr\Log\LogLevel::INFO, $status);
+                $this->logger->info($status);
 
                 // Wait until the child process finishes before continuing
-                pcntl_wait($status);
-                $exitStatus = pcntl_wexitstatus($status);
+                while(($res = pcntl_waitpid(0, $status, WNOHANG)) === 0) {
+                    usleep(250000);
+                    // TODO: we will want check the job and if it's timed out and completed by another child, terminate this child
+                };
 
-                // workaround for a but in phpredis issuing a QUIT command when the child terminates
+                if ($res > 0) {
+                    $exitStatus = pcntl_wexitstatus($status);
+                    if ($exitStatus !== 0) {
+                        $this->logger->debug("Child failed with status {$exitStatus}");
+                        $job->fail("child fail","child return: " . $exitStatus);
+                    } else {
+                        $this->logger->debug("Child completed successfully");
+                    }
+                } else {
+                    $this->logger->error("An error was returned by pcntl_wexitstatus waiting for child to terminate");
+                }
+
+                // workaround for a but in php-redis issuing a QUIT command when the child terminates
                 // which causes Redis to terminate the connection even though the parent process still
                 // has a reference to the socket
                 $this->client->reconnect();
-
-                echo "continuing after child with child exit status: " . $exitStatus . "\n";
-                if($exitStatus !== 0) {
-                    // Q:  When is this not going to be 0?  If I kill it, it returns 0, other cases?
-                    echo "child failed, marking as failed...\n";
-                    $job->fail("child fail","child return: " . $exitStatus);
-                }
             }
-
+            $this->child = null;
         }
     }
 
@@ -151,20 +166,17 @@ class Worker {
             if ($this->jobPerformClass){
                 $performClass = new $this->jobPerformClass;
                 $performClass->perform($job);
-            }
-            else{
+            } else {
                 $job->perform();
             }
-            //Resque_Event::trigger('afterFork', $job);
         }
         catch(\Exception $e) {
-            //$this->logger->log(Psr\Log\LogLevel::CRITICAL, '{job} has failed {stack}', array('job' => $job, 'stack' => $e->getMessage()));
+            $this->logger->critical('{job} has failed {stack}', array('job' => $job->getId(), 'stack' => $e->getMessage()));
             $job->fail("exception", $e->getMessage());
             return;
         }
 
-        //$job->updateStatus(Resque_Job_Status::STATUS_COMPLETE);
-        //$this->logger->log(Psr\Log\LogLevel::NOTICE, '{job} has finished', array('job' => $job));
+        $this->logger->notice('Job has finished', array('job' => $job->getId()));
     }
 
     public function startup(){
@@ -185,14 +197,12 @@ class Worker {
             return;
         }
 
-        declare(ticks = 1);
-        pcntl_signal(SIGTERM, array($this, 'shutDownNow'));
-        pcntl_signal(SIGINT, array($this, 'shutDownNow'));
-        pcntl_signal(SIGQUIT, array($this, 'shutdown'));
-        pcntl_signal(SIGUSR1, array($this, 'killChild'));
-        pcntl_signal(SIGUSR2, array($this, 'pauseProcessing'));
-        pcntl_signal(SIGCONT, array($this, 'unPauseProcessing'));
-        //$this->logger->log(Psr\Log\LogLevel::DEBUG, 'Registered signals');
+        pcntl_signal(SIGTERM, function() { $this->shutdownNow(); });
+        pcntl_signal(SIGINT,  function() { $this->shutdownNow(); });
+        pcntl_signal(SIGQUIT, function() { $this->shutdown(); });
+        pcntl_signal(SIGUSR1, function() { $this->killChild(); });
+        pcntl_signal(SIGUSR2, function() { $this->pauseProcessing(); });
+        pcntl_signal(SIGCONT, function() { $this->unPauseProcessing(); });
     }
 
 
@@ -201,8 +211,7 @@ class Worker {
      */
     public function pauseProcessing()
     {
-        //$this->logger->log(Psr\Log\LogLevel::NOTICE, 'USR2 received; pausing job processing');
-        echo "signal URS2, pausing processing";
+        $this->logger->notice('USR2 received; pausing job processing');
         $this->paused = true;
     }
 
@@ -212,8 +221,7 @@ class Worker {
      */
     public function unPauseProcessing()
     {
-        echo "signal CONT, unpause";
-        //$this->logger->log(Psr\Log\LogLevel::NOTICE, 'CONT received; resuming job processing');
+        $this->logger->notice('CONT received; resuming job processing');
         $this->paused = false;
     }
 
@@ -223,7 +231,6 @@ class Worker {
      */
     public function shutdown()
     {
-        echo "signal QUIT, shutdown.";
         $this->shutdown = true;
         //$this->logger->log(Psr\Log\LogLevel::NOTICE, 'Shutting down');
     }
@@ -234,7 +241,6 @@ class Worker {
      */
     public function shutdownNow()
     {
-        echo "signal INT, shutdown NOW!";
         $this->shutdown();
         $this->killChild();
     }
@@ -246,18 +252,18 @@ class Worker {
     public function killChild()
     {
         if(!$this->child) {
-            //$this->logger->log(Psr\Log\LogLevel::DEBUG, 'No child to kill.');
+            $this->logger->debug('No child to kill.');
             return;
         }
 
-        //$this->logger->log(Psr\Log\LogLevel::INFO, 'Killing child at {child}', array('child' => $this->child));
+        $this->logger->info('Killing child at {child}', array('child' => $this->child));
         if(exec('ps -o pid,state -p ' . $this->child, $output, $returnCode) && $returnCode != 1) {
-            //$this->logger->log(Psr\Log\LogLevel::DEBUG, 'Child {child} found, killing.', array('child' => $this->child));
+            $this->logger->debug('Child {child} found, killing.', array('child' => $this->child));
             posix_kill($this->child, SIGKILL);
-            //$this->child = null;
+            $this->child = null;
         }
         else {
-            //$this->logger->log(Psr\Log\LogLevel::INFO, 'Child {child} not found, restarting.', array('child' => $this->child));
+            $this->logger->info('Child {child} not found, restarting.', array('child' => $this->child));
             $this->shutdown();
         }
     }

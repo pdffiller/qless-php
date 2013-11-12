@@ -143,4 +143,10 @@ class Queue
     public function isPaused() {
         return $this->client->paused($this->name) === 1;
     }
+
+    function __toString() {
+        return $this->name;
+    }
+
+
 } 
