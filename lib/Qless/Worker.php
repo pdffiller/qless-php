@@ -30,6 +30,9 @@ class Worker {
 
     private $paused = false;
 
+    private $who = 'master';
+    private $logContext;
+
     private $logger;
 
     public function __construct($name, $queues, Client $client, $interval=60){
@@ -71,11 +74,13 @@ class Worker {
         declare(ticks=1);
 
         $this->startup();
-        $this->logger->info('Worker started', ['pid' => posix_getpid()]);
+        $this->who = 'master';
+        $this->logContext = [ 'type' => $this->who ];
+        $this->logger->info('{type}: Worker started', $this->logContext);
 
         while (true){
             if ($this->shutdown){
-                $this->logger->info('Shutting down', ['pid' => posix_getpid()]);
+                $this->logger->info('{type}: Shutting down', $this->logContext);
                 break;
             }
 
@@ -84,7 +89,7 @@ class Worker {
             }
 
             // Attempt to find and reserve a job
-            $this->logger->debug('Looking for work', ['pid' => posix_getpid()]);
+            $this->logger->debug('{type}: Looking for work', $this->logContext);
             $this->updateProcLine('Waiting for ' . implode(',', $this->queues) . ' with interval ' . $this->interval);
             $job = $this->reserve();
 
@@ -100,9 +105,11 @@ class Worker {
 
             // Forked and we're the child. Run the job.
             if ($this->child === 0 || $this->child === false) {
+                $this->who = 'child';
+                $this->logContext = [ 'type' => $this->who ];
                 $status = 'Processing ' . $job->getId() . ' since ' . strftime('%F %T');
                 $this->updateProcLine($status);
-                $this->logger->info($status, ['pid' => posix_getpid()]);
+                $this->logger->info($status, $this->logContext);
                 $this->perform($job);
                 if ($this->child === 0) {
                     exit(0);
@@ -113,7 +120,7 @@ class Worker {
                 // Parent process, sit and wait
                 $status = 'Forked ' . $this->child . ' at ' . strftime('%F %T');
                 $this->updateProcLine($status);
-                $this->logger->info($status);
+                $this->logger->info($status, $this->logContext);
 
                 // Wait until the child process finishes before continuing
                 while(($res = pcntl_waitpid(0, $status, WNOHANG)) === 0) {
@@ -124,13 +131,13 @@ class Worker {
                 if ($res > 0) {
                     $exitStatus = pcntl_wexitstatus($status);
                     if ($exitStatus !== 0) {
-                        $this->logger->debug("Child failed with status {$exitStatus}");
+                        $this->logger->debug("Child failed with status {$exitStatus}", $this->logContext);
                         $job->fail("child fail","child return: " . $exitStatus);
                     } else {
-                        $this->logger->debug("Child completed successfully");
+                        $this->logger->debug("{type}: Child completed successfully", $this->logContext);
                     }
                 } else {
-                    $this->logger->error("An error was returned by pcntl_wexitstatus waiting for child to terminate");
+                    $this->logger->error("{type}: An error was returned by pcntl_wexitstatus waiting for child to terminate", $this->logContext);
                 }
 
                 // workaround for a but in php-redis issuing a QUIT command when the child terminates
@@ -171,12 +178,12 @@ class Worker {
             }
         }
         catch(\Exception $e) {
-            $this->logger->critical('{job} has failed {stack}', array('job' => $job->getId(), 'stack' => $e->getMessage()));
+            $this->logger->critical('{type}: {job} has failed {stack}', ['job' => $job->getId(), 'stack' => $e->getMessage(), 'type' => $this->who]);
             $job->fail("exception", $e->getMessage());
             return;
         }
 
-        $this->logger->notice('Job has finished', array('job' => $job->getId()));
+        $this->logger->notice('{type}: Job {job} has finished', ['job' => $job->getId(), 'type' => $this->who]);
     }
 
     public function startup(){
@@ -211,7 +218,7 @@ class Worker {
      */
     public function pauseProcessing()
     {
-        $this->logger->notice('USR2 received; pausing job processing');
+        $this->logger->notice('{type}: USR2 received; pausing job processing', $this->logContext);
         $this->paused = true;
     }
 
@@ -221,7 +228,7 @@ class Worker {
      */
     public function unPauseProcessing()
     {
-        $this->logger->notice('CONT received; resuming job processing');
+        $this->logger->notice('{type}: CONT received; resuming job processing', $this->logContext);
         $this->paused = false;
     }
 
@@ -252,18 +259,18 @@ class Worker {
     public function killChild()
     {
         if(!$this->child) {
-            $this->logger->debug('No child to kill.');
+            $this->logger->debug('{type}: No child to kill.', $this->logContext);
             return;
         }
 
-        $this->logger->info('Killing child at {child}', array('child' => $this->child));
+        $this->logger->info('{type}: Killing child at {child}', ['child' => $this->child, 'type'=>$this->who]);
         if(exec('ps -o pid,state -p ' . $this->child, $output, $returnCode) && $returnCode != 1) {
-            $this->logger->debug('Child {child} found, killing.', array('child' => $this->child));
+            $this->logger->debug('Child {child} found, killing.', ['child' => $this->child, 'type' => $this->who]);
             posix_kill($this->child, SIGKILL);
             $this->child = null;
         }
         else {
-            $this->logger->info('Child {child} not found, restarting.', array('child' => $this->child));
+            $this->logger->info('{type}: Child {child} not found, restarting.', ['child' => $this->child, 'type' => $this->who]);
             $this->shutdown();
         }
     }
