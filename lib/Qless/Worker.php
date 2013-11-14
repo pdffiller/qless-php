@@ -25,6 +25,7 @@ class Worker {
     private $shutdown = false;
     private $workerName;
     private $child = null;
+    private $childSuspended = false;
 
     private $jobPerformClass = null;
 
@@ -33,7 +34,15 @@ class Worker {
     private $who = 'master';
     private $logContext;
 
+    /**
+     * @var LoggerInterface
+     */
     private $logger;
+
+    /**
+     * @var Job
+     */
+    private $job;
 
     public function __construct($name, $queues, Client $client, $interval=60){
         $this->workerName = $name;
@@ -66,6 +75,18 @@ class Worker {
         $this->jobPerformClass = $klass;
     }
 
+    static $SIGNALS = [
+        // kill signals
+        SIGKILL => 'SIGKILL',
+        SIGTERM => 'SIGTERM',
+        SIGINT  => 'SIGINT',
+        SIGQUIT => 'SIGQUIT',
+
+        // stop signals
+        SIGSTOP => 'SIGSTOP',
+        SIGTSTP => 'SIGTSTP',
+    ];
+
     /**
      * starts worker
      */
@@ -77,6 +98,7 @@ class Worker {
         $this->who = 'master';
         $this->logContext = [ 'type' => $this->who ];
         $this->logger->info('{type}: Worker started', $this->logContext);
+        $this->logger->info('{type}: monitoring the following queues (in order), {queues}', ['type'=>$this->who, 'queues' => implode(', ', $this->queues)]);
 
         while (true){
             if ($this->shutdown){
@@ -105,6 +127,7 @@ class Worker {
 
             // Forked and we're the child. Run the job.
             if ($this->child === 0 || $this->child === false) {
+                $this->clearSigHandlers();
                 $this->who = 'child';
                 $this->logContext = [ 'type' => $this->who ];
                 $status = 'Processing ' . $job->getId() . ' since ' . strftime('%F %T');
@@ -117,42 +140,24 @@ class Worker {
             }
 
             if($this->child > 0) {
+                $this->job = $job;
                 // Parent process, sit and wait
                 $status = 'Forked ' . $this->child . ' at ' . strftime('%F %T');
                 $this->updateProcLine($status);
                 $this->logger->info($status, $this->logContext);
 
-                // Wait until the child process finishes before continuing
-                while(($res = pcntl_waitpid(0, $status, WNOHANG)) === 0) {
+                while ($this->child && !$this->shutdown) {
                     usleep(250000);
-                    // TODO: we will want check the job and if it's timed out and completed by another child, terminate this child
-                };
-
-                if ($res > 0) {
-                    $exitStatus = pcntl_wexitstatus($status);
-                    if ($exitStatus !== 0) {
-                        $this->logger->debug("Child failed with status {$exitStatus}", $this->logContext);
-                        $job->fail("child fail","child return: " . $exitStatus);
-                    } else {
-                        $this->logger->debug("{type}: Child completed successfully", $this->logContext);
-                    }
-                } else {
-                    $this->logger->error("{type}: An error was returned by pcntl_wexitstatus waiting for child to terminate", $this->logContext);
                 }
-
-                // workaround for a but in php-redis issuing a QUIT command when the child terminates
-                // which causes Redis to terminate the connection even though the parent process still
-                // has a reference to the socket
-                $this->client->reconnect();
             }
-            $this->child = null;
+            $this->job = null;
         }
     }
 
     /**
      * @return bool|Job
      */
-    public function reserve(){
+    public function reserve() {
         foreach($this->queues as $queue) {
             $job = $queue->pop($this->workerName);
             if ($job){
@@ -200,18 +205,71 @@ class Worker {
      */
     private function registerSigHandlers()
     {
-        if(!function_exists('pcntl_signal')) {
-            return;
-        }
-
         pcntl_signal(SIGTERM, function() { $this->shutdownNow(); });
         pcntl_signal(SIGINT,  function() { $this->shutdownNow(); });
         pcntl_signal(SIGQUIT, function() { $this->shutdown(); });
         pcntl_signal(SIGUSR1, function() { $this->killChild(); });
         pcntl_signal(SIGUSR2, function() { $this->pauseProcessing(); });
         pcntl_signal(SIGCONT, function() { $this->unPauseProcessing(); });
+        pcntl_signal(SIGCHLD, function() { $this->handleChild(); });
     }
 
+    /**
+     * called from the child
+     */
+    private function clearSigHandlers() {
+        pcntl_signal(SIGTERM, SIG_DFL);
+        pcntl_signal(SIGINT,  SIG_DFL);
+        pcntl_signal(SIGQUIT, SIG_DFL);
+        pcntl_signal(SIGUSR1, SIG_DFL);
+        pcntl_signal(SIGUSR2, SIG_DFL);
+        pcntl_signal(SIGCONT, SIG_DFL);
+        pcntl_signal(SIGCHLD, SIG_DFL);
+    }
+
+    private function handleChild() {
+        $res = pcntl_waitpid(0, $status, WNOHANG|WUNTRACED);
+        if ($res === -1) return;
+
+        $jobFailed = false;
+        $jobFailedMessage = null;
+
+        if (pcntl_wifstopped($status)) {
+            $this->childSuspended = true;
+            // child is still running
+            $sig = pcntl_wstopsig($status);
+            $this->logger->notice("{type}: child has been stopped; waiting for it to resume", $this->logContext);
+        } else if (pcntl_wifsignaled($status)) {
+            $this->child = null;
+            $sig = pcntl_wtermsig($status);
+            $this->logger->notice("{type}: child was terminated", $this->logContext);
+        } else if ($this->childSuspended) {
+            // if the child was suspended by a SIGSTOP or SIGTSTP, then reaching this point means it was resumed
+            $this->childSuspended = false;
+            $this->logger->notice("{type}: child was resumed", $this->logContext);
+        } else if (pcntl_wifexited($status)) {
+            $exitStatus = pcntl_wexitstatus($status);
+            if ($exitStatus === 0) {
+                $this->logger->debug("{type}: Child completed successfully", $this->logContext);
+            } else {
+                $jobFailed = true;
+                $jobFailedMessage = "child return: " . $exitStatus;
+                $this->logger->error("{type}: child failed with status {$exitStatus}", $this->logContext);
+            }
+            $this->child = null;
+        }
+
+        if ($this->child === null) {
+            // workaround for a but in php-redis issuing a QUIT command when the child terminates
+            // which causes Redis to terminate the connection even though the parent process still
+            // has a reference to the socket
+            $this->client->reconnect();
+
+            if ($jobFailed) {
+                $this->job->fail('child fail', $jobFailedMessage);
+            }
+        }
+    }
 
     /**
      * Signal handler callback for USR2, pauses processing of new jobs.
@@ -264,12 +322,11 @@ class Worker {
         }
 
         $this->logger->info('{type}: Killing child at {child}', ['child' => $this->child, 'type'=>$this->who]);
-        if(exec('ps -o pid,state -p ' . $this->child, $output, $returnCode) && $returnCode != 1) {
+        if (pcntl_waitpid($this->child, $status, WNOHANG) != -1) {
             $this->logger->debug('Child {child} found, killing.', ['child' => $this->child, 'type' => $this->who]);
             posix_kill($this->child, SIGKILL);
             $this->child = null;
-        }
-        else {
+        } else {
             $this->logger->info('{type}: Child {child} not found, restarting.', ['child' => $this->child, 'type' => $this->who]);
             $this->shutdown();
         }
