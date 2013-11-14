@@ -20,6 +20,14 @@ class JobTest extends QlessTest
         $job1->heartbeat();
     }
 
+    public function testCanGetCorrectTTL() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+        $queue->put("Sample\\TestWorkerImpl", "jobTestDEF", []);
+        $job = $queue->pop("worker-1");
+        $ttl = $job->ttl();
+        $this->assertGreaterThan(55, $ttl);
+    }
+
     public function testCompleteJob() {
         $queue = new Qless\Queue("testQueue", $this->client);
 

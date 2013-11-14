@@ -16,10 +16,17 @@ class Job
     private $queue_name;
     private $klass_name;
     private $state;
+    /**
+     * @var string
+     */
     private $worker_name;
     private $instance;
+    /**
+     * @var float
+     */
+    private $expires;
 
-    public function __construct(Client $client, $jid, $worker_name, $klass_name, $queue_name, $state, $data) {
+    public function __construct(Client $client, $jid, $worker_name, $klass_name, $queue_name, $state, $data, $expires) {
         $this->jid         = $jid;
         $this->client      = $client;
         $this->klass_name  = $klass_name;
@@ -27,10 +34,20 @@ class Job
         $this->state       = $state;
         $this->data        = json_decode($data, true);
         $this->worker_name = $worker_name;
+        $this->expires     = $expires;
     }
 
     public function getId() {
         return $this->jid;
+    }
+
+    /**
+     * Seconds remaining before this job will timeout
+     *
+     * @return float
+     */
+    public function ttl() {
+        return $this->expires - microtime(true);
     }
 
     /**
@@ -90,7 +107,7 @@ class Job
             $data = json_encode($data, JSON_UNESCAPED_SLASHES);
         }
 
-        return $this->client
+        return $this->expires = $this->client
             ->heartbeat($this->jid, $this->worker_name, $data);
     }
 
@@ -111,17 +128,11 @@ class Job
 
         try {
             $instance = $this->getInstance();
-//            if(method_exists($instance, 'setUp')) {
-//                $instance->setUp();
-//            }
 
             $performMethod = $this->data['performMethod'];
 
             $instance->$performMethod($this);
 
-//            if(method_exists($instance, 'tearDown')) {
-//                $instance->tearDown();
-//            }
         } catch (\Exception $e) {
             $this->fail("job exception", $e->getMessage());
 
@@ -156,9 +167,6 @@ class Job
 
         $this->instance = new $this->klass_name;
 
-        //$this->instance->job = $this;
-        //$this->instance->args = $this->getArguments();
-        //$this->instance->queue = $this->queue;
         return $this->instance;
     }
 

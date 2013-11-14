@@ -82,7 +82,7 @@ class Queue
         $returnJob = null;
         if (!empty($jobs)) {
             $job       = $jobs[0];
-            $returnJob = new Job($this->client, $job['jid'], $job['worker'], $job['klass'], $job['queue'], $job['state'], $job['data']);
+            $returnJob = new Job($this->client, $job['jid'], $job['worker'], $job['klass'], $job['queue'], $job['state'], $job['data'], $job['expires']);
         }
 
         return $returnJob;
