@@ -12,23 +12,22 @@ require_once __DIR__ . '/QlessException.php';
  */
 class Lua
 {
-
     /**
      * @var \Redis
      */
-    private $redisCli;
+    protected $redisCli;
     /**
      * @var string
      */
-    private $redisHost;
+    protected $redisHost;
     /**
      * @var int
      */
-    private $redisPort;
+    protected $redisPort;
     /**
      * @var string
      */
-    private $sha = null;
+    protected $sha = null;
 
     public function __construct($redis) {
         $this->redisCli  = $redis['redis'];
@@ -54,12 +53,12 @@ class Lua
         return $result;
     }
 
-    private function handleError($error) {
+    protected function handleError($error) {
         $this->redisCli->clearLastError();
         throw QlessException::createException($error);
     }
 
-    private function reload() {
+    protected function reload() {
         $script    = file_get_contents(__DIR__ . '/qless-core/qless.lua', true);
         $this->sha = sha1($script);
         $res = $this->redisCli->script('exists', $this->sha);

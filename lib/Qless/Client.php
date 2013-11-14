@@ -50,6 +50,17 @@ class Client
         $this->config = new Config($this);
     }
 
+    /**
+     * Used for testing
+     *
+     * @param string $luaClass
+     *
+     * @internal
+     */
+    public function setLuaClass($luaClass) {
+        $this->lua = new $luaClass($this->redis);
+    }
+
     public function __call($command, $arguments) {
         return $this->lua->run($command, $arguments);
     }
