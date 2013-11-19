@@ -15,7 +15,7 @@ class JobTest extends QlessTest
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
         $queue->put("Sample\\TestWorkerImpl", "jobTestDEF", $testData);
 
-        $job1 = $queue->pop("worker-1");
+        $job1 = $queue->pop("worker-1")[0];
         $queue->pop("worker-2");
         $job1->heartbeat();
     }
@@ -23,7 +23,7 @@ class JobTest extends QlessTest
     public function testCanGetCorrectTTL() {
         $queue = new Qless\Queue("testQueue", $this->client);
         $queue->put("Sample\\TestWorkerImpl", "jobTestDEF", []);
-        $job = $queue->pop("worker-1");
+        $job = $queue->pop("worker-1")[0];
         $ttl = $job->ttl();
         $this->assertGreaterThan(55, $ttl);
     }
@@ -34,7 +34,7 @@ class JobTest extends QlessTest
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
         $queue->put("Sample\\TestWorkerImpl", "jobTestDEF", $testData);
 
-        $job1 = $queue->pop("worker-1");
+        $job1 = $queue->pop("worker-1")[0];
         $res = $job1->complete();
         $this->assertEquals('complete', $res);
     }
@@ -45,12 +45,12 @@ class JobTest extends QlessTest
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
         $queue->put("Sample\\TestWorkerImpl", "jid", $testData);
 
-        $job1 = $queue->pop("worker-1");
+        $job1 = $queue->pop("worker-1")[0];
         $res = $job1->fail('account', 'failed to connect');
         $this->assertEquals('jid', $res);
 
         $job1 = $queue->pop("worker-1");
-        $this->assertNull($job1);
+        $this->assertEmpty($job1);
     }
 
     public function testRetryDoesReturnJobAndDefaultsToFiveRetries() {
@@ -59,11 +59,11 @@ class JobTest extends QlessTest
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
         $queue->put("Sample\\TestWorkerImpl", "jid", $testData);
 
-        $job1 = $queue->pop("worker-1");
+        $job1 = $queue->pop("worker-1")[0];
         $remaining = $job1->retry('account', 'failed to connect');
         $this->assertEquals(4, $remaining);
 
-        $job1 = $queue->pop("worker-1");
+        $job1 = $queue->pop("worker-1")[0];
         $this->assertEquals('jid', $job1->getId());
     }
 
@@ -73,11 +73,11 @@ class JobTest extends QlessTest
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
         $queue->put("Sample\\TestWorkerImpl", "jid", $testData, 0, 1);
 
-        $job1 = $queue->pop("worker-1");
+        $job1 = $queue->pop("worker-1")[0];
         $remaining = $job1->retry('account', 'failed to connect');
         $this->assertEquals(0, $remaining);
 
-        $job1 = $queue->pop("worker-1");
+        $job1 = $queue->pop("worker-1")[0];
         $this->assertEquals('jid', $job1->getId());
     }
 
@@ -87,7 +87,7 @@ class JobTest extends QlessTest
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
         $queue->put("Sample\\TestWorkerImpl", "jid", $testData, 0, 0);
 
-        $job1 = $queue->pop("worker-1");
+        $job1 = $queue->pop("worker-1")[0];
         $remaining = $job1->retry('account', 'failed to connect');
         $this->assertEquals(-1, $remaining);
     }
@@ -98,11 +98,11 @@ class JobTest extends QlessTest
         $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
         $queue->put("Sample\\TestWorkerImpl", "jid", $testData, 0, 0);
 
-        $job1 = $queue->pop("worker-1");
+        $job1 = $queue->pop("worker-1")[0];
         $job1->retry('account', 'failed to connect');
 
         $job1 = $queue->pop("worker-1");
-        $this->assertNull($job1);
+        $this->assertEmpty($job1);
     }
 
     public function testCancelRemovesJob() {
@@ -112,7 +112,7 @@ class JobTest extends QlessTest
         $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0);
         $queue->put("Sample\\TestWorkerImpl", "jid-2", $testData, 0, 0);
 
-        $job1 = $queue->pop("worker-1");
+        $job1 = $queue->pop("worker-1")[0];
         $res = $job1->cancel();
 
         $this->assertEquals(['jid-1'], $res);

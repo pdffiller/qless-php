@@ -69,47 +69,25 @@ class Queue
     /**
      * Get the next job on this queue.
      *
-     * @param $worker - worker name popping the job.
-     *
-     * @return null|Job
-     */
-    public function pop($worker) {
-        $results = $this->client
-            ->pop($this->name, $worker, 1);
-
-        $jobs = json_decode($results, true);
-
-        $returnJob = null;
-        if (!empty($jobs)) {
-            $job       = $jobs[0];
-            $returnJob = new Job($this->client, $job['jid'], $job['worker'], $job['klass'], $job['queue'], $job['state'], $job['data'], $job['expires']);
-        }
-
-        return $returnJob;
-    }
-
-    /**
-     * Get the next jobs on this queue.
-     *
      * @param     $worker - worker name popping the job.
-     * @param int $numJobs
+     * @param int $numJobs - number of jobs to pop off of the queue
      *
      * @return Job[]
      */
-    public function popMultiple($worker, $numJobs=1) {
+    public function pop($worker, $numJobs = 1) {
         $results = $this->client
             ->pop($this->name, $worker, $numJobs);
 
         $jobs = json_decode($results, true);
 
+        $returnJobs = [];
         if (!empty($jobs)) {
-            foreach($jobs as $key=>$job) {
-                $jobs[$key] = new Job($this->client, $job['jid'], $job['worker'], $job['klass'], $job['queue'], $job['state'], $job['data'], $job['expires']);
+            foreach($jobs as $job) {
+                $returnJobs[] = new Job($this->client, $job['jid'], $job['worker'], $job['klass'], $job['queue'], $job['state'], $job['data'], $job['expires']);
             }
         }
-        if(is_null($jobs)) $jobs = [];
 
-        return $jobs;
+        return $returnJobs;
     }
 
 
@@ -174,4 +152,4 @@ class Queue
     }
 
 
-} 
+}

@@ -32,7 +32,7 @@ class QueuePerformanceTest extends QlessTest {
     public function testPerfDirectRedis() {
 
         $redis = new Redis();
-        $redis->connect('odin.vm', 6381);
+        $redis->connect(self::$REDIS_HOST, self::$REDIS_PORT);
 
         $cb = $this->getProfilerForCallback(function ($e) use ($redis) {
             $redis->hSet($e, 'data', '');

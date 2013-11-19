@@ -161,7 +161,7 @@ class Worker {
         foreach($this->queues as $queue) {
             $job = $queue->pop($this->workerName);
             if ($job){
-                return $job;
+                return $job[0];
             }
         }
         return false;

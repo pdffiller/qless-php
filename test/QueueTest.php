@@ -10,15 +10,15 @@ class QueueTest extends QlessTest {
 
         $testData = ["performMethod"=>'myPerformMethod',"payload"=>"otherData"];
         $res = $queue->put("Sample\\TestWorkerImpl", "jid", $testData);
-        $job = $queue->pop("worker");
-        $this->assertNotNull($job);
-        $this->assertEquals('jid', $job->getId());
+        $jobs = $queue->pop("worker");
+        $this->assertNotEmpty($jobs);
+        $this->assertEquals('jid', $jobs[0]->getId());
     }
 
     public function testPopWithNoJobs() {
         $queue = new Qless\Queue("testQueue", $this->client);
-        $job = $queue->pop("worker");
-        $this->assertNull($job);
+        $jobs = $queue->pop("worker");
+        $this->assertEmpty($jobs);
     }
 
     public function testQueueLength() {
@@ -29,6 +29,24 @@ class QueueTest extends QlessTest {
         }
         $len = $queue->length();
         $this->assertEquals(10, $len);
+    }
+
+    public function testPoppingMultipleJobs() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+        $testData = ["performMethod"=>'myPerformMethod',"payload"=>"otherData"];
+        $jids = array_map(function($i) {
+            return "jid-$i";
+        }, range(1, 10));
+
+        foreach ($jids as $jid) {
+            $queue->put("Sample\\TestWorkerImpl", $jid, $testData);
+        }
+
+        $results = $queue->pop('worker',10);
+
+        $numJobs = count($results);
+        $this->assertEquals(10, $numJobs);
+
     }
 
     public function testCorrectOrderOfPushingAndPoppingJobs() {
@@ -43,28 +61,9 @@ class QueueTest extends QlessTest {
         }
 
         $results = array_map(function () use ($queue) {
-            return $queue->pop('worker')->getId();
+            return $queue->pop('worker')[0]->getId();
         }, $jids);
 
-        $this->assertEquals($jids, $results);
-    }
-
-    public function testPoppingMultipleJobs() {
-        $queue = new Qless\Queue("testQueue", $this->client);
-        $testData = ["performMethod"=>'myPerformMethod',"payload"=>"otherData"];
-        $jids = array_map(function($i) {
-            return "jid-$i";
-        }, range(1, 10));
-
-        foreach ($jids as $jid) {
-            $queue->put("Sample\\TestWorkerImpl", $jid, $testData);
-        }
-
-        $results = [];
-        $resultJobs = $queue->popMultiple('worker', 10);
-        foreach($resultJobs as $job) {
-            $results[] = $job->getId();
-        }
         $this->assertEquals($jids, $results);
     }
 
@@ -80,7 +79,7 @@ class QueueTest extends QlessTest {
         }
 
         $results = array_map(function () use ($queue) {
-            return $queue->pop('worker')->getId();
+            return $queue->pop('worker')[0]->getId();
         }, $jids);
 
         $this->assertEquals(array_reverse($jids), $results);
@@ -90,7 +89,7 @@ class QueueTest extends QlessTest {
         $queue = new Qless\Queue("testQueue", $this->client);
         $res = $queue->put("Sample\\TestWorkerImpl", "jid-1", []);
         $this->assertEquals('jid-1', $res);
-        $job = $queue->pop("worker");
+        $jobs = $queue->pop("worker");
         $res = $queue->put("Sample\\TestWorkerImpl", "jid-1", [], 0, 5, false);
         $this->assertGreaterThan(0, $res);
     }
@@ -99,7 +98,7 @@ class QueueTest extends QlessTest {
         $queue = new Qless\Queue("testQueue", $this->client);
         $res = $queue->put("Sample\\TestWorkerImpl", "jid-1", []);
         $this->assertEquals('jid-1', $res);
-        $job = $queue->pop("worker");
+        $jobs = $queue->pop("worker");
         $res = $queue->put("Sample\\TestWorkerImpl", "jid-1", [], 0, 5, true);
         $this->assertEquals('jid-1', $res);
     }
@@ -108,8 +107,8 @@ class QueueTest extends QlessTest {
         $queue = new Qless\Queue("testQueue", $this->client);
         $queue->pause();
         $queue->put("Sample\\TestWorkerImpl", "jid", ["performMethod"=>'myPerformMethod',"payload"=>"otherData"]);
-        $job = $queue->pop("worker");
-        $this->assertNull($job);
+        $jobs = $queue->pop("worker");
+        $this->assertEquals([],$jobs);
     }
 
     public function testQueueIsNotPausedByDefault() {
@@ -130,8 +129,8 @@ class QueueTest extends QlessTest {
         $queue->pause();
         $queue->put("Sample\\TestWorkerImpl", "jid", ["performMethod"=>'myPerformMethod',"payload"=>"otherData"]);
         $queue->resume();
-        $job = $queue->pop("worker");
-        $this->assertNotNull($job);
+        $jobs = $queue->pop("worker");
+        $this->assertNotEmpty($jobs);
     }
 
     public function testHighPriorityJobPoppedBeforeLowerPriorityJobs() {
@@ -142,8 +141,7 @@ class QueueTest extends QlessTest {
         $queue->put("Sample\\TestWorkerImpl", "jid-high", ["performMethod"=>'myPerformMethod',"payload"=>"otherData"], 0, 0, true, 1);
         $queue->put("Sample\\TestWorkerImpl", "jid-3", ["performMethod"=>'myPerformMethod',"payload"=>"otherData"]);
 
-        $job = $queue->pop('worker');
+        $job = $queue->pop('worker')[0];
         $this->assertEquals('jid-high', $job->getId());
     }
 }
- 
