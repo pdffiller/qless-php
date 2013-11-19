@@ -60,6 +60,14 @@ class Job
     }
 
     /**
+     * Get the name of the queue this job is on.
+     * @return mixed
+     */
+    public function getQueueName() {
+        return $this->queue_name;
+    }
+
+    /**
      * Change the status of this job to complete
      *
      * @return bool
