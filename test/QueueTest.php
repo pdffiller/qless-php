@@ -49,6 +49,25 @@ class QueueTest extends QlessTest {
         $this->assertEquals($jids, $results);
     }
 
+    public function testPoppingMultipleJobs() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+        $testData = ["performMethod"=>'myPerformMethod',"payload"=>"otherData"];
+        $jids = array_map(function($i) {
+            return "jid-$i";
+        }, range(1, 10));
+
+        foreach ($jids as $jid) {
+            $queue->put("Sample\\TestWorkerImpl", $jid, $testData);
+        }
+
+        $results = [];
+        $resultJobs = $queue->popMulti('worker', 10);
+        foreach($resultJobs as $job) {
+            $results[] = $job->getId();
+        }
+        $this->assertEquals($jids, $results);
+    }
+
     public function testHigherPriorityJobsArePoppedSooner() {
         $queue = new Qless\Queue("testQueue", $this->client);
         $testData = ["performMethod"=>'myPerformMethod',"payload"=>"otherData"];

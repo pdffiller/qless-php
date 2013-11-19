@@ -89,6 +89,31 @@ class Queue
     }
 
     /**
+     * Get the next jobs on this queue.
+     *
+     * @param     $worker - worker name popping the job.
+     * @param int $numJobs
+     *
+     * @return Job[]
+     */
+    public function popMulti($worker, $numJobs=1) {
+        $results = $this->client
+            ->pop($this->name, $worker, $numJobs);
+
+        $jobs = json_decode($results, true);
+
+        if (!empty($jobs)) {
+            foreach($jobs as $key=>$job) {
+                $jobs[$key] = new Job($this->client, $job['jid'], $job['worker'], $job['klass'], $job['queue'], $job['state'], $job['data'], $job['expires']);
+            }
+        }
+        if(is_null($jobs)) $jobs = [];
+
+        return $jobs;
+    }
+
+
+    /**
      * Cancels a job using the specified identifier
      *
      * @param $jid
