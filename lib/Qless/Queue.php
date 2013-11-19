@@ -96,7 +96,7 @@ class Queue
      *
      * @return Job[]
      */
-    public function popMulti($worker, $numJobs=1) {
+    public function popMultiple($worker, $numJobs=1) {
         $results = $this->client
             ->pop($this->name, $worker, $numJobs);
 

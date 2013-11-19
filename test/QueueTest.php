@@ -61,7 +61,7 @@ class QueueTest extends QlessTest {
         }
 
         $results = [];
-        $resultJobs = $queue->popMulti('worker', 10);
+        $resultJobs = $queue->popMultiple('worker', 10);
         foreach($resultJobs as $job) {
             $results[] = $job->getId();
         }
