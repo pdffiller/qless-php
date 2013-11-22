@@ -185,7 +185,7 @@ class Worker {
         }
         catch(\Exception $e) {
             $this->logger->critical('{type}: {job} has failed {stack}', ['job' => $job->getId(), 'stack' => $e->getMessage(), 'type' => $this->who]);
-            $job->fail('system', $e->getMessage());
+            $job->fail('system:fatal', $e->getMessage());
         }
     }
 
@@ -264,7 +264,7 @@ class Worker {
             $this->client->reconnect();
 
             if ($jobFailed) {
-                $this->job->fail('system', $jobFailedMessage);
+                $this->job->fail('system:fatal', $jobFailedMessage);
             }
         }
     }

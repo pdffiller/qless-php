@@ -142,7 +142,7 @@ class Job
             $instance->$performMethod($this);
 
         } catch (\Exception $e) {
-            $this->fail('system', $e->getMessage());
+            $this->fail('system:fatal', $e->getMessage());
 
             return false;
         }
