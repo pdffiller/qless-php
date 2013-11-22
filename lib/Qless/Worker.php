@@ -175,20 +175,18 @@ class Worker {
     public function perform(Job $job)
     {
         try {
-            if ($this->jobPerformClass){
+            if ($this->jobPerformClass) {
                 $performClass = new $this->jobPerformClass;
                 $performClass->perform($job);
             } else {
                 $job->perform();
             }
+            $this->logger->notice('{type}: Job {job} has finished', ['job' => $job->getId(), 'type' => $this->who]);
         }
         catch(\Exception $e) {
             $this->logger->critical('{type}: {job} has failed {stack}', ['job' => $job->getId(), 'stack' => $e->getMessage(), 'type' => $this->who]);
-            $job->fail("exception", $e->getMessage());
-            return;
+            $job->fail('system', $e->getMessage());
         }
-
-        $this->logger->notice('{type}: Job {job} has finished', ['job' => $job->getId(), 'type' => $this->who]);
     }
 
     public function startup(){
@@ -266,7 +264,7 @@ class Worker {
             $this->client->reconnect();
 
             if ($jobFailed) {
-                $this->job->fail('child fail', $jobFailedMessage);
+                $this->job->fail('system', $jobFailedMessage);
             }
         }
     }
