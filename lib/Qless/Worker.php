@@ -240,7 +240,9 @@ class Worker {
         } else if (pcntl_wifsignaled($status)) {
             $this->child = null;
             $sig = pcntl_wtermsig($status);
-            $this->logger->notice("{type}: child was terminated", $this->logContext);
+            $context = $this->logContext;
+            $context['signal'] = $sig;
+            $this->logger->notice("{type}: child was terminated with signal {signal}", $context);
         } else if ($this->childSuspended) {
             // if the child was suspended by a SIGSTOP or SIGTSTP, then reaching this point means it was resumed
             $this->childSuspended = false;
