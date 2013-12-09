@@ -1,4 +1,4 @@
--- Current SHA: 99aef181c6a01168da59049ec35dca9c5e5636d6
+-- Current SHA: f83380cb9d301bb9ee4f3953829d1861344c1dba
 -- This is a generated file
 local Qless = {
   ns = 'ql:'
@@ -220,7 +220,7 @@ function Qless.tag(now, command, ...)
   end
 end
 
-function Qless.cancel(...)
+function Qless.cancel(now, ...)
   local dependents = {}
   for _, jid in ipairs(arg) do
     dependents[jid] = redis.call(
@@ -266,7 +266,7 @@ function Qless.cancel(...)
         queue.depends.remove(jid)
       end
 
-      Qless.job(jid):release_resources()
+      Qless.job(jid):release_resources(now)
 
       for i, j in ipairs(redis.call(
         'smembers', QlessJob.ns .. jid .. '-dependencies')) do
@@ -963,11 +963,11 @@ function QlessJob:history(now, what, item)
   end
 end
 
-function QlessJob:release_resources()
+function QlessJob:release_resources(now)
   local resources = redis.call('hget', QlessJob.ns .. self.jid, 'resources')
   resources = cjson.decode(resources or '[]')
   for _, res in ipairs(resources) do
-    Qless.resource(res):release(self.jid)
+    Qless.resource(res):release(now, self.jid)
   end
 end
 
@@ -980,7 +980,8 @@ function QlessJob:acquire_resources(now)
 
   local acquired_all = true
   for _, res in ipairs(resources) do
-    acquired_all = acquired_all and Qless.resource(res):acquire(now, priority, self.jid)
+    local acquire_ret = Qless.resource(res):acquire(now, priority, self.jid)
+    acquired_all = acquired_all and acquire_ret
   end
   return acquired_all
 end
@@ -1927,10 +1928,44 @@ function QlessResource:data(...)
   return data
 end
 
-function QlessResource:set(max)
+function QlessResource:set(now, max)
   local max = assert(tonumber(max), 'Set(): Arg "max" not a number: ' .. tostring(max))
 
+  local data = self:data()
+  local current_max = 0
+  if data == nil then
+    current_max = max
+  else
+    current_max = data['max']
+  end
+
+  local keyLocks = self:prefix('locks')
+  local current_locks = redis.pcall('scard', keyLocks)
+  local confirm_limit = math.max(current_max,current_locks)
+  local max_change = max - confirm_limit
+  local keyPending = self:prefix('pending')
+
   redis.call('hmset', QlessResource.ns .. self.rid, 'rid', self.rid, 'max', max);
+
+  if max_change > 0 then
+    local jids = redis.call('zrevrange', keyPending, 0, max_change - 1, 'withscores')
+    local jid_count = #jids
+    if jid_count == 0 then
+      return self.rid
+    end
+
+    for i = 1, jid_count, 2 do
+
+      local newJid = jids[i]
+      local score = jids[i + 1]
+
+      if Qless.job(newJid):acquire_resources(now) then
+        local data = Qless.job(newJid):data()
+        local queue = Qless.queue(data['queue'])
+        queue.work.add(score, 0, newJid)
+      end
+    end
+  end
 
   return self.rid
 end
@@ -1953,6 +1988,10 @@ function QlessResource:acquire(now, priority, jid)
   assert(data, 'Acquire(): resource ' .. self.rid .. ' does not exist')
   assert(type(jid) ~= 'table', 'Acquire(): invalid jid')
 
+  if redis.call('sismember', self:prefix('locks'), jid) == 1 then
+    return true
+  end
+
   local remaining = data['max'] - redis.pcall('scard', keyLocks)
 
   if remaining > 0 then
@@ -1961,14 +2000,14 @@ function QlessResource:acquire(now, priority, jid)
     return true
   end
 
-  if redis.call('sismember', self:prefix('locks'), jid) == 0 then
+  if redis.call('zscore', self:prefix('pending'), jid) == false then
     redis.call('zadd', self:prefix('pending'), priority - (now / 10000000000), jid)
   end
 
   return false
 end
 
-function QlessResource:release(jid)
+function QlessResource:release(now, jid)
   local keyLocks = self:prefix('locks')
   local keyPending = self:prefix('pending')
 
@@ -1983,13 +2022,11 @@ function QlessResource:release(jid)
   local newJid = jids[1]
   local score = jids[2]
 
-  redis.call('sadd', keyLocks, newJid)
-  redis.call('zrem', keyPending, newJid)
-
-  local data = Qless.job(newJid):data()
-  local queue = Qless.queue(data['queue'])
-
-  queue.work.add(score, 0, newJid)
+  if Qless.job(newJid):acquire_resources(now) then
+    local data = Qless.job(newJid):data()
+    local queue = Qless.queue(data['queue'])
+    queue.work.add(score, 0, newJid)
+  end
 
   return newJid
 end
@@ -2141,7 +2178,7 @@ QlessAPI.paused = function(now, queue)
 end
 
 QlessAPI.cancel = function(now, ...)
-  return Qless.cancel(unpack(arg))
+  return Qless.cancel(now, unpack(arg))
 end
 
 QlessAPI.timeout = function(now, ...)
@@ -2201,7 +2238,7 @@ QlessAPI['queue.forget'] = function(now, ...)
 end
 
 QlessAPI['resource.set'] = function(now, rid, max)
-  return Qless.resource(rid):set(max)
+  return Qless.resource(rid):set(now, max)
 end
 
 QlessAPI['resource.get'] = function(now, rid)
