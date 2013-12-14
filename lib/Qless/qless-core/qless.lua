@@ -1,4 +1,4 @@
--- Current SHA: f83380cb9d301bb9ee4f3953829d1861344c1dba
+-- Current SHA: 9df835a542b4c5b4453c3c1c9f035f8e137c7a7b
 -- This is a generated file
 local Qless = {
   ns = 'ql:'
@@ -421,9 +421,17 @@ function QlessJob:complete(now, worker, queue, data, ...)
 
   local bin = now - (now % 86400)
 
-  local lastworker, state, priority, retries = unpack(
+  local lastworker, state, priority, retries, interval = unpack(
     redis.call('hmget', QlessJob.ns .. self.jid, 'worker', 'state',
-      'priority', 'retries', 'dependents'))
+      'priority', 'retries', 'throttle_interval'))
+
+  interval = tonumber(interval or 0)
+  local next_run = 0
+  if interval > 0 then
+    next_run = now + interval
+  else
+    next_run = -1
+  end
 
   if lastworker == false then
     error('Complete(): Job does not exist')
@@ -526,7 +534,9 @@ function QlessJob:complete(now, worker, queue, data, ...)
       'failure', '{}',
       'queue', '',
       'expires', 0,
-      'remaining', tonumber(retries))
+      'remaining', tonumber(retries),
+      'throttle_next_run', next_run
+    )
     
     local count = Qless.config.get('jobs-history-count')
     local time  = Qless.config.get('jobs-history')
@@ -1301,9 +1311,11 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
   for i = 1, #arg, 2 do options[arg[i]] = arg[i + 1] end
 
   local job = Qless.job(jid)
-  local priority, tags, oldqueue, state, failure, retries, oldworker =
+  local priority, tags, oldqueue, state, failure, retries, oldworker, interval, next_run =
     unpack(redis.call('hmget', QlessJob.ns .. jid, 'priority', 'tags',
-      'queue', 'state', 'failure', 'retries', 'worker'))
+      'queue', 'state', 'failure', 'retries', 'worker', 'throttle_interval', 'throttle_next_run'))
+
+  next_run = next_run or now
 
   local replace = assert(tonumber(options['replace'] or 1) ,
     'Put(): Arg "replace" not a number: ' .. tostring(options['replace']))
@@ -1330,6 +1342,20 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
 
   local resources = assert(cjson.decode(options['resources'] or '[]'),
     'Put(): Arg "resources" not JSON array: '     .. tostring(options['resources']))
+
+  local interval = assert(tonumber(options['interval'] or interval or 0),
+    'Put(): Arg "interval" not a number: ' .. tostring(options['interval']))
+
+  if interval > 0 then
+    local minimum_delay = next_run - now
+    if minimum_delay < 0 then
+      minimum_delay = 0
+    elseif minimum_delay > delay then
+      delay = minimum_delay
+    end
+  else
+    next_run = 0
+  end
 
   if #depends > 0 then
     local new = {}
@@ -1406,6 +1432,8 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
     'queue'    , self.name,
     'retries'  , retries,
     'remaining', retries,
+    'throttle_interval', interval,
+    'throttle_next_run', next_run,
     'time'     , string.format("%.20f", now))
 
   for i, j in ipairs(depends) do

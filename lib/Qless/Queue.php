@@ -23,7 +23,7 @@ class Queue
     }
 
     /**
-     *  * Either create a new job in the provided queue with the provided attributes,
+     * Either create a new job in the provided queue with the provided attributes,
      * or move that job into that queue. If the job is being serviced by a worker,
      * subsequent attempts by that worker to either `heartbeat` or `complete` the
      * job should fail and return `false`.
@@ -34,26 +34,24 @@ class Queue
      * argument should be in how many seconds the instance should be considered
      * actionable.
      *
-     * @param string $klass     - The class with the 'performMethod' specified in the data.
-     * @param string $jid       - specified job id, if null, will be generated.
-     * @param mixed  $data      - array of parameters for job.
-     * @param int    $delay     - specify delay to run job.
-     * @param int    $retries   - number of retries allowed.
-     * @param bool   $replace   - false to prevent the job from being replaced if it is already running
-     * @param int    $priority
+     * @param string $klass     The class with the 'performMethod' specified in the data.
+     * @param string $jid       specified job id, if false is specified, a jid will be generated.
+     * @param mixed  $data      array of parameters for job.
+     * @param int    $delay     specify delay to run job.
+     * @param int    $retries   number of retries allowed.
+     * @param bool   $replace   false to prevent the job from being replaced if it is already running
+     * @param int    $priority  a greater priority will execute before jobs of lower priority
      * @param array  $resources a list of resource identifiers this job must acquire before being processed
-     *
+     * @param float  $interval  the minimum number of seconds required to transpire before the next instance of this job can run
      * @param array  $tags
-     * @param array  $depends
+     * @param array  $depends   a list of JIDs this job must wait on before executing
      *
      * @return string|float the job identifier or the time remaining before the job expires if the job is already running
      */
-    public function put($klass, $jid, $data, $delay = 0, $retries = 5, $replace = true, $priority = 0, $resources = [], $tags = [], $depends = []) {
-        $useJID = empty($jid) ? Qless::guidv4() : $jid;
-
+    public function put($klass, $jid, $data, $delay = 0, $retries = 5, $replace = true, $priority = 0, $resources = [], $interval = 0.0, $tags = [], $depends = []) {
         return $this->client->put(null,
             $this->name,
-            $useJID,
+            $jid ?: Qless::guidv4(),
             $klass,
             json_encode($data, JSON_UNESCAPED_SLASHES),
             $delay,
@@ -62,7 +60,8 @@ class Queue
             'retries', $retries,
             'depends', json_encode($depends, JSON_UNESCAPED_SLASHES),
             'resources', json_encode($resources, JSON_UNESCAPED_SLASHES),
-            'replace', $replace ? 1 : 0
+            'replace', $replace ? 1 : 0,
+            'interval', $interval
         );
     }
 

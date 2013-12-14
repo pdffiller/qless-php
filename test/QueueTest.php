@@ -15,6 +15,14 @@ class QueueTest extends QlessTest {
         $this->assertEquals('jid', $jobs[0]->getId());
     }
 
+    public function testPutWithFalseJobIDGeneratesUUID() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+
+        $testData = ["performMethod"=>'myPerformMethod',"payload"=>"otherData"];
+        $res = $queue->put("Sample\\TestWorkerImpl", false, $testData);
+        $this->assertRegExp('/^[[:xdigit:]]{8}-([[:xdigit:]]{4}-){3}[[:xdigit:]]{12}/', $res);
+    }
+
     public function testPopWithNoJobs() {
         $queue = new Qless\Queue("testQueue", $this->client);
         $jobs = $queue->pop("worker");
@@ -143,5 +151,17 @@ class QueueTest extends QlessTest {
 
         $job = $queue->pop('worker')[0];
         $this->assertEquals('jid-high', $job->getId());
+    }
+
+    public function testJobWithIntervalIsThrottled() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+
+        $queue->put("Sample\\TestWorkerImpl", "jid-1", [], 0, 5, true, 0, [], 60);
+        $job = $queue->pop('worker')[0];
+        $job->complete();
+
+        $queue->put("Sample\\TestWorkerImpl", "jid-1", [], 0, 5, true, 0, [], 60);
+        $job = $queue->pop('worker');
+        $this->assertEmpty($job);
     }
 }
