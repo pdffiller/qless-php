@@ -114,7 +114,7 @@ class QueueTest extends QlessTest {
     public function testPausedQueueDoesNotReturnJobs() {
         $queue = new Qless\Queue("testQueue", $this->client);
         $queue->pause();
-        $queue->put("Sample\\TestWorkerImpl", "jid", ["performMethod"=>'myPerformMethod',"payload"=>"otherData"]);
+        $queue->put("Sample\\TestWorkerImpl", "jid", ["performMethod" => 'myPerformMethod', "payload" => "otherData"]);
         $jobs = $queue->pop("worker");
         $this->assertEquals([],$jobs);
     }
@@ -135,7 +135,7 @@ class QueueTest extends QlessTest {
     public function testPausedQueueThatIsResumedDoesReturnJobs() {
         $queue = new Qless\Queue("testQueue", $this->client);
         $queue->pause();
-        $queue->put("Sample\\TestWorkerImpl", "jid", ["performMethod"=>'myPerformMethod',"payload"=>"otherData"]);
+        $queue->put("Sample\\TestWorkerImpl", "jid", ["performMethod" => 'myPerformMethod', "payload" => "otherData"]);
         $queue->resume();
         $jobs = $queue->pop("worker");
         $this->assertNotEmpty($jobs);
@@ -144,10 +144,10 @@ class QueueTest extends QlessTest {
     public function testHighPriorityJobPoppedBeforeLowerPriorityJobs() {
         $queue = new Qless\Queue("testQueue", $this->client);
 
-        $queue->put("Sample\\TestWorkerImpl", "jid-1", ["performMethod"=>'myPerformMethod',"payload"=>"otherData"]);
-        $queue->put("Sample\\TestWorkerImpl", "jid-2", ["performMethod"=>'myPerformMethod',"payload"=>"otherData"]);
-        $queue->put("Sample\\TestWorkerImpl", "jid-high", ["performMethod"=>'myPerformMethod',"payload"=>"otherData"], 0, 0, true, 1);
-        $queue->put("Sample\\TestWorkerImpl", "jid-3", ["performMethod"=>'myPerformMethod',"payload"=>"otherData"]);
+        $queue->put("Sample\\TestWorkerImpl", "jid-1", ["performMethod" => 'myPerformMethod', "payload" => "otherData"]);
+        $queue->put("Sample\\TestWorkerImpl", "jid-2", ["performMethod" => 'myPerformMethod', "payload" => "otherData"]);
+        $queue->put("Sample\\TestWorkerImpl", "jid-high", ["performMethod" => 'myPerformMethod', "payload" => "otherData"], 0, 0, true, 1);
+        $queue->put("Sample\\TestWorkerImpl", "jid-3", ["performMethod" => 'myPerformMethod', "payload" => "otherData"]);
 
         $job = $queue->pop('worker')[0];
         $this->assertEquals('jid-high', $job->getId());
