@@ -146,7 +146,7 @@ class Worker {
                 $this->updateProcLine($status);
                 $this->logger->info($status, $this->logContext);
 
-                while ($this->child && !$this->shutdown) {
+                while ($this->child) {
                     usleep(250000);
                 }
             }
@@ -260,7 +260,7 @@ class Worker {
         }
 
         if ($this->child === null) {
-            // workaround for a but in php-redis issuing a QUIT command when the child terminates
+            // workaround for a bug in php-redis issuing a QUIT command when the child terminates
             // which causes Redis to terminate the connection even though the parent process still
             // has a reference to the socket
             $this->client->reconnect();
@@ -296,8 +296,16 @@ class Worker {
      */
     public function shutdown()
     {
+        if ($this->child) {
+            $this->logger->notice('{type}: QUIT received; shutting down after child completes work', $this->logContext);
+        } else {
+            $this->logger->notice('{type}: QUIT received; shutting down', $this->logContext);
+        }
+        $this->doShutdown();
+    }
+
+    protected function doShutdown() {
         $this->shutdown = true;
-        //$this->logger->log(Psr\Log\LogLevel::NOTICE, 'Shutting down');
     }
 
     /**
@@ -306,7 +314,8 @@ class Worker {
      */
     public function shutdownNow()
     {
-        $this->shutdown();
+        $this->logger->notice('{type}: TERM or INT received; shutting down immediately', $this->logContext);
+        $this->doShutdown();
         $this->killChild();
     }
 
@@ -328,7 +337,7 @@ class Worker {
             $this->child = null;
         } else {
             $this->logger->info('{type}: Child {child} not found, restarting.', ['child' => $this->child, 'type' => $this->who]);
-            $this->shutdown();
+            $this->doShutdown();
         }
     }
 
