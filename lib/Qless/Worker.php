@@ -35,6 +35,11 @@ class Worker {
     private $logContext;
 
     /**
+     * @var resource
+     */
+    private $socket;
+
+    /**
      * @var LoggerInterface
      */
     private $logger;
@@ -87,6 +92,14 @@ class Worker {
         SIGTSTP => 'SIGTSTP',
     ];
 
+    static $ERROR_CODES = [
+        E_ERROR => 'E_ERROR',
+        E_CORE_ERROR => 'E_CORE_ERROR',
+        E_COMPILE_ERROR => 'E_COMPILE_ERROR',
+        E_PARSE => 'E_PARSE',
+        E_USER_ERROR => 'E_USER_ERROR',
+    ];
+
     /**
      * starts worker
      */
@@ -95,10 +108,12 @@ class Worker {
         declare(ticks=1);
 
         $this->startup();
-        $this->who = 'master';
-        $this->logContext = [ 'type' => $this->who ];
+        $this->who = 'master:' . $this->workerName;
+        $this->logContext = [ 'type' => $this->who, 'job.identifier' => null ];
         $this->logger->info('{type}: Worker started', $this->logContext);
         $this->logger->info('{type}: monitoring the following queues (in order), {queues}', ['type'=>$this->who, 'queues' => implode(', ', $this->queues)]);
+
+        $did_work = false;
 
         while (true){
             if ($this->shutdown){
@@ -110,11 +125,13 @@ class Worker {
                 usleep(250000);
             }
 
-            // Attempt to find and reserve a job
-            $this->logger->debug('{type}: Looking for work', $this->logContext);
-            $this->updateProcLine('Waiting for ' . implode(',', $this->queues) . ' with interval ' . $this->interval);
-            $job = $this->reserve();
+            if ($did_work) {
+                $this->logger->debug('{type}: Looking for work', $this->logContext);
+                $this->updateProcLine('Waiting for ' . implode(',', $this->queues) . ' with interval ' . $this->interval);
+                $did_work = false;
+            }
 
+            $job = $this->reserve();
             if (!$job) {
                 if ($this->interval == 0){
                     break;
@@ -123,34 +140,76 @@ class Worker {
                 continue;
             }
 
+            $pair = [];
+            if (socket_create_pair(AF_UNIX, SOCK_STREAM, 0, $pair) === false) {
+                $this->logger->error('{type}: Unable to create socket pair; ' . socket_strerror(socket_last_error($pair[0])), $this->logContext);
+            }
+
+            $this->logContext['job.identifier'] = $job->getId();
             $this->child = Qless::fork();
 
             // Forked and we're the child. Run the job.
-            if ($this->child === 0 || $this->child === false) {
+            if ($this->child === 0) {
+                /*** CHILD ***/
                 $this->clearSigHandlers();
-                $this->who = 'child';
+
+                socket_close($pair[0]);
+                $this->socket = $pair[1];
+
+                $reserved = str_repeat('x', 20240);
+
+                register_shutdown_function(function() use (&$reserved) {
+                    // shutting down
+                    if (null === $error = error_get_last()) {
+                        return;
+                    }
+                    unset($reserved);
+
+                    $type = $error['type'];
+                    if (!isset(self::$ERROR_CODES[$type])) {
+                        return;
+                    }
+
+                    $this->logger->debug('Sending error to master', $this->logContext);
+                    $data = serialize($error);
+
+                    while (($len = socket_write($this->socket, $data)) > 0) {
+                        $data = substr($data, $len);
+                    }
+                });
+
+                $this->who = 'child:' . $this->workerName;
                 $this->logContext = [ 'type' => $this->who ];
                 $status = 'Processing ' . $job->getId() . ' since ' . strftime('%F %T');
                 $this->updateProcLine($status);
                 $this->logger->info($status, $this->logContext);
                 $this->perform($job);
-                if ($this->child === 0) {
-                    exit(0);
-                }
+
+                socket_close($this->socket);
+
+                exit(0);
             }
 
-            if($this->child > 0) {
-                $this->job = $job;
-                // Parent process, sit and wait
-                $status = 'Forked ' . $this->child . ' at ' . strftime('%F %T');
-                $this->updateProcLine($status);
-                $this->logger->info($status, $this->logContext);
+            /*** PARENT ***/
+            $this->socket = $pair[0];
+            socket_close($pair[1]);
+            socket_set_option($this->socket, SOL_SOCKET, SO_RCVTIMEO, ['sec' => 0, 'usec' => 10000]); // wait up to 10ms to receive data
 
-                while ($this->child) {
-                    usleep(250000);
-                }
+            $this->job = $job;
+            // Parent process, sit and wait
+            $status = 'Forked ' . $this->child . ' at ' . strftime('%F %T');
+            $this->updateProcLine($status);
+            $this->logger->info($status, $this->logContext);
+
+            while ($this->child) {
+                usleep(250000);
             }
+
+            socket_close($this->socket);
+            $this->socket = null;
             $this->job = null;
+            $this->logContext['job.identifier'] = null;
+            $did_work = true;
         }
     }
 
@@ -252,9 +311,16 @@ class Worker {
             if ($exitStatus === 0) {
                 $this->logger->debug("{type}: Child completed successfully", $this->logContext);
             } else {
+
                 $jobFailed = true;
-                $jobFailedMessage = "child return: " . $exitStatus;
-                $this->logger->error("{type}: child failed with status {$exitStatus}", $this->logContext);
+
+                $error_info = unserialize(socket_read($this->socket, 8192));
+                if (is_array($error_info)) {
+                    $jobFailedMessage = sprintf('[%s] %s:%d %s', self::$ERROR_CODES[$error_info['type']], $error_info['file'], $error_info['line'], $error_info['message']);
+                } else {
+                    $jobFailedMessage = "child failed with status: " . $exitStatus;
+                }
+                $this->logger->error("{type}: fatal error in child: " . $jobFailedMessage, $this->logContext);
             }
             $this->child = null;
         }
