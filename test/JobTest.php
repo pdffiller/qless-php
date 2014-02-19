@@ -118,6 +118,31 @@ class JobTest extends QlessTest
         $this->assertEquals(['jid-1'], $res);
     }
 
+    public function testCancelRemovesJobWithDependents() {
+        $queue = new Qless\Queue("testQueue", $this->client);
 
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0);
+        $queue->put("Sample\\TestWorkerImpl", "jid-2", $testData, 0, 0, true, 0, [], 0, [], ['jid-1']);
+
+        $job1 = $queue->pop("worker-1")[0];
+        $res = $job1->cancel(true);
+
+        $this->assertEquals(['jid-1', 'jid-2'], $res);
+    }
+
+    /**
+     * @expectedException \Qless\QlessException
+     */
+    public function testCancelThrowsExceptionWithDependents() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0);
+        $queue->put("Sample\\TestWorkerImpl", "jid-2", $testData, 0, 0, true, 0, [], 0, [], ['jid-1']);
+
+        $job1 = $queue->pop("worker-1")[0];
+        $job1->cancel();
+    }
 }
  

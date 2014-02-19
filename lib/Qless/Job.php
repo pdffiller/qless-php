@@ -15,7 +15,6 @@ class Job
     private $client;
     private $queue_name;
     private $klass_name;
-    private $state;
     /**
      * @var string
      */
@@ -26,15 +25,30 @@ class Job
      */
     private $expires;
 
-    public function __construct(Client $client, $jid, $worker_name, $klass_name, $queue_name, $state, $data, $expires) {
-        $this->jid         = $jid;
+    /**
+     * @var array
+     */
+    private $job_data;
+
+    public function __construct(Client $client, $job_data) {
         $this->client      = $client;
-        $this->klass_name  = $klass_name;
-        $this->queue_name  = $queue_name;
-        $this->state       = $state;
-        $this->data        = json_decode($data, true);
-        $this->worker_name = $worker_name;
-        $this->expires     = $expires;
+        $this->jid         = $job_data['jid'];
+        $this->klass_name  = $job_data['klass'];
+        $this->queue_name  = $job_data['queue'];
+        $this->data        = json_decode($job_data['data'], true);
+        $this->worker_name = $job_data['worker'];
+        $this->expires     = $job_data['expires'];
+        $this->job_data    = $job_data;
+    }
+
+    /**
+     * @param Client $client
+     * @param array  $job_data
+     *
+     * @return Job
+     */
+    public static function fromJobData(Client $client, $job_data) {
+        return new Job($client, $job_data);
     }
 
     public function getId() {
@@ -64,7 +78,88 @@ class Job
      * @return mixed
      */
     public function getQueueName() {
-        return $this->queue_name;
+        return $this->job_data['queue'];
+    }
+
+    /**
+     * Returns a list of jobs which are dependent upon this one completing successfully
+     *
+     * @return string[]
+     */
+    public function getDependents() {
+        return $this->job_data['dependents'];
+    }
+
+    /**
+     * Returns a list of jobs which must complete successfully before this will be run
+     *
+     * @return string[]
+     */
+    public function getDependencies() {
+        return $this->job_data['dependencies'];
+    }
+
+    /**
+     * Gets the number of retries remaining for this job
+     *
+     * @return int
+     */
+    public function getRetriesLeft() {
+        return $this->job_data['remaining'];
+    }
+
+    /**
+     * Gets the number of retries originally requested
+     *
+     * @return int
+     */
+    public function getOriginalRetries() {
+        return $this->job_data['retries'];
+    }
+
+    /**
+     * Returns the name of the worker currently performing the work or empty
+     *
+     * @return string
+     */
+    public function getWorkerName() {
+        return $this->job_data['worker'];
+    }
+
+    /**
+     * Get the job history
+     *
+     * @return array
+     */
+    public function getHistory() {
+        return $this->job_data['history'];
+    }
+
+    /**
+     * Return the current state of the job
+     *
+     * @return string
+     */
+    public function getState() {
+        return $this->job_data['state'];
+    }
+
+    /**
+     * Get the list of tags associated with this job
+     *
+     * @return string[]
+     */
+    public function getTags() {
+        return $this->job_data['tags'];
+    }
+
+    /**
+     * Returns the failure information for this job
+     *
+     * @return array
+     */
+    public function getFailureInfo() {
+        return $this->job_data['failure'];
     }
 
     /**
@@ -120,11 +215,16 @@ class Job
     }
 
     /**
-     * Cancels the specified job, removing it from the queue
+     * Cancels the specified job and optionally all it's dependents
+     *
+     * @param bool $dependents true if associated dependents should also be cancelled
      *
      * @return int
      */
-    public function cancel() {
+    public function cancel($dependents=false) {
+        if ($dependents && !empty($this->job_data['dependents'])) {
+            return call_user_func_array([$this->client, 'cancel'], array_merge([$this->jid], $this->job_data['dependents']));
+        }
         return $this->client->cancel($this->jid);
     }
 
@@ -148,6 +248,27 @@ class Job
         }
 
         return true;
+    }
+
+    /**
+     * @param $group
+     * @param $message
+     *
+     * @return bool
+     * return values -
+     */
+    public function fail($group, $message) {
+        $jsonData = json_encode($this->data, JSON_UNESCAPED_SLASHES);
+
+        return $this->client
+            ->fail($this->jid, $this->worker_name, $group, $message, $jsonData);
+    }
+
+    /**
+     * Timeout this job
+     */
+    public function timeout() {
+        $this->client->timeout($this->jid);
     }
 
     /**
@@ -176,20 +297,6 @@ class Job
         $this->instance = new $this->klass_name;
 
         return $this->instance;
-    }
-
-    /**
-     * @param $group
-     * @param $message
-     *
-     * @return bool
-     * return values -
-     */
-    public function fail($group, $message) {
-        $jsonData = json_encode($this->data, JSON_UNESCAPED_SLASHES);
-
-        return $this->client
-            ->fail($this->jid, $this->worker_name, $group, $message, $jsonData);
     }
 
 } 

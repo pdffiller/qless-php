@@ -81,8 +81,8 @@ class Queue
 
         $returnJobs = [];
         if (!empty($jobs)) {
-            foreach($jobs as $job) {
-                $returnJobs[] = new Job($this->client, $job['jid'], $job['worker'], $job['klass'], $job['queue'], $job['state'], $job['data'], $job['expires']);
+            foreach($jobs as $job_data) {
+                $returnJobs[] = new Job($this->client, $job_data);
             }
         }
 

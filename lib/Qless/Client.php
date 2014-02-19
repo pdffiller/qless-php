@@ -21,6 +21,12 @@ use Redis;
  * @method int retry() retry(\string $jid, \string $queue, \string $worker, \int $delay = 0, \string $group, \string $message)
  * @method int cancel() cancel(\string $jid)
  * @method int fail() fail(\string $jid, \string $worker, \string $group, \string $message, \string $data = null)
+ * @method string[] jobs(\string $state, \int $offset = 0, \int $count = 25)
+ * @method string get(\string $jid)
+ * @method string[] multiget(array $jids)
+ * @method bool complete(\string $jid, \string $worker_name, \string $queue_name, array $data)
+ * @method void timeout(\string $jid)
+ * @method array failed(\string $group=false, \int $start=0, \int $limit=25)
  */
 class Client
 {
