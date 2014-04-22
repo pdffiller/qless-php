@@ -2,6 +2,9 @@
 
 require_once __DIR__ . '/QlessTest.php';
 
+/**
+ * @group performance
+ */
 class QueuePerformanceTest extends QlessTest {
 
     const TEST_TIME = 2;
