@@ -144,5 +144,38 @@ class JobTest extends QlessTest
         $job1 = $queue->pop("worker-1")[0];
         $job1->cancel();
     }
+
+    #region requeue
+
+    public function testRequeueJob() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0, true, 1, [], 5, ['tag1','tag2']);
+
+        $job = $queue->pop("worker-1")[0];
+        $job->requeue();
+
+        $job = $queue->pop("worker-1")[0];
+        $this->assertEquals(5, $job->getInterval());
+        $this->assertEquals(1, $job->getPriority());
+        $this->assertEquals(['tag1','tag2'], $job->getTags());
+    }
+
+    /**
+     * @expectedException \Qless\InvalidJobException
+     */
+    public function testThrowsInvalidJobExceptionWhenRequeuingCancelledJob() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0, true, 1, [], 5, ['tag1','tag2']);
+
+        $job = $queue->pop("worker-1")[0];
+        $this->client->cancel('jid-1');
+        $job->requeue();
+    }
+
+    #endregion
 }
  

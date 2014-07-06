@@ -31,6 +31,7 @@ class QlessException extends \Exception
         }
 
         switch (true) {
+            case ($area === 'Requeue' && stripos($message, 'does not exist') !== false):
             case (stripos($message, 'Job does not exist') !== false):
                 return new InvalidJobException($message, $area);
 

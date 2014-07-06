@@ -26,6 +26,11 @@ class Job
     private $expires;
 
     /**
+     * @var float
+     */
+    private $delay;
+
+    /**
      * @var array
      */
     private $job_data;
@@ -38,6 +43,7 @@ class Job
         $this->data        = json_decode($job_data['data'], true);
         $this->worker_name = $job_data['worker'];
         $this->expires     = $job_data['expires'];
+        $this->priority    = $job_data['priority'];
         $this->job_data    = $job_data;
     }
 
@@ -97,6 +103,33 @@ class Job
      */
     public function getDependencies() {
         return $this->job_data['dependencies'];
+    }
+
+    /**
+     * Returns a list of requires resources before this job can be processed
+     *
+     * @return string[]
+     */
+    public function getResources() {
+        return $this->job_data['resources'];
+    }
+
+    /**
+     * Returns the throttle interval for this job
+     *
+     * @return float
+     */
+    public function getInterval() {
+        return floatval($this->job_data['interval']);
+    }
+
+    /**
+     * Get the priority of this job
+     *
+     * @return int
+     */
+    public function getPriority() {
+        return $this->priority;
     }
 
     /**
@@ -176,6 +209,53 @@ class Job
                 $jsonData
             );
 
+    }
+
+    /**
+     * Options:
+     *
+     * optional values to replace when re-queuing job
+     *
+     * * int delay          delay (in seconds)
+     * * array data         replacement data
+     * * int priority       replacement priority
+     * * int retries        replacement number of retries
+     * * string[] tags      replacement tags
+     * * string[] depends   replacement list of JIDs this job is dependent on
+     * * string[] resources replacement list of resource IDs required before this job can be processed
+     *
+     * @param array $opts optional values
+     * @return string
+     */
+    public function requeue($opts=[]) {
+        $opts = array_merge($opts,
+            [
+                'delay'     => 0,
+                'data'      => $this->data,
+                'priority'  => $this->priority,
+                'retries'   => $this->getOriginalRetries(),
+                'tags'      => $this->getTags(),
+                'depends'   => $this->getDependencies(),
+                'resources' => $this->getResources(),
+                'interval'  => $this->getInterval()
+            ]
+        );
+
+        return $this->client
+            ->requeue(
+                $this->worker_name,
+                $this->queue_name,
+                $this->jid,
+                $this->klass_name,
+                json_encode($opts['data'], JSON_UNESCAPED_SLASHES),
+                $opts['delay'],
+                'priority', $opts['priority'],
+                'tags', json_encode($opts['tags'], JSON_UNESCAPED_SLASHES),
+                'retries', $opts['retries'],
+                'depends', json_encode($opts['depends'], JSON_UNESCAPED_SLASHES),
+                'resources', json_encode($opts['resources'], JSON_UNESCAPED_SLASHES),
+                'interval', floatval($opts['interval'])
+            );
     }
 
     /**

@@ -1,4 +1,4 @@
--- Current SHA: 5020ce029c643c147ff4313a7d93c3a66ed250bf
+-- Current SHA: 323be310f1546a8b6a129409eb10fedb585972e8
 -- This is a generated file
 local Qless = {
   ns = 'ql:'
@@ -357,7 +357,7 @@ function QlessJob:data(...)
   local job = redis.call(
       'hmget', QlessJob.ns .. self.jid, 'jid', 'klass', 'state', 'queue',
       'worker', 'priority', 'expires', 'retries', 'remaining', 'data',
-      'tags', 'failure', 'resources', 'result_data')
+      'tags', 'failure', 'resources', 'result_data', 'throttle_interval')
 
   if not job[1] then
     return nil
@@ -381,6 +381,7 @@ function QlessJob:data(...)
     failure      = cjson.decode(job[12] or '{}'),
     resources    = cjson.decode(job[13] or '[]'),
     result_data  = cjson.decode(job[14] or '{}'),
+    interval     = tonumber(job[15]) or 0,
     dependents   = redis.call(
       'smembers', QlessJob.ns .. self.jid .. '-dependents'),
     dependencies = redis.call(
@@ -1692,19 +1693,20 @@ function QlessQueue:check_recurring(now, count)
       end
       
       redis.call('hmset', QlessJob.ns .. child_jid,
-        'jid'      , child_jid,
-        'klass'    , klass,
-        'data'     , data,
-        'priority' , priority,
-        'tags'     , tags,
-        'state'    , 'waiting',
-        'worker'   , '',
-        'expires'  , 0,
-        'queue'    , self.name,
-        'retries'  , retries,
-        'remaining', retries,
-        'resources', cjson.encode(resources),
-        'time'     , string.format("%.20f", score))
+        'jid'              , child_jid,
+        'klass'            , klass,
+        'data'             , data,
+        'priority'         , priority,
+        'tags'             , tags,
+        'state'            , 'waiting',
+        'worker'           , '',
+        'expires'          , 0,
+        'queue'            , self.name,
+        'retries'          , retries,
+        'remaining'        , retries,
+        'resources'        , cjson.encode(resources),
+        'throttle_interval', 0,
+        'time'             , string.format("%.20f", score))
 
       local job = Qless.job(child_jid)
       job:history(score, 'put', {q = self.name})
@@ -2333,6 +2335,12 @@ end
 QlessAPI.put = function(now, me, queue, jid, klass, data, delay, ...)
   data = tonil(data)
   return Qless.queue(queue):put(now, me, jid, klass, data, delay, unpack(arg))
+end
+
+QlessAPI.requeue = function(now, me, queue, jid, ...)
+  local job = Qless.job(jid)
+  assert(job:exists(), 'Requeue(): Job ' .. jid .. ' does not exist')
+  return QlessAPI.put(now, me, queue, jid, unpack(arg))
 end
 
 QlessAPI.unfail = function(now, queue, group, count)
