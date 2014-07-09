@@ -55,7 +55,7 @@ class Lua
 
     protected function handleError($error) {
         $this->redisCli->clearLastError();
-        throw QlessException::createException($error);
+        throw QlessException::createExceptionFromError($error);
     }
 
     protected function reload() {

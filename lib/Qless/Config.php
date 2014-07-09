@@ -16,15 +16,15 @@ class Config {
     }
 
 
-    function get($name) {
+    public function get($name) {
         return $this->client->lua->run('config.get', [$name]);
     }
 
-    function set($name, $value) {
+    public function set($name, $value) {
         return $this->client->lua->run('config.set', [$name, $value]);
     }
 
-    function clear($name) {
+    public function clear($name) {
         return $this->client->lua->run('config.unset', [$name]);
     }
 } 

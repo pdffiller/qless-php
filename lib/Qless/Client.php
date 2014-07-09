@@ -4,6 +4,7 @@ namespace Qless;
 
 require_once __DIR__ . '/Lua.php';
 require_once __DIR__ . '/Config.php';
+require_once __DIR__ . '/Resource.php';
 
 use Redis;
 
@@ -74,6 +75,10 @@ class Client
 
     public function getQueue($name) {
         return new Queue($name, $this);
+    }
+
+    public function getResource($name) {
+        return new Resource($this, $name);
     }
 
     /**

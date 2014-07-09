@@ -1,4 +1,4 @@
--- Current SHA: 323be310f1546a8b6a129409eb10fedb585972e8
+-- Current SHA: da6ca9bccd0a5d747942377ff216d873dfc63a84
 -- This is a generated file
 local Qless = {
   ns = 'ql:'
@@ -2022,22 +2022,30 @@ function QlessResource:data(...)
   local data = {
     rid          = res[1],
     max          = tonumber(res[2] or 0),
-    pending      = redis.call('zrevrange', self:prefix('pending'), 0, -1),
-    locks        = redis.call('smembers', self:prefix('locks')),
+    pending      = self:pending(),
+    locks        = self:locks(),
   }
 
   return data
 end
 
+function QlessResource:get(...)
+  local res = redis.call(
+      'hmget', QlessResource.ns .. self.rid, 'rid', 'max')
+
+  if not res[1] then
+    return nil
+  end
+
+  return tonumber(res[2] or 0)
+end
+
 function QlessResource:set(now, max)
   local max = assert(tonumber(max), 'Set(): Arg "max" not a number: ' .. tostring(max))
 
-  local data = self:data()
-  local current_max = 0
-  if data == nil then
+  local current_max = self:get()
+  if current_max == nil then
     current_max = max
-  else
-    current_max = data['max']
   end
 
   local keyLocks = self:prefix('locks')
@@ -2085,8 +2093,8 @@ end
 
 function QlessResource:acquire(now, priority, jid)
   local keyLocks = self:prefix('locks')
-  local data = self:data()
-  if type(data) ~= 'table' then
+  local max = self:get()
+  if max == nil then
     error({code=1, msg='Acquire(): resource ' .. self.rid .. ' does not exist'})
   end
 
@@ -2099,7 +2107,7 @@ function QlessResource:acquire(now, priority, jid)
     return true
   end
 
-  local remaining = data['max'] - redis.pcall('scard', keyLocks)
+  local remaining = max - redis.pcall('scard', keyLocks)
 
   if remaining > 0 then
     redis.call('sadd', keyLocks, jid)
@@ -2140,10 +2148,18 @@ function QlessResource:release(now, jid)
 end
 
 function QlessResource:locks()
+  return redis.call('smembers', self:prefix('locks'))
+end
+
+function QlessResource:lock_count()
   return redis.call('scard', self:prefix('locks'))
 end
 
 function QlessResource:pending()
+  return redis.call('zrevrange', self:prefix('pending'), 0, -1)
+end
+
+function QlessResource:pending_count()
   return redis.call('zcard', self:prefix('pending'))
 end
 
@@ -2393,11 +2409,20 @@ QlessAPI['resource.set'] = function(now, rid, max)
 end
 
 QlessAPI['resource.get'] = function(now, rid)
+  return Qless.resource(rid):get()
+end
+
+QlessAPI['resource.data'] = function(now, rid)
   local data = Qless.resource(rid):data()
   if not data then
     return nil
   end
+
   return cjson.encode(data)
+end
+
+QlessAPI['resource.exists'] = function(now, rid)
+  return Qless.resource(rid):exists()
 end
 
 QlessAPI['resource.unset'] = function(now, rid)
@@ -2405,7 +2430,30 @@ QlessAPI['resource.unset'] = function(now, rid)
 end
 
 QlessAPI['resource.locks'] = function(now, rid)
-  return Qless.resource(rid):locks()
+  local data = Qless.resource(rid):locks()
+  if not data then
+    return nil
+  end
+
+  return cjson.encode(data)
+end
+
+QlessAPI['resource.lock_count'] = function(now, rid)
+  return Qless.resource(rid):lock_count()
+end
+
+QlessAPI['resource.pending'] = function(now, rid)
+  local data = Qless.resource(rid):pending()
+    if not data then
+    return nil
+  end
+
+  return cjson.encode(data)
+
+end
+
+QlessAPI['resource.pending_count'] = function(now, rid)
+  return Qless.resource(rid):pending_count()
 end
 
 QlessAPI['resource.stats_pending'] = function(now)
