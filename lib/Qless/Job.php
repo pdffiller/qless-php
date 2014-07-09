@@ -228,7 +228,7 @@ class Job
      * @return string
      */
     public function requeue($opts=[]) {
-        $opts = array_merge($opts,
+        $opts = array_merge(
             [
                 'delay'     => 0,
                 'data'      => $this->data,
@@ -238,7 +238,8 @@ class Job
                 'depends'   => $this->getDependencies(),
                 'resources' => $this->getResources(),
                 'interval'  => $this->getInterval()
-            ]
+            ],
+            $opts
         );
 
         return $this->client
