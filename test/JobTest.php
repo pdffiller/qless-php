@@ -145,6 +145,46 @@ class JobTest extends QlessTest
         $job1->cancel();
     }
 
+    #region tags
+
+    public function testItCanAddTagsToAJobWithNoExistingTags() {
+        $queue = new Qless\Queue($this->client, "testQueue");
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0);
+
+        $job1 = $queue->pop("worker-1")[0];
+        $job1->tag('a', 'b');
+
+        $data = json_decode($this->client->get('jid-1'));
+        $this->assertEquals(['a', 'b'], $data->tags);
+    }
+
+    public function testItCanAddTagsToAJobWithExistingTags() {
+        $queue = new Qless\Queue($this->client, "testQueue");
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0, true, 0, [], 0, ['1', '2']);
+
+        $job1 = $queue->pop("worker-1")[0];
+        $job1->tag('a', 'b');
+
+        $data = json_decode($this->client->get('jid-1'));
+        $this->assertEquals(['1', '2', 'a', 'b'], $data->tags);
+    }
+
+    public function testItCanRemoveExistingTags() {
+        $queue = new Qless\Queue($this->client, "testQueue");
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0, true, 0, [], 0, ['1', '2', '3']);
+
+        $job1 = $queue->pop("worker-1")[0];
+        $job1->untag('2', '3');
+
+        $data = json_decode($this->client->get('jid-1'));
+        $this->assertEquals(['1'], $data->tags);
+    }
+
+    #endregion
+
     #region requeue
 
     public function testRequeueJob() {

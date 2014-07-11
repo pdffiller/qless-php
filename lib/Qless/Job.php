@@ -24,11 +24,11 @@ class Job
      * @var float
      */
     private $expires;
-
+    
     /**
-     * @var float
+     * @var string[]
      */
-    private $delay;
+    private $tags;
 
     /**
      * @var array
@@ -44,6 +44,7 @@ class Job
         $this->worker_name = $job_data['worker'];
         $this->expires     = $job_data['expires'];
         $this->priority    = $job_data['priority'];
+        $this->tags        = $job_data['tags'];
         $this->job_data    = $job_data;
     }
 
@@ -183,7 +184,29 @@ class Job
      * @return string[]
      */
     public function getTags() {
-        return $this->job_data['tags'];
+        return $this->tags;
+    }
+
+    /**
+     * Add the specified tags to this job
+     *
+     * @param string $tags... list of tags to remove from this job
+     *
+     * @return string[] the new list of tags
+     */
+    public function tag($tags) {
+        $tags = func_get_args();
+        $this->tags = json_decode(call_user_func_array([$this->client, 'call'], array_merge(['tag', 'add', $this->jid], $tags)), true);
+    }
+
+    /**
+     * Remove the specified tags to this job
+     *
+     * @param string $tags... list of tags to add to this job
+     */
+    public function untag($tags) {
+        $tags = func_get_args();
+        $this->tags = json_decode(call_user_func_array([$this->client, 'call'], array_merge(['tag', 'remove', $this->jid], $tags)), true);
     }
 
     /**
