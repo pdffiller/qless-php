@@ -17,7 +17,7 @@ class Queue
      */
     private $name;
 
-    public function __construct(Client $client, $name) {
+    public function __construct($name, Client $client) {
         $this->client = $client;
         $this->name   = $name;
     }

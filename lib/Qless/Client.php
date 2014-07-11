@@ -110,7 +110,7 @@ class Client
      * @return Queue
      */
     public function getQueue($name) {
-        return new Queue($this, $name);
+        return new Queue($name, $this);
     }
 
     /**
