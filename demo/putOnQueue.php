@@ -6,8 +6,8 @@ require_once '../lib/Qless/Client.php';
 require_once 'TestWorkerImpl.php';
 
 $client = new Qless\Client('localhost',6380);
-$queue = new Qless\Queue("testQueue1",$client);
-$queue2 = new Qless\Queue("testQueue2",$client);
+$queue = new Qless\Queue($client, "testQueue1");
+$queue2 = new Qless\Queue($client, "testQueue2");
 
 $testData1 = ["performMethod"=>'myPerformMethod',"payload"=>"otherData"];
 //$testData1 = ["performMethod"=>'myThrowMethod',"payload"=>"otherData"];

@@ -73,8 +73,14 @@ class Client
         return $this->lua->run($command, $arguments);
     }
 
+    /**
+     *
+     * @param string $name name of queue
+     *
+     * @return Queue
+     */
     public function getQueue($name) {
-        return new Queue($name, $this);
+        return new Queue($this, $name);
     }
 
     public function getResource($name) {
