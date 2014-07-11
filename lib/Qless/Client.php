@@ -5,6 +5,7 @@ namespace Qless;
 require_once __DIR__ . '/Lua.php';
 require_once __DIR__ . '/Config.php';
 require_once __DIR__ . '/Resource.php';
+require_once __DIR__ . '/Jobs.php';
 
 use Redis;
 
@@ -28,7 +29,10 @@ use Redis;
  * @method string[] multiget(array $jids)
  * @method bool complete(\string $jid, \string $worker_name, \string $queue_name, array $data)
  * @method void timeout(\string $jid)
- * @method array failed(\string $group=false, \int $start=0, \int $limit=25)
+ * @method array failed(\string $group = false, \int $start = 0, \int $limit = 25)
+ * @method string[] tag(\string $op, $tags)
+ *
+ * @property-read Jobs jobs
  */
 class Client
 {
@@ -49,6 +53,11 @@ class Client
      */
     private $redis = [];
 
+    /**
+     * @var Jobs
+     */
+    private $_jobs;
+
     public function __construct($host = 'localhost', $port = 6379) {
         $this->redis['redis'] = new Redis();
         $this->redis['host']  = $host;
@@ -56,6 +65,7 @@ class Client
 
         $this->lua    = new Lua($this->redis);
         $this->config = new Config($this);
+        $this->_jobs   = new Jobs($this);
     }
 
     /**
@@ -69,12 +79,32 @@ class Client
         $this->lua = new $luaClass($this->redis);
     }
 
-    public function __call($command, $arguments) {
+    function __call($command, $arguments) {
+        return $this->lua->run($command, $arguments);
+    }
+
+    function __get($prop) {
+        if ($prop === 'jobs') return $this->_jobs;
+
+        return null;
+    }
+
+    /**
+     * Call a specific q-less command
+     *
+     * @param string $command
+     * @param mixed  $arguments...
+     *
+     * @return mixed
+     */
+    public function call($command, $arguments) {
+        $arguments = func_get_args();
+        array_shift($arguments);
         return $this->lua->run($command, $arguments);
     }
 
     /**
-     *
+     * Returns
      * @param string $name name of queue
      *
      * @return Queue
@@ -83,8 +113,24 @@ class Client
         return new Queue($this, $name);
     }
 
+    /**
+     * APIs for manipulating a resource
+     *
+     * @param $name
+     *
+     * @return Resource
+     */
     public function getResource($name) {
         return new Resource($this, $name);
+    }
+
+    /**
+     * Returns APIs for querying information about jobs
+     *
+     * @return Jobs
+     */
+    public function getJobs() {
+        return $this->_jobs;
     }
 
     /**

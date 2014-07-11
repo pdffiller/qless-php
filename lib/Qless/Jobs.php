@@ -2,7 +2,8 @@
 
 namespace Qless;
 
-class Jobs implements \ArrayAccess {
+class Jobs implements \ArrayAccess
+{
 
     /**
      * @var Client
@@ -21,26 +22,39 @@ class Jobs implements \ArrayAccess {
      *
      * @return string[]
      */
-    public function complete($offset=0, $count=25) {
+    public function completed($offset = 0, $count = 25) {
         return $this->client->jobs('complete', $offset, $count);
     }
 
     /**
-     * Return {@see Job} objects for the specified job identifiers
+     * Return a {@see Job} instance for the specified job identifier or null if the job does not exist
      *
-     * @param string[] $jids a list of job identifiers to fetch
+     * @param string $jid the job identifier to fetch
      *
-     * @return Job[]
+     * @return Job[]|null
      */
-    public function get($jids) {
+    public function get($jid) {
+        return $this->offsetGet($jid);
+    }
+
+    /**
+     * Returns an array of jobs for the specified job identifiers, keyed by job identifier
+     *
+     * @param string[] $jids
+     *
+     * @return array|Job[]
+     */
+    public function multiget($jids) {
         if (empty($jids)) return [];
 
         $results = call_user_func_array([$this->client, 'multiget'], $jids);
-        $jobs = json_decode($results, true);
-        $ret = [];
+        $jobs    = json_decode($results, true);
+        $ret     = [];
         foreach ($jobs as $job_data) {
-            $ret []= new Job($this->client, $job_data);
+            $job                = new Job($this->client, $job_data);
+            $ret[$job->getId()] = $job;
         }
+
         return $ret;
     }
 
@@ -53,9 +67,12 @@ class Jobs implements \ArrayAccess {
      *
      * @return \Iterator|Job[]
      */
-    public function failedForGroup($group, $start=0, $limit=25) {
-        $results = json_decode($this->client->failed($group, $start, $limit), true);
-        $results['jobs'] = $this->get($results['jobs']);
+    public function failedForGroup($group, $start = 0, $limit = 25) {
+        $results         = json_decode($this->client->failed($group, $start, $limit), true);
+        if (!empty($results['jobs'])) {
+            $results['jobs'] = $this->multiget($results['jobs']);
+        }
+
         return $results;
     }
 

@@ -24,7 +24,7 @@ class Job
      * @var float
      */
     private $expires;
-    
+
     /**
      * @var string[]
      */
