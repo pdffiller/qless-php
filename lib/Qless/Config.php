@@ -4,7 +4,8 @@ namespace Qless;
 
 require_once __DIR__ . '/Client.php';
 
-class Config {
+class Config
+{
 
     /**
      * @var Client
@@ -15,16 +16,36 @@ class Config {
         $this->client = $client;
     }
 
+    /**
+     * Gets the value for the specified config name, falling back to the default if it does not exist
+     *
+     * @param string $name
+     * @param mixed  $default
+     *
+     * @return mixed
+     */
+    public function get($name, $default = null) {
+        $res = $this->client->lua->run('config.get', [$name]);
 
-    public function get($name) {
-        return $this->client->lua->run('config.get', [$name]);
+        return $res === false ? $default : $res;
     }
 
+    /**
+     * Sets the config name to the specified value
+     *
+     * @param string          $name
+     * @param string|int|bool $value
+     */
     public function set($name, $value) {
-        return $this->client->lua->run('config.set', [$name, $value]);
+        $this->client->lua->run('config.set', [$name, $value]);
     }
 
+    /**
+     * Clears the specified config name
+     *
+     * @param string $name
+     */
     public function clear($name) {
-        return $this->client->lua->run('config.unset', [$name]);
+        $this->client->lua->run('config.unset', [$name]);
     }
 } 

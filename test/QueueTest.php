@@ -164,4 +164,30 @@ class QueueTest extends QlessTest {
         $job = $queue->pop('worker');
         $this->assertEmpty($job);
     }
+
+    #region heartbeat tests
+
+    public function testItUsesGlobalHeartbeatValueWhenNotSet() {
+        $this->client->config->set('heartbeat', 10);
+        $queue = new Qless\Queue("testQueue", $this->client);
+
+        $this->assertSame(10, $queue->heartbeat);
+    }
+
+    public function testItUsesOwnHeartbeatValue() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+        $queue->heartbeat = 55;
+
+        $this->assertSame(55, $queue->heartbeat);
+    }
+
+    public function testItCanUnsetHeartbeatValueForQueue() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+        $queue->heartbeat = 10;
+        $this->assertSame(10, $queue->heartbeat);
+        unset($queue->heartbeat);
+        $this->assertSame(60, $queue->heartbeat);
+    }
+
+    #endregion
 }

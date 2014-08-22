@@ -20,6 +20,22 @@ class ConfigTest extends QlessTest {
         $this->assertEquals(10, $val);
     }
 
+    public function testItUsesDefaultValueWhenConfigNotSet() {
+        $val = $this->client->config->get('__blah__', 'val');
+        $this->assertEquals('val', $val);
+    }
 
+    public function testItDoesSetTheConfigValue() {
+        $this->client->config->set('__blah__', 'val');
+        $val = $this->client->config->get('__blah__');
+        $this->assertEquals('val', $val);
+    }
+
+    public function testItDoesClearTheConfigValue() {
+        $this->client->config->set('__blah__', 'val');
+        $this->client->config->clear('__blah__');
+        $val = $this->client->config->get('__blah__');
+        $this->assertNull($val);
+    }
 }
  
