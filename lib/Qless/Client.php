@@ -59,13 +59,41 @@ class Client
     private $_jobs;
 
     public function __construct($host = 'localhost', $port = 6379) {
-        $this->redis['redis'] = new Redis();
         $this->redis['host']  = $host;
         $this->redis['port']  = $port;
 
         $this->lua    = new Lua($this->redis);
         $this->config = new Config($this);
         $this->_jobs   = new Jobs($this);
+    }
+
+    /**
+     * Return the host for the Redis server
+     *
+     * @return string
+     */
+    public function getRedisHost() {
+        return $this->redis['host'];
+    }
+
+    /**
+     * Return the port for the Redis server
+     *
+     * @return int
+     */
+    public function getRedisPort() {
+        return $this->redis['port'];
+    }
+
+    /**
+     * Create a new listener
+     *
+     * @param $channels
+     *
+     * @return Listener
+     */
+    public function createListener($channels) {
+        return new Listener($this->redis, $channels);
     }
 
     /**

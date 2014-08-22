@@ -30,10 +30,10 @@ class Lua
     protected $sha = null;
 
     public function __construct($redis) {
-        $this->redisCli  = $redis['redis'];
         $this->redisHost = $redis['host'];
         $this->redisPort = $redis['port'];
 
+        $this->redisCli  = new \Redis();
         $this->redisCli->connect($this->redisHost, $this->redisPort);
     }
 
