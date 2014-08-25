@@ -44,9 +44,9 @@ class Worker {
     private $logContext;
 
     /**
-     * @var resource
+     * @var resource[]
      */
-    private $socket;
+    private $sockets = [];
 
     /**
      * @var LoggerInterface
@@ -88,18 +88,6 @@ class Worker {
 
         $this->jobPerformClass = $klass;
     }
-
-    static $SIGNALS = [
-        // kill signals
-        SIGKILL => 'SIGKILL',
-        SIGTERM => 'SIGTERM',
-        SIGINT  => 'SIGINT',
-        SIGQUIT => 'SIGQUIT',
-
-        // stop signals
-        SIGSTOP => 'SIGSTOP',
-        SIGTSTP => 'SIGTSTP',
-    ];
 
     static $ERROR_CODES = [
         E_ERROR => 'E_ERROR',
@@ -152,18 +140,9 @@ class Worker {
             $this->job = $job;
             $this->logContext['job.identifier'] = $job->getId();
 
-            $pair = [];
-            if (socket_create_pair(AF_UNIX, SOCK_STREAM, 0, $pair) === false) {
-                $this->logger->error('{type}: Unable to create socket pair; ' . socket_strerror(socket_last_error($pair[0])), $this->logContext);
-            }
-
             // fork processes
-            $this->childStart($pair);
+            $this->childStart();
             $this->watchdogStart();
-
-            $this->socket = $pair[0];
-            socket_close($pair[1]);
-            socket_set_option($this->socket, SOL_SOCKET, SO_RCVTIMEO, ['sec' => 0, 'usec' => 10000]); // wait up to 10ms to receive data
 
             // Parent process, sit and wait
             $proc_line = 'Forked ' . $this->childPID . ' at ' . strftime('%F %T');
@@ -200,12 +179,13 @@ class Worker {
                                 break;
                         }
                     }
-
                 }
             }
 
-            socket_close($this->socket);
-            $this->socket                       = null;
+            foreach ($this->sockets as $socket) {
+                socket_close($socket);
+            }
+            $this->sockets                      = [];
             $this->job                          = null;
             $this->logContext['job.identifier'] = null;
             $did_work                           = true;
@@ -271,25 +251,39 @@ class Worker {
         pcntl_signal(SIGCONT, SIG_DFL);
     }
 
-    #region child methods executed in child process
+    /**
+     * Forks and creates a socket pair for communication between parent and child process
+     *
+     * @param resource $socket
+     *
+     * @return int PID if master or 0 if child
+     */
+    private function fork(&$socket) {
+        $pair = [];
+        if (socket_create_pair(AF_UNIX, SOCK_STREAM, 0, $pair) === false) {
+            $this->logger->error('{type}: Unable to create socket pair; ' . socket_strerror(socket_last_error($pair[0])), $this->logContext);
 
-    private function childStart(array &$pair) {
-        $this->childPID = Qless::fork();
-        if ($this->childPID !== 0) {
-            // MASTER
-            $this->childProcesses++;
-            return;
+            exit(0);
         }
 
-        $this->processType = self::PROCESS_TYPE_JOB;
-        $this->clearSigHandlers();
+        $PID = Qless::fork();
+        if ($PID !== 0) {
+            // MASTER
+            $this->childProcesses++;
 
+            $socket = $pair[0];
+            socket_close($pair[1]);
+            socket_set_option($socket, SOL_SOCKET, SO_RCVTIMEO, ['sec' => 0, 'usec' => 10000]); // wait up to 10ms to receive data
+
+            return $PID;
+        }
+
+        $socket = $pair[1];
         socket_close($pair[0]);
-        $this->socket = $pair[1];
 
         $reserved = str_repeat('x', 20240);
 
-        register_shutdown_function(function () use (&$reserved) {
+        register_shutdown_function(function () use (&$reserved, $socket) {
             // shutting down
             if (null === $error = error_get_last()) {
                 return;
@@ -304,10 +298,66 @@ class Worker {
             $this->logger->debug('Sending error to master', $this->logContext);
             $data = serialize($error);
 
-            while (($len = socket_write($this->socket, $data)) > 0) {
+            while (($len = socket_write($socket, $data)) > 0) {
                 $data = substr($data, $len);
             }
         });
+
+        return $PID;
+    }
+
+    /**
+     * @param resource $socket
+     *
+     * @return null|string
+     */
+    private function readErrorFromSocket($socket) {
+        $error_info = "";
+        while (!empty($res = socket_read($socket, 8192))) {
+            $error_info .= $res;
+        }
+        $error_info = unserialize($error_info);
+        if (is_array($error_info)) {
+            return sprintf('[%s] %s:%d %s', self::$ERROR_CODES[$error_info['type']], $error_info['file'], $error_info['line'], $error_info['message']);
+        }
+
+        return null;
+    }
+
+    /**
+     * @param int $PID
+     * @param int $exitStatus
+     *
+     * @return bool|string false if exit status indicates success; otherwise, a string containing the error messages
+     */
+    private function handleProcessExitStatus($PID, $child_type, $exitStatus) {
+        $child_type = $child_type === self::PROCESS_TYPE_JOB ? "child" : "watchdog";
+
+        if ($exitStatus === 0) {
+            $this->logger->debug("{type}: {$child_type} process exited successfully", $this->logContext);
+
+            return false;
+        }
+
+        $jobFailedMessage = $this->readErrorFromSocket($this->sockets[$PID]) ?: "{$child_type} process failed with status: {$exitStatus}";
+        $this->logger->error("{type}: fatal error in {$child_type} process: {$jobFailedMessage}", $this->logContext);
+
+        return $jobFailedMessage;
+    }
+
+
+    #region child methods executed in child process
+
+    private function childStart() {
+        $socket = null;
+        $this->childPID = $this->fork($socket);
+        if ($this->childPID !== 0) {
+            $this->sockets[$this->childPID] = $socket;
+            return;
+        }
+
+        $this->processType = self::PROCESS_TYPE_JOB;
+        $this->clearSigHandlers();
 
         $jid              = $this->job->getId();
         $this->who        = 'child:' . $this->workerName;
@@ -317,7 +367,7 @@ class Worker {
         $this->logger->info($status, $this->logContext);
         $this->childPerform($this->job);
 
-        socket_close($this->socket);
+        socket_close($socket);
 
         exit(0);
     }
@@ -357,7 +407,9 @@ class Worker {
         switch (true) {
             case pcntl_wifexited($status):
                 $code = pcntl_wexitstatus($status);
-                $this->childProcessExit($code);
+                if (($res = $this->handleProcessExitStatus($this->childPID, self::PROCESS_TYPE_JOB, $code)) !== false) {
+                    $this->job->fail('system:fatal', $res);
+                }
                 return true;
 
             case pcntl_wifsignaled($status):
@@ -376,22 +428,6 @@ class Worker {
                 $this->logger->error(sprintf("unexpected status for child %d; exiting\n", $this->childPID));
                 exit(1);
         }
-    }
-
-    private function childProcessExit($exitStatus) {
-        if ($exitStatus === 0) {
-            $this->logger->debug("{type}: Child exited successfully", $this->logContext);
-            return;
-        }
-
-        $error_info = unserialize(socket_read($this->socket, 8192));
-        if (is_array($error_info)) {
-            $jobFailedMessage = sprintf('[%s] %s:%d %s', self::$ERROR_CODES[$error_info['type']], $error_info['file'], $error_info['line'], $error_info['message']);
-        } else {
-            $jobFailedMessage = "child failed with status: " . $exitStatus;
-        }
-        $this->logger->error("{type}: fatal error in child: " . $jobFailedMessage, $this->logContext);
-        $this->job->fail('system:fatal', $jobFailedMessage);
     }
 
     private function childProcessUnhandledSignal($sig) {
@@ -415,10 +451,10 @@ class Worker {
     #region watchdog methods executed in watchdog
 
     private function watchdogStart() {
-        $this->watchdogPID = Qless::fork();
+        $socket = null;
+        $this->watchdogPID = $this->fork($socket);
         if ($this->watchdogPID !== 0) {
-            // MASTER
-            $this->childProcesses++;
+            $this->sockets[$this->watchdogPID] = $socket;
             return;
         }
 
@@ -463,6 +499,7 @@ class Worker {
             }
         });
 
+        socket_close($socket);
         $this->logger->info("{type}: done", $this->logContext);
 
         exit(0);
@@ -477,10 +514,7 @@ class Worker {
         switch (true) {
             case pcntl_wifexited($status):
                 $code = pcntl_wexitstatus($status);
-                if ($code !== 0) {
-                    $this->logger->error(sprintf("watchdog %d exited with %s\n", $this->watchdogPID, $code));
-                }
-
+                $this->handleProcessExitStatus($this->watchdogPID, self::PROCESS_TYPE_WATCHDOG, $code);
                 return true;
 
             case pcntl_wifsignaled($status):
