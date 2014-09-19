@@ -118,6 +118,119 @@ class JobTest extends QlessTest
         $this->assertEquals(['jid-1'], $res);
     }
 
+    public function testCancelRemovesJobWithDependents() {
+        $queue = new Qless\Queue("testQueue", $this->client);
 
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0);
+        $queue->put("Sample\\TestWorkerImpl", "jid-2", $testData, 0, 0, true, 0, [], 0, [], ['jid-1']);
+
+        $job1 = $queue->pop("worker-1")[0];
+        $res = $job1->cancel(true);
+
+        $this->assertEquals(['jid-1', 'jid-2'], $res);
+    }
+
+    /**
+     * @expectedException \Qless\QlessException
+     */
+    public function testCancelThrowsExceptionWithDependents() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0);
+        $queue->put("Sample\\TestWorkerImpl", "jid-2", $testData, 0, 0, true, 0, [], 0, [], ['jid-1']);
+
+        $job1 = $queue->pop("worker-1")[0];
+        $job1->cancel();
+    }
+
+    #region tags
+
+    public function testItCanAddTagsToAJobWithNoExistingTags() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0);
+
+        $job1 = $queue->pop("worker-1")[0];
+        $job1->tag('a', 'b');
+
+        $data = json_decode($this->client->get('jid-1'));
+        $this->assertEquals(['a', 'b'], $data->tags);
+    }
+
+    public function testItCanAddTagsToAJobWithExistingTags() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0, true, 0, [], 0, ['1', '2']);
+
+        $job1 = $queue->pop("worker-1")[0];
+        $job1->tag('a', 'b');
+
+        $data = json_decode($this->client->get('jid-1'));
+        $this->assertEquals(['1', '2', 'a', 'b'], $data->tags);
+    }
+
+    public function testItCanRemoveExistingTags() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0, true, 0, [], 0, ['1', '2', '3']);
+
+        $job1 = $queue->pop("worker-1")[0];
+        $job1->untag('2', '3');
+
+        $data = json_decode($this->client->get('jid-1'));
+        $this->assertEquals(['1'], $data->tags);
+    }
+
+    #endregion
+
+    #region requeue
+
+    public function testRequeueJob() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0, true, 1, [], 5, ['tag1','tag2']);
+
+        $job = $queue->pop("worker-1")[0];
+        $job->requeue();
+
+        $job = $queue->pop("worker-1")[0];
+        $this->assertEquals(5, $job->getInterval());
+        $this->assertEquals(1, $job->getPriority());
+        $this->assertEquals(['tag1','tag2'], $job->getTags());
+    }
+
+    public function testRequeueJobWithNewTags() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0, true, 1, [], 5, ['tag1','tag2']);
+
+        $job = $queue->pop("worker-1")[0];
+        $job->requeue(['tags' => ['nnn']]);
+
+        $job = $queue->pop("worker-1")[0];
+        $this->assertEquals(5, $job->getInterval());
+        $this->assertEquals(1, $job->getPriority());
+        $this->assertEquals(['nnn'], $job->getTags());
+    }
+
+    /**
+     * @expectedException \Qless\InvalidJobException
+     */
+    public function testThrowsInvalidJobExceptionWhenRequeuingCancelledJob() {
+        $queue = new Qless\Queue("testQueue", $this->client);
+
+        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+        $queue->put("Sample\\TestWorkerImpl", "jid-1", $testData, 0, 0, true, 1, [], 5, ['tag1','tag2']);
+
+        $job = $queue->pop("worker-1")[0];
+        $this->client->cancel('jid-1');
+        $job->requeue();
+    }
+
+    #endregion
 }
  

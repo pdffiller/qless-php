@@ -5,21 +5,23 @@ namespace Qless;
 require_once __DIR__ . '/Qless.php';
 require_once __DIR__ . '/Job.php';
 
-
+/**
+ * @property int $heartbeat get / set the heartbeat timeout for the queue
+ */
 class Queue
 {
-    /**
-     * @var string
-     */
-    private $name;
     /**
      * @var Client
      */
     private $client;
+    /**
+     * @var string
+     */
+    private $name;
 
     public function __construct($name, Client $client) {
-        $this->name   = $name;
         $this->client = $client;
+        $this->name   = $name;
     }
 
     /**
@@ -81,8 +83,8 @@ class Queue
 
         $returnJobs = [];
         if (!empty($jobs)) {
-            foreach($jobs as $job) {
-                $returnJobs[] = new Job($this->client, $job['jid'], $job['worker'], $job['klass'], $job['queue'], $job['state'], $job['data'], $job['expires']);
+            foreach($jobs as $job_data) {
+                $returnJobs[] = new Job($this->client, $job_data);
             }
         }
 
@@ -143,6 +145,50 @@ class Queue
      */
     public function length() {
         return $this->client->length($this->name);
+    }
+
+    function __get($name) {
+        switch ($name) {
+            case 'heartbeat':
+                $cfg = $this->client->config;
+
+                return intval($cfg->get("{$this->name}-heartbeat", $cfg->get('heartbeat', 60)));
+
+            default:
+                throw new \InvalidArgumentException("Undefined property '$name'");
+        }
+    }
+
+    function __set($name, $value) {
+        switch ($name) {
+            case 'heartbeat':
+                if (!is_int($value)) {
+                    throw new \InvalidArgumentException('heartbeat must be an int');
+                }
+
+                $this->client
+                    ->config
+                    ->set("{$this->name}-heartbeat", $value);
+
+                break;
+
+            default:
+                throw new \InvalidArgumentException("Undefined property '$name'");
+        }
+    }
+
+    function __unset($name) {
+        switch ($name) {
+            case 'heartbeat':
+                $this->client
+                    ->config
+                    ->clear("{$this->name}-heartbeat");
+
+                break;
+
+            default:
+                throw new \InvalidArgumentException("Undefined property '$name'");
+        }
     }
 
     /**

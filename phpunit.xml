@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Use this configuration file as a template to run the tests against any dbms.
+    Procedure:
+        1) Save a copy of this file with a name of your choosing. It doesn't matter
+           where you place it as long as you know where it is.
+           i.e. "mysqlconf.xml" (It needs the ending .xml).
+        2) Edit the file and fill in your settings (database name, type, username, etc.)
+           Just change the "value"s, not the names of the var elements.
+        3) To run the tests against the database type the following from within the
+           tests/ folder: phpunit -c <filename> ...
+           Example: phpunit -c mysqlconf.xml AllTests
+-->
+<phpunit
+        backupGlobals="false"
+        backupStaticAttributes="false"
+        colors="true"
+        convertErrorsToExceptions="true"
+        convertNoticesToExceptions="true"
+        convertWarningsToExceptions="true"
+        processIsolation="false"
+        stopOnFailure="false"
+        syntaxCheck="false">
+
+    <testsuites>
+        <testsuite name="qless core">
+            <directory>./test</directory>
+        </testsuite>
+    </testsuites>
+    <logging>
+        <log type="junit" target="./tests/artifacts/phpunitout.xml"/>
+    </logging>
+
+    <groups>
+        <exclude>
+            <group>performance</group>
+        </exclude>
+    </groups>
+
+    <php>
+        <env name="REDIS_HOST" value="192.168.50.130"/>
+        <env name="REDIS_PORT" value="6380"/>
+    </php>
+
+</phpunit>

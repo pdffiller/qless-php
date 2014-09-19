@@ -30,10 +30,10 @@ class Lua
     protected $sha = null;
 
     public function __construct($redis) {
-        $this->redisCli  = $redis['redis'];
         $this->redisHost = $redis['host'];
         $this->redisPort = $redis['port'];
 
+        $this->redisCli  = new \Redis();
         $this->redisCli->connect($this->redisHost, $this->redisPort);
     }
 
@@ -55,7 +55,7 @@ class Lua
 
     protected function handleError($error) {
         $this->redisCli->clearLastError();
-        throw QlessException::createException($error);
+        throw QlessException::createExceptionFromError($error);
     }
 
     protected function reload() {

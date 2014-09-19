@@ -20,7 +20,7 @@ class QlessException extends \Exception
      *
      * @return QlessException
      */
-    public static function createException($error) {
+    public static function createExceptionFromError($error) {
 
         if (preg_match('/^ERR.*user_script:\d+:\s*(?<area>[\w.]+)\(\):\s*(?<message>.*)/', $error, $matches) > 0) {
             $area    = $matches['area'];
@@ -31,6 +31,7 @@ class QlessException extends \Exception
         }
 
         switch (true) {
+            case ($area === 'Requeue' && stripos($message, 'does not exist') !== false):
             case (stripos($message, 'Job does not exist') !== false):
                 return new InvalidJobException($message, $area);
 
