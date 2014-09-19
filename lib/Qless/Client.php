@@ -15,6 +15,7 @@ use Redis;
  * @package Qless
  *
  * @method string put() put(\string $worker, \string $queue, \string $job_identifier, \string $klass, array $data, \int $delay_in_seconds)
+ * @method string recur() recur(\string $klass, \string $jid, array $data, \int $interval, \int $offset, \int $retries, \int $priority, array $resources, array $tags)
  * @method array pop() pop(\string $queue, \string $worker, \int $count)
  * @method int length() length(\string $queue)
  * @method int heartbeat() heartbeat()

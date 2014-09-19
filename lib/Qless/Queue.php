@@ -89,6 +89,41 @@ class Queue
         return $returnJobs;
     }
 
+    /**
+     * Create a recurring job.
+     *
+     * The `priority` argument should be negative to be run sooner rather than
+     * later, and positive if it's less important. The `tags` argument should be
+     * a JSON array of the tags associated with the instance.
+     *
+     * @param string $klass     The class with the 'performMethod' specified in the data.
+     * @param string $jid       specified job id, if false is specified, a jid will be generated.
+     * @param mixed  $data      array of parameters for job.
+     * @param int   $interval   The recurring interval in seconds.
+     * @param int   $offset     A delay before the first run in seconds.
+     * @param int   $retries    Number of times the job can retry when it runs.
+     * @param int   $priority   a negative priority will run sooner.
+     * @param array $resources  array of resource identifiers this job must acquire before being processed
+     * @param array $tags       array of tags to add to the job.
+     *
+     * @return mixed
+     */
+    public function recur($klass, $jid, $data, $interval = 0, $offset = 0, $retries = 5, $priority = 0, $resources = [], $tags = []) {
+        return $this->client->recur(null,
+            $this->name,
+            $jid ?: Qless::guidv4(),
+            $klass,
+            json_encode($data, JSON_UNESCAPED_SLASHES),
+            'interval',
+            $interval,
+            $offset,
+            'priority', $priority,
+            'tags', json_encode($tags, JSON_UNESCAPED_SLASHES),
+            'retries', $retries,
+            'resources', json_encode($resources, JSON_UNESCAPED_SLASHES)
+        );
+    }
+
 
     /**
      * Cancels a job using the specified identifier
