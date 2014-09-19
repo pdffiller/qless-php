@@ -24,6 +24,7 @@ use Redis;
  * @method int heartbeat() heartbeat()
  * @method int retry() retry(\string $jid, \string $queue, \string $worker, \int $delay = 0, \string $group, \string $message)
  * @method int cancel() cancel(\string $jid)
+ * @method int unrecur() unrecur(\string $jid)
  * @method int fail() fail(\string $jid, \string $worker, \string $group, \string $message, \string $data = null)
  * @method string[] jobs(\string $state, \int $offset = 0, \int $count = 25)
  * @method string get(\string $jid)

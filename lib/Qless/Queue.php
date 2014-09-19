@@ -139,6 +139,17 @@ class Queue
     }
 
     /**
+     * Remove a recurring job using the specified identifier
+     *
+     * @param $jid
+     *
+     * @return int
+     */
+    public function unrecur($jid) {
+        return $this->client->unrecur($jid);
+    }
+
+    /**
      * Get the length of the queue.
      *
      * @return int
