@@ -111,7 +111,7 @@ class Queue
      * @return mixed
      */
     public function recur($klass, $jid, $data, $interval = 0, $offset = 0, $retries = 5, $priority = 0, $resources = [], $tags = []) {
-        return $this->client->recur(null,
+        return $this->client->recur(
             $this->name,
             $jid ?: Qless::guidv4(),
             $klass,
