@@ -1,4 +1,4 @@
--- Current SHA: da6ca9bccd0a5d747942377ff216d873dfc63a84
+-- Current SHA: dd23fa02c38d8b1b31ccd0ecf250d5832da6844a
 -- This is a generated file
 local Qless = {
   ns = 'ql:'
@@ -307,6 +307,37 @@ function Qless.cancel(now, ...)
   return cancelled_jids
 end
 
+local Set = {}
+
+function Set.new (t)
+  local set = {}
+  for _, l in ipairs(t) do set[l] = true end
+  return set
+end
+
+function Set.union (a,b)
+  local res = Set.new{}
+  for k in pairs(a) do res[k] = true end
+  for k in pairs(b) do res[k] = true end
+  return res
+end
+
+function Set.intersection (a,b)
+  local res = Set.new{}
+  for k in pairs(a) do
+    res[k] = b[k]
+  end
+  return res
+end
+
+function Set.diff(a,b)
+  local res = Set.new{}
+  for k in pairs(a) do
+      if not b[k] then res[k] = true end
+  end
+
+  return res
+end
 
 Qless.config.defaults = {
   ['application']        = 'qless',
@@ -1007,6 +1038,7 @@ function QlessJob:acquire_resources(now)
     end
     acquired_all = acquired_all and res
   end
+
   return acquired_all
 end
 
@@ -1381,9 +1413,9 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
   for i = 1, #arg, 2 do options[arg[i]] = arg[i + 1] end
 
   local job = Qless.job(jid)
-  local priority, tags, oldqueue, state, failure, retries, oldworker, interval, next_run =
+  local priority, tags, oldqueue, state, failure, retries, oldworker, interval, next_run, old_resources =
     unpack(redis.call('hmget', QlessJob.ns .. jid, 'priority', 'tags',
-      'queue', 'state', 'failure', 'retries', 'worker', 'throttle_interval', 'throttle_next_run'))
+      'queue', 'state', 'failure', 'retries', 'worker', 'throttle_interval', 'throttle_next_run', 'resources'))
 
   next_run = next_run or now
 
@@ -1413,6 +1445,14 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
   local resources = assert(cjson.decode(options['resources'] or '[]'),
     'Put(): Arg "resources" not JSON array: '     .. tostring(options['resources']))
   assert(#resources == 0 or QlessResource.all_exist(resources), 'Put(): invalid resources requested')
+
+  if old_resources then
+    old_resources = Set.new(cjson.decode(old_resources))
+    local removed_resources = Set.diff(old_resources, Set.new(resources))
+    for k in pairs(removed_resources) do
+      Qless.resource(k):release(now, jid)
+    end
+  end
 
   local interval = assert(tonumber(options['interval'] or interval or 0),
     'Put(): Arg "interval" not a number: ' .. tostring(options['interval']))
