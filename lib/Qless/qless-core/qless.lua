@@ -1,4 +1,4 @@
--- Current SHA: dd23fa02c38d8b1b31ccd0ecf250d5832da6844a
+-- Current SHA: 9a235bcc4091f798e6a64503969900f1415df8a4
 -- This is a generated file
 local Qless = {
   ns = 'ql:'
@@ -2217,7 +2217,7 @@ function QlessResource.all_exist(resources)
 end
 
 function QlessResource.pending_counts(now)
-  local search = QlessResource.ns..'*pending'
+  local search = QlessResource.ns..'*-pending'
   local reply = redis.call('keys', search)
   local response = {}
   for index, rname in ipairs(reply) do
@@ -2229,7 +2229,7 @@ function QlessResource.pending_counts(now)
 end
 
 function QlessResource.locks_counts(now)
-  local search = QlessResource.ns..'*locks'
+  local search = QlessResource.ns..'*-locks'
   local reply = redis.call('keys', search)
   local response = {}
   for index, rname in ipairs(reply) do
