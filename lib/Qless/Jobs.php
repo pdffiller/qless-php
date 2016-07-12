@@ -31,7 +31,7 @@ class Jobs implements \ArrayAccess
      *
      * @param string $jid the job identifier to fetch
      *
-     * @return Job[]|null
+     * @return Job|null
      */
     public function get($jid) {
         return $this->offsetGet($jid);
