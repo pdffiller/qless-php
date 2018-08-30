@@ -1,0 +1,33 @@
+sudo: false
+dist: trusty
+
+language: php
+
+php:
+  - '7.0'
+  - '7.1'
+  - '7.2'
+  - nightly
+
+services:
+  - redis-server
+
+git:
+  depth: 1
+
+matrix:
+  fast_finish: true
+  allow_failures:
+    - php: nightly
+
+install:
+  - |
+    composer install \
+        --no-interaction \
+        --no-ansi \
+        --no-progress \
+        --no-suggest
+
+script:
+  - composer lint
+  - composer test
