@@ -28,7 +28,8 @@ class Lua
      */
     protected $sha = null;
 
-    public function __construct($redis) {
+    public function __construct($redis)
+    {
         $this->redisHost = $redis['host'];
         $this->redisPort = $redis['port'];
 
@@ -36,7 +37,8 @@ class Lua
         $this->redisCli->connect($this->redisHost, $this->redisPort);
     }
 
-    public function run($command, $args) {
+    public function run($command, $args)
+    {
         if (empty($this->sha)) {
             $this->reload();
         }
@@ -52,12 +54,15 @@ class Lua
         return $result;
     }
 
-    protected function handleError($error) {
+    protected function handleError($error)
+    {
         $this->redisCli->clearLastError();
+
         throw QlessException::createExceptionFromError($error);
     }
 
-    protected function reload() {
+    protected function reload()
+    {
         $script    = file_get_contents(__DIR__ . '/qless-core/qless.lua', true);
         $this->sha = sha1($script);
         $res = $this->redisCli->script('exists', $this->sha);
@@ -68,17 +73,17 @@ class Lua
 
     /**
      * Removes all the entries from the default Redis database
-     *
-     * @internal
      */
-    public function flush() {
+    public function flush()
+    {
         $this->redisCli->flushDB();
     }
 
     /**
      * Reconnect to the Redis server
      */
-    public function reconnect() {
+    public function reconnect()
+    {
         $this->redisCli->close();
         $this->redisCli->connect($this->redisHost, $this->redisPort);
     }
