@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/../lib/Qless/Lua.php';
+namespace Qless\Tests;
 
 class LuaTester extends \Qless\Lua {
 
@@ -22,4 +22,4 @@ class LuaTester extends \Qless\Lua {
         return $result;
     }
 
-} 
+}

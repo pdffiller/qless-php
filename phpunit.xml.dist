@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+>
+    <filter>
+        <whitelist>
+            <directory suffix=".php">src</directory>
+            <exclude>
+                <directory suffix="Interface.php">src/</directory>
+            </exclude>
+        </whitelist>
+    </filter>
+
+    <groups>
+        <exclude>
+            <group>performance</group>
+        </exclude>
+    </groups>
+
+    <testsuites>
+        <testsuite name="Qless Test Suite">
+            <directory>tests</directory>
+        </testsuite>
+    </testsuites>
+
+    <php>
+        <ini name="date.timezone" value="UTC"/>
+        <ini name="display_errors" value="on"/>
+        <ini name="display_startup_errors" value="on"/>
+        <env name="REDIS_HOST" value="192.168.0.1"/>
+        <env name="REDIS_PORT" value="6380"/>
+    </php>
+
+    <logging>
+        <log
+            type="coverage-text"
+            target="php://stdout"
+            lowUpperBound="60"
+            highLowerBound="90"/>
+
+        <log
+            type="coverage-clover"
+            target="build/coverage.xml"/>
+    </logging>
+</phpunit>

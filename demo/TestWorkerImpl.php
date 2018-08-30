@@ -1,13 +1,9 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: paul
- * Date: 11/4/13
- * Time: 12:14 PM
- */
 
-class TestWorkerImpl {
-    public function myPerformMethod($job){
+class TestWorkerImpl
+{
+    public function myPerformMethod($job)
+    {
         echo "here in worker performMethod\n\n";
         $job->complete();
 
@@ -18,18 +14,20 @@ class TestWorkerImpl {
         // fail
         // complete - on success, can throw in some cases, need to handle responses.
 
-
         // jobId = instance_id:job_name:user_id:additional if always unique
     }
 
-    public function myThrowMethod($job){
+    public function myThrowMethod($job)
+    {
         echo "in throw job.\n";
         sleep(15);
+
         throw new \Exception("job exception message.");
     }
 
-    public function exitMethod($job){
+    public function exitMethod($job)
+    {
         sleep(5);
         exit(1);
     }
-} 
+}

@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/QlessTest.php';
+namespace Qless\Tests;
 
 class ConfigTest extends QlessTest {
 
@@ -38,4 +38,3 @@ class ConfigTest extends QlessTest {
         $this->assertNull($val);
     }
 }
- 
