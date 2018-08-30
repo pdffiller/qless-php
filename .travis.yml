@@ -29,7 +29,9 @@ matrix:
     - php: nightly
 
 before_install:
+
   - if [[ ! -z "${GH_TOKEN}" ]]; then composer config github-oauth.github.com ${GH_TOKEN}; echo "Configured Github token"; fi;
+  - ulimit -c unlimited -S || true
   - bash tests/ci/pear_setup.sh
   - phpenv config-add $TRAVIS_BUILD_DIR/tests/ci/ci.ini
 
