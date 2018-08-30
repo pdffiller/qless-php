@@ -2,15 +2,20 @@
 
 namespace Qless;
 
+/**
+ * Qless\Jobs
+ *
+ * @package Qless
+ */
 class Jobs implements \ArrayAccess
 {
-
     /**
      * @var Client
      */
     private $client;
 
-    public function __construct(Client $client) {
+    public function __construct(Client $client)
+    {
         $this->client = $client;
     }
 
@@ -22,7 +27,8 @@ class Jobs implements \ArrayAccess
      *
      * @return string[]
      */
-    public function completed($offset = 0, $count = 25) {
+    public function completed($offset = 0, $count = 25)
+    {
         return $this->client->jobs('complete', $offset, $count);
     }
 
@@ -33,7 +39,8 @@ class Jobs implements \ArrayAccess
      *
      * @return Job|null
      */
-    public function get($jid) {
+    public function get($jid)
+    {
         return $this->offsetGet($jid);
     }
 
@@ -44,8 +51,11 @@ class Jobs implements \ArrayAccess
      *
      * @return array|Job[]
      */
-    public function multiget($jids) {
-        if (empty($jids)) return [];
+    public function multiget($jids)
+    {
+        if (empty($jids)) {
+            return [];
+        }
 
         $results = call_user_func_array([$this->client, 'multiget'], $jids);
         $jobs    = json_decode($results, true);
@@ -67,7 +77,8 @@ class Jobs implements \ArrayAccess
      *
      * @return \Iterator|Job[]
      */
-    public function failedForGroup($group, $start = 0, $limit = 25) {
+    public function failedForGroup($group, $start = 0, $limit = 25)
+    {
         $results         = json_decode($this->client->failed($group, $start, $limit), true);
         if (!empty($results['jobs'])) {
             $results['jobs'] = $this->multiget($results['jobs']);
@@ -81,7 +92,8 @@ class Jobs implements \ArrayAccess
      *
      * @return array
      */
-    public function failed() {
+    public function failed()
+    {
         return json_decode($this->client->failed(), true);
     }
 
@@ -90,18 +102,22 @@ class Jobs implements \ArrayAccess
     /**
      * @inheritdoc
      */
-    public function offsetExists($jid) {
+    public function offsetExists($jid)
+    {
         return $this->client->get($jid) !== false;
     }
 
     /**
      * @inheritdoc
      */
-    public function offsetGet($jid) {
+    public function offsetGet($jid)
+    {
         $job_data = $this->client->get($jid);
         if ($job_data === false) {
             $job_data = $this->client->{'recur.get'}($jid);
-            if ($job_data === false) return null;
+            if ($job_data === false) {
+                return null;
+            }
         }
 
         return new Job($this->client, json_decode($job_data, true));
@@ -110,14 +126,16 @@ class Jobs implements \ArrayAccess
     /**
      * @inheritdoc
      */
-    public function offsetSet($offset, $value) {
+    public function offsetSet($offset, $value)
+    {
         throw new \LogicException('set not supported');
     }
 
     /**
      * @inheritdoc
      */
-    public function offsetUnset($offset) {
+    public function offsetUnset($offset)
+    {
         throw new \LogicException('unset not supported');
     }
 

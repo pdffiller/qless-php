@@ -2,11 +2,10 @@
 
 namespace Qless;
 
-require_once __DIR__ . '/QlessException.php';
-
 /**
- * Class Lua
- * wrapper to load and execute lua script for qless-core.
+ * Qless\Lua
+ *
+ * Wrapper to load and execute lua script for qless-core.
  *
  * @package Qless
  */
@@ -83,4 +82,4 @@ class Lua
         $this->redisCli->close();
         $this->redisCli->connect($this->redisHost, $this->redisPort);
     }
-} 
+}

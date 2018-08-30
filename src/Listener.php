@@ -2,9 +2,13 @@
 
 namespace Qless;
 
+/**
+ * Qless\Listener
+ *
+ * @package Qless
+ */
 class Listener
 {
-
     private $redis;
 
     /**
@@ -12,7 +16,8 @@ class Listener
      */
     private $channels;
 
-    public function __construct($redisConfig, $channels) {
+    public function __construct($redisConfig, $channels)
+    {
         $this->redis = new \Redis();
         $this->redis->connect($redisConfig['host'], $redisConfig['port']);
 
@@ -24,13 +29,15 @@ class Listener
      *
      * @param callable $callback
      */
-    public function messages(callable $callback) {
+    public function messages(callable $callback)
+    {
         $this->redis->subscribe($this->channels, function (\Redis $redis, $channel, $data) use ($callback) {
             call_user_func($callback, $channel, json_decode($data));
         });
     }
 
-    public function stop() {
+    public function stop()
+    {
         $this->redis->close();
     }
 }

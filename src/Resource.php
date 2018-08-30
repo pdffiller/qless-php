@@ -2,8 +2,11 @@
 
 namespace Qless;
 
-require_once __DIR__ . '/Client.php';
-
+/**
+ * Qless\Resource
+ *
+ * @package Qless
+ */
 class Resource
 {
     /**
@@ -21,7 +24,8 @@ class Resource
      */
     private $max;
 
-    function __construct(Client $client, $name) {
+    public function __construct(Client $client, $name)
+    {
         $this->client = $client;
         $this->name   = $name;
     }
@@ -31,7 +35,8 @@ class Resource
      *
      * @return bool
      */
-    public function exists() {
+    public function exists()
+    {
         return $this->client->lua->run('resource.exists', [$this->name]) === 1;
     }
 
@@ -39,7 +44,8 @@ class Resource
      * Gets the current lock count for this resource
      * @return int
      */
-    public function getLockCount() {
+    public function getLockCount()
+    {
         return $this->client->lua->run('resource.lock_count', [$this->name]);
     }
 
@@ -48,7 +54,8 @@ class Resource
      *
      * @return string[]
      */
-    public function getLocks() {
+    public function getLocks()
+    {
         $data = $this->client->lua->run('resource.locks', [$this->name]);
 
         return json_decode($data);
@@ -58,7 +65,8 @@ class Resource
      * Gets the current lock count for this resource
      * @return int
      */
-    public function getPendingCount() {
+    public function getPendingCount()
+    {
         return $this->client->lua->run('resource.pending_count', [$this->name]);
     }
 
@@ -67,7 +75,8 @@ class Resource
      *
      * @return string[]
      */
-    public function getPending() {
+    public function getPending()
+    {
         $data = $this->client->lua->run('resource.pending', [$this->name]);
 
         return json_decode($data);
@@ -80,7 +89,8 @@ class Resource
      *
      * @throws QlessException
      */
-    public function delete() {
+    public function delete()
+    {
         $res = $this->client->lua->run('resource.unset', [$this->name]) === 1;
 
         return $res;
@@ -89,7 +99,8 @@ class Resource
     /**
      * @param int $max Update the maximum number of units available for this resource
      */
-    public function setMax($max) {
+    public function setMax($max)
+    {
         $this->client->lua->run('resource.set', [$this->name, $max]);
         unset($this->max);
     }
@@ -99,10 +110,11 @@ class Resource
      *
      * @return int
      */
-    public function getMax() {
+    public function getMax()
+    {
         if (!isset($this->max)) {
             $this->max = $this->client->lua->run('resource.get', [$this->name]);
         }
         return $this->max;
     }
-} 
+}
