@@ -7,6 +7,7 @@ Makefile         text eol=lf linguist-language=Makefile linguist-vendored=false
 *.php            text eol=lf linguist-language=PHP linguist-vendored=false
 
 README.md        text eol=lf linguist-language=Markdown linguist-documentation
+CONTRIBUTING.md  text eol=lf linguist-language=Markdown linguist-documentation
 *.md             text eol=lf linguist-language=Markdown linguist-documentation
 LICENSE.txt      text eol=lf linguist-documentation
 AUTHORS          text eol=lf linguist-documentation
