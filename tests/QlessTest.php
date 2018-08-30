@@ -1,14 +1,14 @@
 <?php
 
-require_once __DIR__ . '/../lib/Qless/Client.php';
-require_once __DIR__ . '/../lib/Qless/Queue.php';
-require_once __DIR__ . '/../lib/Qless/Jobs.php';
-require_once __DIR__ . '/LuaTester.php';
+namespace Qless\Tests;
+
+use Qless\Client;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Base class for qless-php testing
  */
-class QlessTest extends PHPUnit_Framework_TestCase {
+class QlessTest extends TestCase {
 
     static $REDIS_HOST;
     static $REDIS_PORT;
@@ -19,16 +19,15 @@ class QlessTest extends PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @var Qless\Client
+     * @varClient
      */
     protected $client;
 
     public function setUp() {
-        $this->client = new Qless\Client(self::$REDIS_HOST, self::$REDIS_PORT);
+        $this->client = new Client(self::$REDIS_HOST, self::$REDIS_PORT);
     }
 
     public function tearDown() {
         $this->client->lua->flush();
     }
 }
- 

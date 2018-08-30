@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/QlessTest.php';
+namespace Qless\Tests;
 
 class JobsTest extends QlessTest
 {
@@ -118,4 +118,3 @@ class JobsTest extends QlessTest
         );
     }
 }
- 

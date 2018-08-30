@@ -16,12 +16,12 @@ trim_trailing_whitespace = true
 indent_style             = tab
 trim_trailing_whitespace = true
 
-[*.{yml,xml,lua}]
+[*.{yml,lua}]
 indent_size              = 2
 indent_style             = space
 trim_trailing_whitespace = true
 
-[composer.json]
+[{composer.json,phpunit.xml,phpunit.xml.dist,phpcs.xml,phpcs.xml.dist}]
 indent_size              = 4
 indent_style             = space
 trim_trailing_whitespace = true

@@ -1,6 +1,8 @@
 <?php
 
-require_once __DIR__ . '/QlessTest.php';
+namespace Qless\Tests;
+
+use Qless\Queue;
 
 /**
  * @group performance
@@ -10,7 +12,7 @@ class QueuePerformanceTest extends QlessTest {
     const TEST_TIME = 2;
 
     public function testPerfPuttingJobs() {
-        $queue = new Qless\Queue("testQueue", $this->client);
+        $queue = new Queue("testQueue", $this->client);
         $cb = $this->getProfilerForCallback(function ($e) use ($queue) {
             $queue->put("Sample\\TestWorkerImpl", $e, []);
         });
@@ -19,7 +21,7 @@ class QueuePerformanceTest extends QlessTest {
     }
 
     public function testPerfPuttingThenPoppingJobs() {
-        $queue = new Qless\Queue("testQueue", $this->client);
+        $queue = new Queue("testQueue", $this->client);
         $cb = $this->getProfilerForCallback(function ($e) use ($queue) {
             $queue->put("Sample\\TestWorkerImpl", $e, []);
         });
@@ -34,7 +36,7 @@ class QueuePerformanceTest extends QlessTest {
 
     public function testPerfDirectRedis() {
 
-        $redis = new Redis();
+        $redis = new \Redis();
         $redis->connect(self::$REDIS_HOST, self::$REDIS_PORT);
 
         $cb = $this->getProfilerForCallback(function ($e) use ($redis) {
@@ -46,7 +48,7 @@ class QueuePerformanceTest extends QlessTest {
 
     public function testPerfQueueLength() {
 
-        $queue = new Qless\Queue("testQueue", $this->client);
+        $queue = new Queue("testQueue", $this->client);
         $cb = $this->getProfilerForCallback(function ($e) use ($queue) {
             $queue->length();
         });
@@ -70,4 +72,3 @@ class QueuePerformanceTest extends QlessTest {
         };
     }
 }
- 

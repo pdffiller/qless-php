@@ -41,7 +41,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Qless\\": "src/"
+            "Qless\\": "src/",
+            "Qless\\Tests\\": "tests/"
         }
     },
     "minimum-stability": "dev",
