@@ -2,10 +2,11 @@
 
 namespace Qless;
 
-require_once __DIR__ . '/Qless.php';
-require_once __DIR__ . '/Job.php';
-
 /**
+ * Qless\Queue
+ *
+ * @package Qless
+ *
  * @property int $heartbeat get / set the heartbeat timeout for the queue
  */
 class Queue
@@ -19,7 +20,8 @@ class Queue
      */
     private $name;
 
-    public function __construct($name, Client $client) {
+    public function __construct($name, Client $client)
+    {
         $this->client = $client;
         $this->name   = $name;
     }
@@ -37,33 +39,55 @@ class Queue
      * actionable.
      *
      * @param string $klass     The class with the 'performMethod' specified in the data.
-     * @param string $jid       specified job id, if false is specified, a jid will be generated.
-     * @param mixed  $data      array of parameters for job.
-     * @param int    $delay     specify delay to run job.
-     * @param int    $retries   number of retries allowed.
-     * @param bool   $replace   false to prevent the job from being replaced if it is already running
-     * @param int    $priority  a greater priority will execute before jobs of lower priority
-     * @param array  $resources a list of resource identifiers this job must acquire before being processed
-     * @param float  $interval  the minimum number of seconds required to transpire before the next instance of this job can run
+     * @param string $jid       The specified job id, if false is specified, a jid will be generated.
+     * @param mixed  $data      An array of parameters for job.
+     * @param int    $delay     The specified delay to run job.
+     * @param int    $retries   Number of retries allowed.
+     * @param bool   $replace   False to prevent the job from being replaced if it is already running.
+     * @param int    $priority  A greater priority will execute before jobs of lower priority.
+     * @param array  $resources A list of resource identifiers this job must acquire before being processed.
+     * @param float  $interval  The minimum number of seconds required to transpire before the next
+     *                          instance of this job can run.
      * @param array  $tags
-     * @param array  $depends   a list of JIDs this job must wait on before executing
+     * @param array  $depends   A list of JIDs this job must wait on before executing
      *
-     * @return string|float the job identifier or the time remaining before the job expires if the job is already running
+     * @return string|float The job identifier or the time remaining before the job expires
+     *                      if the job is already running.
      */
-    public function put($klass, $jid, $data, $delay = 0, $retries = 5, $replace = true, $priority = 0, $resources = [], $interval = 0.0, $tags = [], $depends = []) {
-        return $this->client->put(null,
+    public function put(
+        $klass,
+        $jid,
+        $data,
+        $delay = 0,
+        $retries = 5,
+        $replace = true,
+        $priority = 0,
+        $resources = [],
+        $interval = 0.0,
+        $tags = [],
+        $depends = []
+    ) {
+        return $this->client->put(
+            null,
             $this->name,
             $jid ?: Qless::guidv4(),
             $klass,
             json_encode($data, JSON_UNESCAPED_SLASHES),
             $delay,
-            'priority', $priority,
-            'tags', json_encode($tags, JSON_UNESCAPED_SLASHES),
-            'retries', $retries,
-            'depends', json_encode($depends, JSON_UNESCAPED_SLASHES),
-            'resources', json_encode($resources, JSON_UNESCAPED_SLASHES),
-            'replace', $replace ? 1 : 0,
-            'interval', $interval
+            'priority',
+            $priority,
+            'tags',
+            json_encode($tags, JSON_UNESCAPED_SLASHES),
+            'retries',
+            $retries,
+            'depends',
+            json_encode($depends, JSON_UNESCAPED_SLASHES),
+            'resources',
+            json_encode($resources, JSON_UNESCAPED_SLASHES),
+            'replace',
+            $replace ? 1 : 0,
+            'interval',
+            $interval
         );
     }
 
@@ -75,7 +99,8 @@ class Queue
      *
      * @return Job[]
      */
-    public function pop($worker, $numJobs = 1) {
+    public function pop($worker, $numJobs = 1)
+    {
         $results = $this->client
             ->pop($this->name, $worker, $numJobs);
 
@@ -83,7 +108,7 @@ class Queue
 
         $returnJobs = [];
         if (!empty($jobs)) {
-            foreach($jobs as $job_data) {
+            foreach ($jobs as $job_data) {
                 $returnJobs[] = new Job($this->client, $job_data);
             }
         }
@@ -99,18 +124,28 @@ class Queue
      * a JSON array of the tags associated with the instance.
      *
      * @param string $klass     The class with the 'performMethod' specified in the data.
-     * @param string $jid       specified job id, if false is specified, a jid will be generated.
-     * @param mixed  $data      array of parameters for job.
-     * @param int   $interval   The recurring interval in seconds.
-     * @param int   $offset     A delay before the first run in seconds.
-     * @param int   $retries    Number of times the job can retry when it runs.
-     * @param int   $priority   a negative priority will run sooner.
-     * @param array $resources  array of resource identifiers this job must acquire before being processed
-     * @param array $tags       array of tags to add to the job.
+     * @param string $jid       The specified job id, if false is specified, a jid will be generated.
+     * @param mixed  $data      An array of parameters for job.
+     * @param int    $interval  The recurring interval in seconds.
+     * @param int    $offset    A delay before the first run in seconds.
+     * @param int    $retries   Number of times the job can retry when it runs.
+     * @param int    $priority  A negative priority will run sooner.
+     * @param array  $resources An array of resource identifiers this job must acquire before being processed.
+     * @param array  $tags      An array of tags to add to the job.
      *
      * @return mixed
      */
-    public function recur($klass, $jid, $data, $interval = 0, $offset = 0, $retries = 5, $priority = 0, $resources = [], $tags = []) {
+    public function recur(
+        $klass,
+        $jid,
+        $data,
+        $interval = 0,
+        $offset = 0,
+        $retries = 5,
+        $priority = 0,
+        $resources = [],
+        $tags = []
+    ) {
         return $this->client->recur(
             $this->name,
             $jid ?: Qless::guidv4(),
@@ -119,10 +154,14 @@ class Queue
             'interval',
             $interval,
             $offset,
-            'priority', $priority,
-            'tags', json_encode($tags, JSON_UNESCAPED_SLASHES),
-            'retries', $retries,
-            'resources', json_encode($resources, JSON_UNESCAPED_SLASHES)
+            'priority',
+            $priority,
+            'tags',
+            json_encode($tags, JSON_UNESCAPED_SLASHES),
+            'retries',
+            $retries,
+            'resources',
+            json_encode($resources, JSON_UNESCAPED_SLASHES)
         );
     }
 
@@ -134,7 +173,8 @@ class Queue
      *
      * @return int
      */
-    public function cancel($jid) {
+    public function cancel($jid)
+    {
         return $this->client->cancel($jid);
     }
 
@@ -145,7 +185,8 @@ class Queue
      *
      * @return int
      */
-    public function unrecur($jid) {
+    public function unrecur($jid)
+    {
         return $this->client->unrecur($jid);
     }
 
@@ -154,11 +195,13 @@ class Queue
      *
      * @return int
      */
-    public function length() {
+    public function length()
+    {
         return $this->client->length($this->name);
     }
 
-    function __get($name) {
+    public function __get($name)
+    {
         switch ($name) {
             case 'heartbeat':
                 $cfg = $this->client->config;
@@ -170,7 +213,8 @@ class Queue
         }
     }
 
-    function __set($name, $value) {
+    public function __set($name, $value)
+    {
         switch ($name) {
             case 'heartbeat':
                 if (!is_int($value)) {
@@ -188,7 +232,8 @@ class Queue
         }
     }
 
-    function __unset($name) {
+    public function __unset($name)
+    {
         switch ($name) {
             case 'heartbeat':
                 $this->client
@@ -209,7 +254,8 @@ class Queue
      *
      * @return array
      */
-    public function stats($date = null) {
+    public function stats($date = null)
+    {
         $date = $date ? : time();
 
         return $this->client->stats($this->name, $date);
@@ -218,14 +264,16 @@ class Queue
     /**
      * Pauses the queue so it will not process any more jobs
      */
-    public function pause() {
+    public function pause()
+    {
         $this->client->pause($this->name);
     }
 
     /**
      * Resumes the queue so it will continue processing jobs
      */
-    public function resume() {
+    public function resume()
+    {
         $this->client->unpause($this->name);
     }
 
@@ -234,13 +282,13 @@ class Queue
      *
      * @return bool
      */
-    public function isPaused() {
+    public function isPaused()
+    {
         return $this->client->paused($this->name) === 1;
     }
 
-    function __toString() {
+    public function __toString()
+    {
         return $this->name;
     }
-
-
 }

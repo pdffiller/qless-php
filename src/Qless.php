@@ -2,8 +2,13 @@
 
 namespace Qless;
 
-class Qless {
-
+/**
+ * Qless\Qless
+ *
+ * @package Qless
+ */
+class Qless
+{
     const VERSION = '1.0.0';
 
     /**
@@ -12,12 +17,12 @@ class Qless {
      */
     public static function fork()
     {
-        if(!function_exists('pcntl_fork')) {
+        if (!function_exists('pcntl_fork')) {
             return -1;
         }
 
         $pid = pcntl_fork();
-        if($pid === -1) {
+        if ($pid === -1) {
             throw new \RuntimeException('Unable to fork child worker.');
         }
 
@@ -33,6 +38,4 @@ class Qless {
 
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
     }
-
-
-} 
+}

@@ -6,12 +6,12 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 /**
- * Class Worker
+ * Qless\Worker
  *
  * @package Qless
  */
-class Worker {
-
+class Worker
+{
     const PROCESS_TYPE_MASTER = 0;
     const PROCESS_TYPE_JOB = 1;
     const PROCESS_TYPE_WATCHDOG = 2;
@@ -58,29 +58,32 @@ class Worker {
      */
     private $job;
 
-    public function __construct($name, $queues, Client $client, $interval=60){
+    public function __construct($name, $queues, Client $client, $interval = 60)
+    {
         $this->workerName = $name;
         $this->queues = [];
         $this->client = $client;
         $this->interval = $interval;
-        foreach ($queues as $queue){
+        foreach ($queues as $queue) {
             $this->queues[] = $this->client->getQueue($queue);
         }
         $this->logger = new NullLogger();
     }
 
-    public function setLogger(LoggerInterface $logger) {
+    public function setLogger(LoggerInterface $logger)
+    {
         $this->logger = $logger;
     }
 
-    public function registerJobPerformHandler($klass){
-        if(!class_exists($klass)) {
+    public function registerJobPerformHandler($klass)
+    {
+        if (!class_exists($klass)) {
             throw new \Exception(
                 'Could not find job perform class ' . $klass . '.'
             );
         }
 
-        if(!method_exists($klass, 'perform')) {
+        if (!method_exists($klass, 'perform')) {
             throw new \Exception(
                 'Job class ' . $klass . ' does not contain perform method '
             );
@@ -89,7 +92,7 @@ class Worker {
         $this->jobPerformClass = $klass;
     }
 
-    static $ERROR_CODES = [
+    public static $ERROR_CODES = [
         E_ERROR => 'E_ERROR',
         E_CORE_ERROR => 'E_CORE_ERROR',
         E_COMPILE_ERROR => 'E_COMPILE_ERROR',
@@ -100,7 +103,8 @@ class Worker {
     /**
      * starts worker
      */
-    public function run() {
+    public function run()
+    {
 
         declare(ticks=1);
 
@@ -108,12 +112,15 @@ class Worker {
         $this->who = 'master:' . $this->workerName;
         $this->logContext = [ 'type' => $this->who, 'job.identifier' => null ];
         $this->logger->info('{type}: Worker started', $this->logContext);
-        $this->logger->info('{type}: monitoring the following queues (in order), {queues}', ['type'=>$this->who, 'queues' => implode(', ', $this->queues)]);
+        $this->logger->info(
+            '{type}: monitoring the following queues (in order), {queues}',
+            ['type'=>$this->who, 'queues' => implode(', ', $this->queues)]
+        );
 
         $did_work = false;
 
-        while (true){
-            if ($this->shutdown){
+        while (true) {
+            if ($this->shutdown) {
                 $this->logger->info('{type}: Shutting down', $this->logContext);
                 break;
             }
@@ -124,13 +131,15 @@ class Worker {
 
             if ($did_work) {
                 $this->logger->debug('{type}: Looking for work', $this->logContext);
-                $this->updateProcLine('Waiting for ' . implode(',', $this->queues) . ' with interval ' . $this->interval);
+                $this->updateProcLine(
+                    'Waiting for ' . implode(',', $this->queues) . ' with interval ' . $this->interval
+                );
                 $did_work = false;
             }
 
             $job = $this->reserve();
             if (!$job) {
-                if ($this->interval == 0){
+                if ($this->interval == 0) {
                     break;
                 }
                 usleep($this->interval * 1000000);
@@ -155,7 +164,7 @@ class Worker {
                 if ($pid > 0) {
                     if ($pid === $this->childPID) {
                         $exited = $this->childProcessStatus($status);
-                    } else if ($pid === $this->watchdogPID) {
+                    } elseif ($pid === $this->watchdogPID) {
                         $exited = $this->watchdogProcessStatus($status);
                     } else {
                         // unexpected?
@@ -207,17 +216,19 @@ class Worker {
     /**
      * @return bool|Job
      */
-    public function reserve() {
-        foreach($this->queues as $queue) {
+    public function reserve()
+    {
+        foreach ($this->queues as $queue) {
             $job = $queue->pop($this->workerName);
-            if ($job){
+            if ($job) {
                 return $job[0];
             }
         }
         return false;
     }
 
-    public function startup(){
+    public function startup()
+    {
         $this->masterRegisterSigHandlers();
     }
 
@@ -231,20 +242,33 @@ class Worker {
      */
     private function masterRegisterSigHandlers()
     {
-        pcntl_signal(SIGTERM, function() { $this->shutdownNow(); },       false);
-        pcntl_signal(SIGINT,  function() { $this->shutdownNow(); },       false);
-        pcntl_signal(SIGQUIT, function() { $this->shutdown(); },          false);
-        pcntl_signal(SIGUSR1, function() { $this->killChildren(); },      false);
-        pcntl_signal(SIGUSR2, function() { $this->pauseProcessing(); },   false);
-        pcntl_signal(SIGCONT, function() { $this->unPauseProcessing(); }, false);
+        pcntl_signal(SIGTERM, function () {
+            $this->shutdownNow();
+        }, false);
+        pcntl_signal(SIGINT, function () {
+            $this->shutdownNow();
+        }, false);
+        pcntl_signal(SIGQUIT, function () {
+            $this->shutdown();
+        }, false);
+        pcntl_signal(SIGUSR1, function () {
+            $this->killChildren();
+        }, false);
+        pcntl_signal(SIGUSR2, function () {
+            $this->pauseProcessing();
+        }, false);
+        pcntl_signal(SIGCONT, function () {
+            $this->unPauseProcessing();
+        }, false);
     }
 
     /**
      * Clear all previously registered signal handlers
      */
-    private function clearSigHandlers() {
+    private function clearSigHandlers()
+    {
         pcntl_signal(SIGTERM, SIG_DFL);
-        pcntl_signal(SIGINT,  SIG_DFL);
+        pcntl_signal(SIGINT, SIG_DFL);
         pcntl_signal(SIGQUIT, SIG_DFL);
         pcntl_signal(SIGUSR1, SIG_DFL);
         pcntl_signal(SIGUSR2, SIG_DFL);
@@ -258,10 +282,14 @@ class Worker {
      *
      * @return int PID if master or 0 if child
      */
-    private function fork(&$socket) {
+    private function fork(&$socket)
+    {
         $pair = [];
         if (socket_create_pair(AF_UNIX, SOCK_STREAM, 0, $pair) === false) {
-            $this->logger->error('{type}: Unable to create socket pair; ' . socket_strerror(socket_last_error($pair[0])), $this->logContext);
+            $this->logger->error(
+                '{type}: Unable to create socket pair; ' . socket_strerror(socket_last_error($pair[0])),
+                $this->logContext
+            );
 
             exit(0);
         }
@@ -273,7 +301,14 @@ class Worker {
 
             $socket = $pair[0];
             socket_close($pair[1]);
-            socket_set_option($socket, SOL_SOCKET, SO_RCVTIMEO, ['sec' => 0, 'usec' => 10000]); // wait up to 10ms to receive data
+
+            // wait up to 10ms to receive data
+            socket_set_option(
+                $socket,
+                SOL_SOCKET,
+                SO_RCVTIMEO,
+                ['sec' => 0, 'usec' => 10000]
+            );
 
             return $PID;
         }
@@ -311,14 +346,21 @@ class Worker {
      *
      * @return null|string
      */
-    private function readErrorFromSocket($socket) {
+    private function readErrorFromSocket($socket)
+    {
         $error_info = "";
         while (!empty($res = socket_read($socket, 8192))) {
             $error_info .= $res;
         }
         $error_info = unserialize($error_info);
         if (is_array($error_info)) {
-            return sprintf('[%s] %s:%d %s', self::$ERROR_CODES[$error_info['type']], $error_info['file'], $error_info['line'], $error_info['message']);
+            return sprintf(
+                '[%s] %s:%d %s',
+                self::$ERROR_CODES[$error_info['type']],
+                $error_info['file'],
+                $error_info['line'],
+                $error_info['message']
+            );
         }
 
         return null;
@@ -330,7 +372,8 @@ class Worker {
      *
      * @return bool|string false if exit status indicates success; otherwise, a string containing the error messages
      */
-    private function handleProcessExitStatus($PID, $child_type, $exitStatus) {
+    private function handleProcessExitStatus($PID, $child_type, $exitStatus)
+    {
         $child_type = $child_type === self::PROCESS_TYPE_JOB ? "child" : "watchdog";
 
         if ($exitStatus === 0) {
@@ -339,7 +382,8 @@ class Worker {
             return false;
         }
 
-        $jobFailedMessage = $this->readErrorFromSocket($this->sockets[$PID]) ?: "{$child_type} process failed with status: {$exitStatus}";
+        $error = $this->readErrorFromSocket($this->sockets[$PID]);
+        $jobFailedMessage = $error ?: "{$child_type} process failed with status: {$exitStatus}";
         $this->logger->error("{type}: fatal error in {$child_type} process: {$jobFailedMessage}", $this->logContext);
 
         return $jobFailedMessage;
@@ -348,7 +392,8 @@ class Worker {
 
     #region child methods executed in child process
 
-    private function childStart() {
+    private function childStart()
+    {
         $socket = null;
         $this->childPID = $this->fork($socket);
         if ($this->childPID !== 0) {
@@ -387,9 +432,11 @@ class Worker {
                 $job->perform();
             }
             $this->logger->notice('{type}: Job {job} has finished', ['job' => $job->getId(), 'type' => $this->who]);
-        }
-        catch(\Exception $e) {
-            $this->logger->critical('{type}: {job} has failed {stack}', ['job' => $job->getId(), 'stack' => $e->getMessage(), 'type' => $this->who]);
+        } catch (\Exception $e) {
+            $this->logger->critical(
+                '{type}: {job} has failed {stack}',
+                ['job' => $job->getId(), 'stack' => $e->getMessage(), 'type' => $this->who]
+            );
             $job->fail('system:fatal', $e->getMessage());
         }
     }
@@ -403,7 +450,8 @@ class Worker {
      *
      * @return bool
      */
-    private function childProcessStatus($status) {
+    private function childProcessStatus($status)
+    {
         switch (true) {
             case pcntl_wifexited($status):
                 $code = pcntl_wexitstatus($status);
@@ -421,7 +469,9 @@ class Worker {
 
             case pcntl_wifstopped($status):
                 $sig = pcntl_wstopsig($status);
-                $this->logger->info(sprintf("child %d was stopped with signal %s\n", $this->childPID, pcntl_sig_name($sig)));
+                $this->logger->info(
+                    sprintf("child %d was stopped with signal %s\n", $this->childPID, pcntl_sig_name($sig))
+                );
                 return false;
 
             default:
@@ -430,13 +480,15 @@ class Worker {
         }
     }
 
-    private function childProcessUnhandledSignal($sig) {
+    private function childProcessUnhandledSignal($sig)
+    {
         $context = $this->logContext;
         $context['signal'] = pcntl_sig_name($sig);
         $this->logger->notice("{type}: child terminated with unhandled signal '{signal}'", $context);
     }
 
-    private function childKill() {
+    private function childKill()
+    {
         if ($this->childPID) {
             $this->logger->info('{type}: Killing child at {child}', ['child' => $this->childPID, 'type' => $this->who]);
             if (pcntl_waitpid($this->childPID, $status, WNOHANG) != -1) {
@@ -450,7 +502,8 @@ class Worker {
 
     #region watchdog methods executed in watchdog
 
-    private function watchdogStart() {
+    private function watchdogStart()
+    {
         $socket = null;
         $this->watchdogPID = $this->fork($socket);
         if ($this->watchdogPID !== 0) {
@@ -478,7 +531,10 @@ class Worker {
             switch ($event->event) {
                 case 'lock_lost':
                     if ($event->worker === $this->workerName) {
-                        $this->logger->info("{type}: sending SIGKILL to child {$this->childPID}; job handed out to another worker", $this->logContext);
+                        $this->logger->info(
+                            "{type}: sending SIGKILL to child {$this->childPID}; job handed out to another worker",
+                            $this->logContext
+                        );
                         posix_kill($this->childPID, SIGKILL);
                         $l->stop();
                     }
@@ -486,7 +542,10 @@ class Worker {
 
                 case 'canceled':
                     if ($event->worker === $this->workerName) {
-                        $this->logger->info("{type}: sending SIGKILL to child {$this->childPID}; job canceled", $this->logContext);
+                        $this->logger->info(
+                            "{type}: sending SIGKILL to child {$this->childPID}; job canceled",
+                            $this->logContext
+                        );
                         posix_kill($this->childPID, SIGKILL);
                         $l->stop();
                     }
@@ -510,7 +569,8 @@ class Worker {
      *
      * @return bool
      */
-    private function watchdogProcessStatus($status) {
+    private function watchdogProcessStatus($status)
+    {
         switch (true) {
             case pcntl_wifexited($status):
                 $code = pcntl_wexitstatus($status);
@@ -520,25 +580,37 @@ class Worker {
             case pcntl_wifsignaled($status):
                 $sig = pcntl_wtermsig($status);
                 if ($sig !== SIGKILL) {
-                    $this->logger->warn(sprintf("watchdog %d terminated with unhandled signal %s\n", $this->watchdogPID, pcntl_sig_name($sig)));
+                    $this->logger->warn(
+                        sprintf(
+                            "watchdog %d terminated with unhandled signal %s\n",
+                            $this->watchdogPID,
+                            pcntl_sig_name($sig)
+                        )
+                    );
                 }
                 return true;
 
             case pcntl_wifstopped($status):
                 $sig = pcntl_wstopsig($status);
-                $this->logger->warn(sprintf("watchdog %d was stopped with signal %s\n", $this->watchdogPID, pcntl_sig_name($sig)));
+                $this->logger->warn(
+                    sprintf("watchdog %d was stopped with signal %s\n", $this->watchdogPID, pcntl_sig_name($sig))
+                );
                 return false;
 
             default:
                 $this->logger->error(sprintf("unexpected status for watchdog %d; exiting\n", $this->childPID));
                 exit(1);
         }
-
     }
 
-    private function watchdogKill() {
+    private function watchdogKill()
+    {
         if ($this->watchdogPID) {
-            $this->logger->info('{type}: Killing watchdog at {child}', ['child' => $this->watchdogPID, 'type' => $this->who]);
+            $this->logger->info(
+                '{type}: Killing watchdog at {child}',
+                ['child' => $this->watchdogPID, 'type' => $this->who]
+            );
+
             if (pcntl_waitpid($this->watchdogPID, $status, WNOHANG) != -1) {
                 posix_kill($this->watchdogPID, SIGKILL);
             }
@@ -585,7 +657,8 @@ class Worker {
         $this->doShutdown();
     }
 
-    protected function doShutdown() {
+    protected function doShutdown()
+    {
         $this->shutdown = true;
     }
 
@@ -614,13 +687,15 @@ class Worker {
         $this->watchdogKill();
     }
 
-    protected function updateProcLine($status) {
+    protected function updateProcLine($status)
+    {
         $processTitle = 'qless-' . Qless::VERSION . ': ' . $status;
         cli_set_process_title($processTitle);
     }
 }
 
-function pcntl_sig_name($sig_no) {
+function pcntl_sig_name($sig_no)
+{
     static $pcntl_contstants;
     if (!isset($pcntl_contstants)) {
         $a                = get_defined_constants(true)["pcntl"];

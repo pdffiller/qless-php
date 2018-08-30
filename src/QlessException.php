@@ -3,15 +3,20 @@
 namespace Qless;
 
 /**
- * The base class for all qless exceptions
+ * Qless\QlessException
+ *
+ * The base class for all qless exceptions.
+ *
+ * @package Qless
  */
 class QlessException extends \Exception
 {
-
     protected $area;
 
-    function __construct($message, $area = null, $code = 0, \Exception $previous = null) {
+    public function __construct($message, $area = null, $code = 0, \Exception $previous = null)
+    {
         parent::__construct($message, $code, $previous);
+
         $this->area = $area;
     }
 
@@ -20,7 +25,8 @@ class QlessException extends \Exception
      *
      * @return QlessException
      */
-    public static function createExceptionFromError($error) {
+    public static function createExceptionFromError($error)
+    {
 
         if (preg_match('/^ERR.*user_script:\d+:\s*(?<area>[\w.]+)\(\):\s*(?<message>.*)/', $error, $matches) > 0) {
             $area    = $matches['area'];
@@ -42,20 +48,10 @@ class QlessException extends \Exception
             default:
                 return new QlessException($message, $area);
         }
-
     }
 
-    public function getArea() {
+    public function getArea()
+    {
         return $this->area;
     }
-}
-
-class InvalidJobException extends QlessException
-{
-
-}
-
-class JobLostException extends QlessException
-{
-
 }
