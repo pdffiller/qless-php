@@ -1,10 +1,10 @@
 {
     "name": "pdffiller/qless-php",
-    "description": "Qless bindings for PHP",
+    "description": "PHP Bindings for qless",
     "keywords": [
         "qless",
         "queue",
-        "job",
+        "jobs",
         "lua",
         "redis",
         "worker",
