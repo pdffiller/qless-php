@@ -10,7 +10,7 @@ use Qless\Queue;
  * @group performance
  * @package Qless\Tests
  */
-class QueuePerformanceTest extends QlessTest
+class QueuePerformanceTest extends QlessTestCase
 {
     const TEST_TIME = 2;
 

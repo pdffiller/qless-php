@@ -1,0 +1,60 @@
+sudo: false
+dist: trusty
+
+language: php
+
+php:
+  - '7.0'
+  - '7.1'
+  - '7.2'
+  - nightly
+
+services:
+  - redis-server
+
+git:
+  depth: 1
+
+cache:
+  apt: true
+  ccache: true
+  timeout: 604800
+  directories:
+    - $HOME/.composer/cache
+    - $HOME/pear
+
+matrix:
+  fast_finish: true
+  allow_failures:
+    - php: nightly
+
+env:
+  global:
+  - REDIS_HOST="127.0.0.1"
+  - REDIS_PORT="6379"
+
+before_install:
+  - if [[ ! -z "${GH_TOKEN}" ]]; then composer config github-oauth.github.com ${GH_TOKEN}; echo "Configured Github token"; fi;
+  - ulimit -c unlimited -S || true
+  - bash tests/ci/pear_setup.sh
+  - phpenv config-add $TRAVIS_BUILD_DIR/tests/ci/ci.ini
+
+install:
+  - |
+    composer install \
+        --no-interaction \
+        --no-ansi \
+        --no-progress \
+        --no-suggest
+
+script:
+  - composer lint
+  - composer test
+
+after_success:
+  - if [[ ! -z "${CODECOV_TOKEN}" ]]; then (bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"); fi;
+
+notifications:
+  email:
+    on_success: never
+    on_failure: never

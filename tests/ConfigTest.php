@@ -7,7 +7,7 @@ namespace Qless\Tests;
  *
  * @package Qless\Tests
  */
-class ConfigTest extends QlessTest
+class ConfigTest extends QlessTestCase
 {
     public function testDefaultHeartbeat()
     {

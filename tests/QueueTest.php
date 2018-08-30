@@ -5,11 +5,11 @@ namespace Qless\Tests;
 use Qless\Queue;
 
 /**
- * Qless\Tests\LuaTester
+ * Qless\Tests\QueueTest
  *
  * @package Qless\Tests
  */
-class QueueTest extends QlessTest
+class QueueTest extends QlessTestCase
 {
     public function testPutAndPop()
     {

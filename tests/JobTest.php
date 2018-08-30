@@ -9,7 +9,7 @@ use Qless\Queue;
  *
  * @package Qless\Tests
  */
-class JobTest extends QlessTest
+class JobTest extends QlessTestCase
 {
     /**
      * @expectedException \Qless\JobLostException
@@ -163,8 +163,6 @@ class JobTest extends QlessTest
         $job1->cancel();
     }
 
-    #region tags
-
     public function testItCanAddTagsToAJobWithNoExistingTags()
     {
         $queue = new Queue("testQueue", $this->client);
@@ -203,10 +201,6 @@ class JobTest extends QlessTest
         $data = json_decode($this->client->get('jid-1'));
         $this->assertEquals(['1'], $data->tags);
     }
-
-    #endregion
-
-    #region requeue
 
     public function testRequeueJob()
     {
@@ -254,6 +248,4 @@ class JobTest extends QlessTest
         $this->client->cancel('jid-1');
         $job->requeue();
     }
-
-    #endregion
 }

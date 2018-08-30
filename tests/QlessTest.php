@@ -12,11 +12,19 @@ use PHPUnit\Framework\TestCase;
  *
  * @package Qless\Tests
  */
-class QlessTest extends TestCase
+abstract class QlessTestCase extends TestCase
 {
+    /**  @var Client */
+    protected $client;
+
     public static $REDIS_HOST;
     public static $REDIS_PORT;
 
+    /**
+     * {@inheritdoc}
+     *
+     * @return void
+     */
     public static function setUpBeforeClass()
     {
         self::$REDIS_HOST = getenv('REDIS_HOST') ?: 'localhost';
@@ -24,15 +32,20 @@ class QlessTest extends TestCase
     }
 
     /**
-     * @varClient
+     * {@inheritdoc}
+     *
+     * @return void
      */
-    protected $client;
-
     public function setUp()
     {
         $this->client = new Client(self::$REDIS_HOST, self::$REDIS_PORT);
     }
 
+    /**
+     * {@inheritdoc}
+     *
+     * @return void
+     */
     public function tearDown()
     {
         $this->client->lua->flush();
