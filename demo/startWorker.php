@@ -1,15 +1,14 @@
 <?php
 
-require_once '../lib/Qless/Worker.php';
-require_once '../lib/Qless/Queue.php';
-require_once '../lib/Qless/Client.php';
-require_once 'TestWorkerImpl.php';
+use Qless\Client;
+use Qless\Worker;
 
-$queues = ['testQueue1','testQueue2'];
-$REDIS_HOST = getenv('REDIS_HOST') ?: 'localhost';
-$REDIS_PORT = getenv('REDIS_PORT') ?: 6380;
+require_once './TestWorkerImpl.php';
+require_once './bootstrap.php';
 
-$client = new Qless\Client($REDIS_HOST, $REDIS_PORT);
-$worker = new Qless\Worker("TestWorker_1", $queues, $client, 5);
+$queues = ['testQueue1', 'testQueue2'];
+
+$client = new Client(REDIS_HOST, REDIS_PORT);
+$worker = new Worker("TestWorker_1", $queues, $client, 5);
 
 $worker->run();
