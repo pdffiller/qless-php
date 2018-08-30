@@ -28,8 +28,12 @@ matrix:
   allow_failures:
     - php: nightly
 
-before_install:
+env:
+  global:
+  - REDIS_HOST="127.0.0.1"
+  - REDIS_PORT="6379"
 
+before_install:
   - if [[ ! -z "${GH_TOKEN}" ]]; then composer config github-oauth.github.com ${GH_TOKEN}; echo "Configured Github token"; fi;
   - ulimit -c unlimited -S || true
   - bash tests/ci/pear_setup.sh
