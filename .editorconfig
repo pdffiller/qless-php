@@ -16,8 +16,13 @@ trim_trailing_whitespace = true
 indent_style             = tab
 trim_trailing_whitespace = true
 
-[*.{json,yml,xml,lua}]
+[*.{yml,xml,lua}]
 indent_size              = 2
+indent_style             = space
+trim_trailing_whitespace = true
+
+[composer.json]
+indent_size              = 4
 indent_style             = space
 trim_trailing_whitespace = true
 
