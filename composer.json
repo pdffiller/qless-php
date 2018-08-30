@@ -25,6 +25,7 @@
     "require": {
         "php": ">=7.0 <8.0",
         "ext-pcntl": "*",
+        "ext-redis": "*",
         "psr/log": "^1.0"
     },
     "conflict": {
