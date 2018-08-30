@@ -7,7 +7,7 @@ namespace Qless\Tests;
  *
  * @package Qless\Tests
  */
-class JobsTest extends QlessTest
+class JobsTest extends QlessTestCase
 {
     public function testItReturnsNullForInvalidJobID()
     {

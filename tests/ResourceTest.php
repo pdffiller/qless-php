@@ -7,7 +7,7 @@ namespace Qless\Tests;
  *
  * @package Qless\Tests
  */
-class ResourceTest extends QlessTest
+class ResourceTest extends QlessTestCase
 {
     public function testResourceDoesNotExist()
     {
