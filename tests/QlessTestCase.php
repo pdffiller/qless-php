@@ -6,7 +6,7 @@ use Qless\Client;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Qless\Tests\QlessTest
+ * Qless\Tests\QlessTestCase
  *
  * Base class for qless-php testing
  *
@@ -17,19 +17,11 @@ abstract class QlessTestCase extends TestCase
     /**  @var Client */
     protected $client;
 
-    public static $REDIS_HOST;
-    public static $REDIS_PORT;
+    /** @var string */
+    protected $redisHost;
 
-    /**
-     * {@inheritdoc}
-     *
-     * @return void
-     */
-    public static function setUpBeforeClass()
-    {
-        self::$REDIS_HOST = getenv('REDIS_HOST') ?: 'localhost';
-        self::$REDIS_PORT = getenv('REDIS_PORT') ?: 6379;
-    }
+    /** @var int */
+    protected $redisPort;
 
     /**
      * {@inheritdoc}
@@ -38,7 +30,13 @@ abstract class QlessTestCase extends TestCase
      */
     public function setUp()
     {
-        $this->client = new Client(self::$REDIS_HOST, self::$REDIS_PORT);
+        $this->redisHost = getenv('REDIS_HOST') ?: '127.0.0.1';
+        $this->redisPort = getenv('REDIS_PORT') ?: 6379;
+
+        $this->client = new Client(
+            $this->redisHost,
+            $this->redisPort
+        );
     }
 
     /**

@@ -41,9 +41,8 @@ class QueuePerformanceTest extends QlessTestCase
 
     public function testPerfDirectRedis()
     {
-
         $redis = new \Redis();
-        $redis->connect(self::$REDIS_HOST, self::$REDIS_PORT);
+        $redis->connect($this->redisHost, $this->redisPort);
 
         $cb = $this->getProfilerForCallback(function ($e) use ($redis) {
             $redis->hSet($e, 'data', '');
@@ -54,7 +53,6 @@ class QueuePerformanceTest extends QlessTestCase
 
     public function testPerfQueueLength()
     {
-
         $queue = new Queue("testQueue", $this->client);
         $cb = $this->getProfilerForCallback(function ($e) use ($queue) {
             $queue->length();
