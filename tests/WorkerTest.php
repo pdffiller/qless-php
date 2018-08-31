@@ -30,10 +30,12 @@ class WorkerTest extends QlessTestCase
     /**
      * @test
      * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessage Provided Job class "stdClass" does not implement Qless\Job\JobHandlerInterface interface.
      */
     public function shouldThrowExceptionInCaseOfInvalidJobClass()
     {
+        $this->expectExceptionMessage(
+            'Provided Job class "stdClass" does not implement Qless\Job\JobHandlerInterface interface.'
+        );
         $worker = new Worker('test', [], $this->createMock(Client::class));
         $worker->registerJobPerformHandler(\stdClass::class);
     }
