@@ -4,6 +4,8 @@ namespace Qless\Demo;
 
 use Qless\Job;
 use Qless\Job\JobHandlerInterface;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
 
 /**
  * Qless\Demo\JobHandler
@@ -12,6 +14,15 @@ use Qless\Job\JobHandlerInterface;
  */
 class JobHandler implements JobHandlerInterface
 {
+    /** @var Logger */
+    private $logger;
+
+    public function __construct()
+    {
+        $this->logger = new Logger('APP');
+        $this->logger->pushHandler(new StreamHandler(STDOUT, Logger::DEBUG));
+    }
+
     /**
      * {@inheritdoc}
      *
@@ -22,12 +33,14 @@ class JobHandler implements JobHandlerInterface
      */
     public function perform(Job $job)
     {
-        fprintf(STDOUT, "Here in %s perform\n", __CLASS__);
+        $this->logger->debug('JobHandler: The job data is: ', $job->getData());
 
         $instance = $job->getInstance();
         $data = $job->getData();
         $performMethod = $data['performMethod'];
 
         $instance->$performMethod($job);
+
+        $this->logger->debug("JobHandler: Finished Job::{$performMethod}");
     }
 }

@@ -4,8 +4,8 @@ use Qless\Client;
 use Qless\Worker;
 use Qless\Demo\JobHandler;
 
-require_once '../vendor/autoload.php';
-require_once './bootstrap.php';
+require_once dirname(__FILE__) . '/../vendor/autoload.php';
+require_once dirname(__FILE__) . '/bootstrap.php';
 
 $queues = ['testQueue1', 'testQueue2'];
 $client = new Client(REDIS_HOST, REDIS_PORT);

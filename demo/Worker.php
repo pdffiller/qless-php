@@ -3,6 +3,8 @@
 namespace Qless\Demo;
 
 use Qless\Job;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
 
 /**
  * Qless\Demo\Worker
@@ -11,9 +13,18 @@ use Qless\Job;
  */
 class Worker
 {
+    /** @var Logger */
+    private $logger;
+
+    public function __construct()
+    {
+        $this->logger = new Logger('APP');
+        $this->logger->pushHandler(new StreamHandler(STDOUT, Logger::DEBUG));
+    }
+
     public function myPerformMethod(Job $job)
     {
-        fprintf(STDOUT, "Here in %s\n", __METHOD__);
+        $this->logger->debug('We are in :', [__METHOD__]);
 
         $job->complete();
 
@@ -28,16 +39,16 @@ class Worker
 
     public function myThrowMethod(Job $job)
     {
-        fprintf(STDERR, "Here in %s\n", __METHOD__);
-        sleep(15);
+        $this->logger->debug('We are in: ', [__METHOD__]);
+        sleep(2);
 
         throw new \Exception('Sample job exception message.');
     }
 
     public function exitMethod(Job $job)
     {
-        fprintf(STDERR, "Here in %s\n", __METHOD__);
-        sleep(5);
+        $this->logger->debug('We are in :', [__METHOD__]);
+        sleep(1);
 
         exit(1);
     }
