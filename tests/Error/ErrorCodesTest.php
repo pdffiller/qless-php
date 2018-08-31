@@ -5,6 +5,11 @@ namespace Qless\Tests\Error;
 use Qless\Error\ErrorCodes;
 use Qless\Tests\QlessTestCase;
 
+/**
+ * Qless\Tests\ErrorCodesTest
+ *
+ * @package Qless\Tests
+ */
 class ErrorCodesTest extends QlessTestCase
 {
     /**

@@ -5,6 +5,7 @@ namespace Qless;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qless\Error\ErrorCodes;
+use Qless\Job\JobHandlerInterface;
 
 /**
  * Qless\Worker
@@ -19,14 +20,11 @@ class Worker
 
     private $processType = self::PROCESS_TYPE_MASTER;
 
-    /**
-     * @var Queue[]
-     */
+    /** @var Queue[] */
     private $queues = [];
     private $interval = 0;
-    /**
-     * @var Client
-     */
+
+    /** @var Client */
     private $client;
 
     private $shutdown = false;
@@ -45,19 +43,13 @@ class Worker
     private $who = 'master';
     private $logContext;
 
-    /**
-     * @var resource[]
-     */
+    /** @var resource[] */
     private $sockets = [];
 
-    /**
-     * @var LoggerInterface
-     */
+    /** @var LoggerInterface */
     private $logger;
 
-    /**
-     * @var Job
-     */
+    /** @var Job */
     private $job;
 
     public function __construct($name, $queues, Client $client, $interval = 60)
@@ -78,24 +70,33 @@ class Worker
     }
 
     /**
-     * @param string $className
-     * @throws \Exception
+     * Register Job perform handler.
+     *
+     * @param string $fqcl The fully qualified class name.
+     * @return void
+     *
+     * @throws \RuntimeException
      */
-    public function registerJobPerformHandler($className)
+    public function registerJobPerformHandler($fqcl)
     {
-        if (!class_exists($className)) {
-            throw new \Exception(
-                'Could not find job perform class ' . $className . '.'
+        if (!class_exists($fqcl)) {
+            throw new \RuntimeException(
+                sprintf('Could not find job perform class %s.', $fqcl)
             );
         }
 
-        if (!method_exists($className, 'perform')) {
-            throw new \Exception(
-                'Job class ' . $className . ' does not contain perform method '
+        $interfaces = class_implements($fqcl);
+        if ($interfaces === false || in_array(JobHandlerInterface::class, $interfaces, true) == false) {
+            throw new \InvalidArgumentException(
+                sprintf(
+                    'Provided Job class "%s" does not implement %s interface.',
+                    $fqcl,
+                    JobHandlerInterface::class
+                )
             );
         }
 
-        $this->jobPerformClass = $className;
+        $this->jobPerformClass = $fqcl;
     }
 
     /**
