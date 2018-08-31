@@ -27,7 +27,6 @@ class QlessException extends \Exception
      */
     public static function createExceptionFromError($error)
     {
-
         if (preg_match('/^ERR.*user_script:\d+:\s*(?<area>[\w.]+)\(\):\s*(?<message>.*)/', $error, $matches) > 0) {
             $area    = $matches['area'];
             $message = $matches['message'];

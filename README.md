@@ -1,6 +1,7 @@
 # qless-php
 
 [![Build Status](https://travis-ci.org/pdffiller/qless-php.svg?branch=master)](https://travis-ci.org/pdffiller/qless-php)
+[![Code Coverage](https://codecov.io/gh/pdffiller/qless-php/branch/master/graph/badge.svg)](https://codecov.io/gh/pdffiller/qless-php)
 
 PHP Bindings for qless.
 

@@ -4,6 +4,8 @@ namespace Qless;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qless\Error\ErrorCodes;
+use Qless\Job\JobHandlerInterface;
 
 /**
  * Qless\Worker
@@ -18,14 +20,11 @@ class Worker
 
     private $processType = self::PROCESS_TYPE_MASTER;
 
-    /**
-     * @var Queue[]
-     */
-    private $queues = array();
+    /** @var Queue[] */
+    private $queues = [];
     private $interval = 0;
-    /**
-     * @var Client
-     */
+
+    /** @var Client */
     private $client;
 
     private $shutdown = false;
@@ -36,6 +35,7 @@ class Worker
 
     private $childProcesses = 0;
 
+    /** @var ?string */
     private $jobPerformClass = null;
 
     private $paused = false;
@@ -43,19 +43,13 @@ class Worker
     private $who = 'master';
     private $logContext;
 
-    /**
-     * @var resource[]
-     */
+    /** @var resource[] */
     private $sockets = [];
 
-    /**
-     * @var LoggerInterface
-     */
+    /** @var LoggerInterface */
     private $logger;
 
-    /**
-     * @var Job
-     */
+    /** @var Job */
     private $job;
 
     public function __construct($name, $queues, Client $client, $interval = 60)
@@ -75,37 +69,41 @@ class Worker
         $this->logger = $logger;
     }
 
-    public function registerJobPerformHandler($klass)
+    /**
+     * Register Job perform handler.
+     *
+     * @param string $fqcl The fully qualified class name.
+     * @return void
+     *
+     * @throws \RuntimeException
+     */
+    public function registerJobPerformHandler($fqcl)
     {
-        if (!class_exists($klass)) {
-            throw new \Exception(
-                'Could not find job perform class ' . $klass . '.'
+        if (!class_exists($fqcl)) {
+            throw new \RuntimeException(
+                sprintf('Could not find job perform class %s.', $fqcl)
             );
         }
 
-        if (!method_exists($klass, 'perform')) {
-            throw new \Exception(
-                'Job class ' . $klass . ' does not contain perform method '
+        $interfaces = class_implements($fqcl);
+        if ($interfaces === false || in_array(JobHandlerInterface::class, $interfaces, true) == false) {
+            throw new \InvalidArgumentException(
+                sprintf(
+                    'Provided Job class "%s" does not implement %s interface.',
+                    $fqcl,
+                    JobHandlerInterface::class
+                )
             );
         }
 
-        $this->jobPerformClass = $klass;
+        $this->jobPerformClass = $fqcl;
     }
-
-    public static $ERROR_CODES = [
-        E_ERROR => 'E_ERROR',
-        E_CORE_ERROR => 'E_CORE_ERROR',
-        E_COMPILE_ERROR => 'E_COMPILE_ERROR',
-        E_PARSE => 'E_PARSE',
-        E_USER_ERROR => 'E_USER_ERROR',
-    ];
 
     /**
      * starts worker
      */
     public function run()
     {
-
         declare(ticks=1);
 
         $this->startup();
@@ -235,31 +233,31 @@ class Worker
     /**
      * Register signal handlers that a worker should respond to.
      *
-     * TERM: Shutdown immediately and stop processing jobs.
-     * INT: Shutdown immediately and stop processing jobs.
-     * QUIT: Shutdown after the current job finishes processing.
+     * TERM: Shutdown immediately and stop processing jobs (quick shutdown).
+     * INT:  Shutdown immediately and stop processing jobs (quick shutdown).
+     * QUIT: Shutdown after the current job finishes processing (graceful shutdown).
      * USR1: Kill the forked child immediately and continue processing jobs.
+     * USR2: Pausing job processing.
+     * CONT: Resumes worker allowing it to pick.
+     *
+     * @link http://man7.org/linux/man-pages/man7/signal.7.html
+     *
+     * @return void
      */
     private function masterRegisterSigHandlers()
     {
-        pcntl_signal(SIGTERM, function () {
-            $this->shutdownNow();
-        }, false);
-        pcntl_signal(SIGINT, function () {
-            $this->shutdownNow();
-        }, false);
-        pcntl_signal(SIGQUIT, function () {
-            $this->shutdown();
-        }, false);
-        pcntl_signal(SIGUSR1, function () {
-            $this->killChildren();
-        }, false);
-        pcntl_signal(SIGUSR2, function () {
-            $this->pauseProcessing();
-        }, false);
-        pcntl_signal(SIGCONT, function () {
-            $this->unPauseProcessing();
-        }, false);
+        if (!function_exists('pcntl_signal')) {
+            return;
+        }
+
+        pcntl_signal(SIGTERM, [$this, 'shutDownNow'], false);
+        pcntl_signal(SIGINT, [$this, 'shutDownNow'], false);
+        pcntl_signal(SIGQUIT, [$this, 'shutdown'], false);
+        pcntl_signal(SIGUSR1, [$this, 'killChildren'], false);
+        pcntl_signal(SIGUSR2, [$this, 'pauseProcessing'], false);
+        pcntl_signal(SIGCONT, [$this, 'unPauseProcessing'], false);
+
+        $this->logger->info('Registered signals');
     }
 
     /**
@@ -325,8 +323,7 @@ class Worker
             }
             unset($reserved);
 
-            $type = $error['type'];
-            if (!isset(self::$ERROR_CODES[$type])) {
+            if (call_user_func(new ErrorCodes, $error['type']) == null) {
                 return;
             }
 
@@ -353,10 +350,11 @@ class Worker
             $error_info .= $res;
         }
         $error_info = unserialize($error_info);
+
         if (is_array($error_info)) {
             return sprintf(
                 '[%s] %s:%d %s',
-                self::$ERROR_CODES[$error_info['type']],
+                call_user_func(new ErrorCodes, $error_info['type']) ?: 'UNKNOWN',
                 $error_info['file'],
                 $error_info['line'],
                 $error_info['message']
@@ -368,6 +366,7 @@ class Worker
 
     /**
      * @param int $PID
+     * @param string $child_type
      * @param int $exitStatus
      *
      * @return bool|string false if exit status indicates success; otherwise, a string containing the error messages
@@ -389,8 +388,6 @@ class Worker
         return $jobFailedMessage;
     }
 
-
-    #region child methods executed in child process
 
     private function childStart()
     {
@@ -424,26 +421,24 @@ class Worker
      */
     public function childPerform(Job $job)
     {
+        $context = ['job' => $job->getId(), 'type' => $this->who];
+
         try {
             if ($this->jobPerformClass) {
+                /** @var object $performClass */
                 $performClass = new $this->jobPerformClass;
                 $performClass->perform($job);
             } else {
                 $job->perform();
             }
-            $this->logger->notice('{type}: Job {job} has finished', ['job' => $job->getId(), 'type' => $this->who]);
+            $this->logger->notice('{type}: Job {job} has finished', $context);
         } catch (\Exception $e) {
-            $this->logger->critical(
-                '{type}: {job} has failed {stack}',
-                ['job' => $job->getId(), 'stack' => $e->getMessage(), 'type' => $this->who]
-            );
+            $context['stack'] = $e->getMessage();
+
+            $this->logger->critical('{type}: {job} has failed {stack}', $context);
             $job->fail('system:fatal', $e->getMessage());
         }
     }
-
-    #endregion
-
-    #region child methods executed in master
 
     /**
      * @param $status
@@ -497,10 +492,6 @@ class Worker
             $this->childPID = null;
         }
     }
-
-    #endregion
-
-    #region watchdog methods executed in watchdog
 
     private function watchdogStart()
     {
@@ -617,12 +608,6 @@ class Worker
             $this->watchdogPID = null;
         }
     }
-
-    #endregion
-
-    #region watchdog methods executed in master
-
-    #endregion
 
     /**
      * Signal handler callback for USR2, pauses processing of new jobs.

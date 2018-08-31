@@ -24,14 +24,18 @@
     ],
     "require": {
         "php": ">=7.0 <8.0",
+        "ext-json": "*",
         "ext-pcntl": "*",
         "ext-redis": "*",
+        "ext-posix": "*",
+        "ext-sockets": "*",
         "psr/log": "^1.0"
     },
     "conflict": {
         "contatta/qless-php": "*"
     },
     "require-dev": {
+        "monolog/monolog": "^1.23",
         "phpunit/phpunit": ">=5.3 <8.0",
         "squizlabs/php_codesniffer": "3.*"
     },
@@ -42,7 +46,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Qless\\": "src/",
+            "Qless\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Qless\\Demo\\": "demo/",
             "Qless\\Tests\\": "tests/"
         }
     },
