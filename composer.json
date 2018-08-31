@@ -45,7 +45,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Qless\\": "src/",
+            "Qless\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Qless\\Demo\\": "demo/",
             "Qless\\Tests\\": "tests/"
         }
     },

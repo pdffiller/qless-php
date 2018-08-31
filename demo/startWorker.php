@@ -3,7 +3,6 @@
 use Qless\Client;
 use Qless\Worker;
 
-require_once './TestWorkerImpl.php';
 require_once './bootstrap.php';
 
 $queues = ['testQueue1', 'testQueue2'];
