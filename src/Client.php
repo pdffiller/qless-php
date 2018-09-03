@@ -2,6 +2,8 @@
 
 namespace Qless;
 
+use Qless\Resource as QResource;
+
 /**
  * Qless\Client
  *
@@ -27,33 +29,35 @@ namespace Qless;
  * @method string[] tag(string $op, $tags)
  *
  * @property-read Jobs jobs
+ * @property-read Config config
+ * @property-read Lua lua
  */
 class Client
 {
-    /**
-     * Used for testing and internal use.
-     *
-     * @var Lua
-     */
-    public $lua;
-    /**
-     * @var Config
-     */
-    public $config;
-    /**
-     * @var array
-     */
+    /** @var Lua */
+    private $lua;
+
+    /** @var Config */
+    private $config;
+
+    /** @var array */
     private $redis = [];
 
-    /**
-     * @var Jobs
-     */
+    /** @var Jobs */
     private $jobs;
 
-    public function __construct($host = 'localhost', $port = 6379)
+    /**
+     * Client constructor.
+     *
+     * @param string $host    Can be a host, or the path to a unix domain socket.
+     * @param int    $port    The redis port [optional].
+     * @param float  $timeout Value in seconds (optional, default is 0.0 meaning unlimited).
+     */
+    public function __construct(string $host = '127.0.0.1', int $port = 6379, float $timeout = 0.0)
     {
         $this->redis['host']  = $host;
         $this->redis['port']  = $port;
+        $this->redis['timeout']  = $timeout;
 
         $this->lua    = new Lua($this->redis);
         $this->config = new Config($this);
@@ -65,7 +69,7 @@ class Client
      *
      * @return string
      */
-    public function getRedisHost()
+    public function getRedisHost(): string
     {
         return $this->redis['host'];
     }
@@ -75,19 +79,29 @@ class Client
      *
      * @return int
      */
-    public function getRedisPort()
+    public function getRedisPort(): int
     {
         return $this->redis['port'];
     }
 
     /**
-     * Create a new listener
+     * Return the redis timeout.
+     *
+     * @return float
+     */
+    public function getRedisTimeout(): float
+    {
+        return $this->redis['port'];
+    }
+
+    /**
+     * Create a new listener.
      *
      * @param $channels
      *
      * @return Listener
      */
-    public function createListener($channels)
+    public function createListener($channels): Listener
     {
         return new Listener($this->redis, $channels);
     }
@@ -117,6 +131,8 @@ class Client
      * @param mixed  $params    Additional parameters.
      *
      * @return string
+     *
+     * @throws QlessException
      */
     public function recur(
         string $klass,
@@ -133,70 +149,94 @@ class Client
         return $this->lua->run('recur', func_get_args());
     }
 
-    public function __call($command, $arguments)
+    /**
+     * Call a specific q-less command.
+     *
+     * @param string $command
+     * @param $arguments
+     * @return mixed
+     *
+     * @throws QlessException
+     */
+    public function __call(string $command, array $arguments)
     {
         return $this->lua->run($command, $arguments);
     }
 
+    /**
+     * Getting inaccessible properties.
+     *
+     * @param string $prop
+     * @return null|Config|Jobs|Lua
+     */
     public function __get($prop)
     {
-        if ($prop === 'jobs') {
-            return $this->jobs;
+        switch ($prop) {
+            case 'jobs':
+                return $this->jobs;
+            case 'config':
+                return $this->config;
+            case 'lua':
+                return $this->lua;
+            default:
+                return null;
         }
-
-        return null;
     }
 
     /**
-     * Call a specific q-less command
+     * Call a specific q-less command.
      *
      * @param string $command
-     * @param mixed  $arguments...
+     * @param mixed $arguments
+     * @return mixed|null
      *
-     * @return mixed
+     * @throws QlessException
      */
-    public function call($command, $arguments)
+    public function call(string $command, ...$arguments)
     {
         $arguments = func_get_args();
         array_shift($arguments);
-        return $this->lua->run($command, $arguments);
+
+        return $this->__call($command, $arguments);
     }
 
     /**
-     * Returns
-     * @param string $name name of queue
+     * Creates a Queue instance.
      *
+     * @param string $name The name of a queue.
      * @return Queue
      */
-    public function getQueue($name)
+    public function getQueue($name): Queue
     {
         return new Queue($name, $this);
     }
 
+
     /**
-     * APIs for manipulating a resource
+     * Creates a Resource instance.
      *
-     * @param $name
-     *
-     * @return Resource
+     * @param string $name The name of a resource.
+     * @return QResource
      */
-    public function getResource($name)
+    public function getResource(string $name): QResource
     {
-        return new Resource($this, $name);
+        return new QResource($this, $name);
     }
 
     /**
-     * Returns APIs for querying information about jobs
+     * Returns APIs for querying information about jobs.
      *
      * @return Jobs
      */
-    public function getJobs()
+    public function getJobs(): Jobs
     {
         return $this->jobs;
     }
 
     /**
-     * Call to reconnect to Redis server
+     * Call to reconnect to Redis server.
+     *
+     * @return void
      */
     public function reconnect()
     {
