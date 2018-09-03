@@ -9,112 +9,130 @@ namespace Qless;
  */
 class Resource
 {
-    /**
-     * @var Client
-     */
+    /** @var Client */
     private $client;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $name;
 
-    /**
-     * @var int
-     */
+    /** @var int */
     private $max;
 
-    public function __construct(Client $client, $name)
+    /**
+     * Resource constructor.
+     *
+     * @param Client $client
+     * @param string $name
+     */
+    public function __construct(Client $client, string $name)
     {
         $this->client = $client;
-        $this->name   = $name;
+        $this->name = $name;
     }
 
     /**
-     * Returns true if this resource exists
+     * Returns true if this resource exists.
      *
      * @return bool
+     *
+     * @throws QlessException
      */
-    public function exists()
+    public function exists(): bool
     {
         return $this->client->lua->run('resource.exists', [$this->name]) === 1;
     }
 
     /**
-     * Gets the current lock count for this resource
+     * Gets the current lock count for this resource.
+     *
      * @return int
-     */
-    public function getLockCount()
-    {
-        return $this->client->lua->run('resource.lock_count', [$this->name]);
-    }
-
-    /**
-     * Get a list of job identifiers that have active locks for this resource
-     *
-     * @return string[]
-     */
-    public function getLocks()
-    {
-        $data = $this->client->lua->run('resource.locks', [$this->name]);
-
-        return json_decode($data);
-    }
-
-    /**
-     * Gets the current lock count for this resource
-     * @return int
-     */
-    public function getPendingCount()
-    {
-        return $this->client->lua->run('resource.pending_count', [$this->name]);
-    }
-
-    /**
-     * Gets a list of job identifiers that are waiting on this resource
-     *
-     * @return string[]
-     */
-    public function getPending()
-    {
-        $data = $this->client->lua->run('resource.pending', [$this->name]);
-
-        return json_decode($data);
-    }
-
-    /**
-     * Deletes this resource
-     *
-     * @return bool true if resource was deleted
      *
      * @throws QlessException
      */
-    public function delete()
+    public function getLockCount(): int
     {
-        $res = $this->client->lua->run('resource.unset', [$this->name]) === 1;
-
-        return $res;
+        return (int) $this->client->lua->run('resource.lock_count', [$this->name]);
     }
 
     /**
-     * @param int $max Update the maximum number of units available for this resource
+     * Get a list of job identifiers that have active locks for this resource.
+     *
+     * @return string[]
+     *
+     * @throws QlessException
      */
-    public function setMax($max)
+    public function getLocks(): array
     {
-        $this->client->lua->run('resource.set', [$this->name, $max]);
-        unset($this->max);
+        $data = $this->client->lua->run('resource.locks', [$this->name]);
+
+        return $data ? json_decode($data, true) : [];
     }
 
     /**
-     * Return the maximum number of units available
+     * Gets the current lock count for this resource.
      *
      * @return int
+     *
+     * @throws QlessException
      */
-    public function getMax()
+    public function getPendingCount(): int
     {
-        if (!isset($this->max)) {
-            $this->max = $this->client->lua->run('resource.get', [$this->name]);
+        return (int) $this->client->lua->run('resource.pending_count', [$this->name]);
+    }
+
+    /**
+     * Gets a list of job identifiers that are waiting on this resource.
+     *
+     * @return string[]
+     *
+     * @throws QlessException
+     */
+    public function getPending(): array
+    {
+        $data = $this->client->lua->run('resource.pending', [$this->name]);
+
+        return $data ? json_decode($data, true) : [];
+    }
+
+    /**
+     * Deletes this resource.
+     *
+     * @return bool
+     *
+     * @throws QlessException
+     */
+    public function delete(): bool
+    {
+        return $this->client->lua->run('resource.unset', [$this->name]) === 1;
+    }
+
+    /**
+     * Update units available for this resource.
+     *
+     * @param int $max
+     * @return void
+     *
+     * @throws QlessException
+     */
+    public function setMax(int $max)
+    {
+        $this->client->lua->run('resource.set', [$this->name, $max]);
+        $this->max = null;
+    }
+
+    /**
+     * Return the maximum number of units available.
+     *
+     * @return int
+     *
+     * @throws QlessException
+     */
+    public function getMax(): int
+    {
+        if ($this->max === null) {
+            $this->max = (int) $this->client->lua->run('resource.get', [$this->name]);
         }
+
         return $this->max;
     }
 }

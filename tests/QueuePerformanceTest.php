@@ -3,16 +3,21 @@
 namespace Qless\Tests;
 
 use Qless\Queue;
+use Qless\Tests\Support\RedisAwareTrait;
 
 /**
- * Qless\Tests\LuaTester
+ * Qless\Tests\QueuePerformanceTest
  *
  * @group performance
  * @package Qless\Tests
  */
 class QueuePerformanceTest extends QlessTestCase
 {
+    use RedisAwareTrait;
+
     const TEST_TIME = 2;
+
+    protected static $report = [];
 
     public function testPerfPuttingJobs()
     {
@@ -41,8 +46,7 @@ class QueuePerformanceTest extends QlessTestCase
 
     public function testPerfDirectRedis()
     {
-        $redis = new \Redis();
-        $redis->connect($this->redisHost, $this->redisPort);
+        $redis = $this->redis();
 
         $cb = $this->getProfilerForCallback(function ($e) use ($redis) {
             $redis->hSet($e, 'data', '');
@@ -67,13 +71,46 @@ class QueuePerformanceTest extends QlessTestCase
             $s = microtime(true);
             $e = microtime(true) - $s;
             $i = 0;
+
             while ($e < $time) {
                 $cb($e);
                 ++$i;
                 $e = microtime(true) - $s;
             }
 
-            printf("%s: %d iterations in %.2f seconds, %0.2f / sec\n", $message, $i, $e, $i / $e);
+            $message = str_replace('Qless\Tests\QueuePerformanceTest::testPerf', '', $message);
+            $message = ucfirst(trim(strtolower(implode(' ', preg_split('/(?=[A-Z])/', $message)))));
+
+            self::$report[] = sprintf(
+                ' %-30s %d iterations in %.3f seconds, %0.3f / sec',
+                ($message ? $message . ':' : ''),
+                $i,
+                $e,
+                $i / $e
+            );
         };
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @return void
+     */
+    public static function setUpBeforeClass()
+    {
+        self::$report = [];
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @return void
+     */
+    public static function tearDownAfterClass()
+    {
+        fprintf(STDOUT, PHP_EOL . PHP_EOL);
+        foreach (self::$report as $line) {
+            fprintf(STDOUT, $line . PHP_EOL);
+        }
     }
 }

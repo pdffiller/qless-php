@@ -32,6 +32,7 @@ env:
   global:
   - REDIS_HOST="127.0.0.1"
   - REDIS_PORT="6379"
+  - REDIS_TIMEOUT="0.0"
 
 before_install:
   - if [[ ! -z "${GH_TOKEN}" ]]; then composer config github-oauth.github.com ${GH_TOKEN}; echo "Configured Github token"; fi;
@@ -50,6 +51,7 @@ install:
 script:
   - composer lint
   - composer test
+  - composer bench
 
 after_success:
   - if [[ ! -z "${CODECOV_TOKEN}" ]]; then (bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"); fi;

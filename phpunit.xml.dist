@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="vendor/autoload.php"
+         bootstrap="tests/bootstrap.php"
          colors="true"
 >
     <filter>
@@ -31,6 +31,7 @@
         <ini name="display_startup_errors" value="on"/>
         <!-- env name="REDIS_HOST" value="127.0.0.1"/ -->
         <!-- env name="REDIS_PORT" value="6379"/ -->
+        <!-- env name="REDIS_TIMEOUT" value="0.0"/ -->
     </php>
 
     <logging>

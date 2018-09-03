@@ -9,43 +9,53 @@ namespace Qless\Tests;
  */
 class ConfigTest extends QlessTestCase
 {
-    public function testDefaultHeartbeat()
+    /** @test */
+    public function shouldGetDefaultHeartbeat()
     {
-        $val = $this->client->config->get('heartbeat');
-        $this->assertEquals(60, $val);
+        $this->assertEquals(60, $this->client->config->get('heartbeat'));
     }
 
-    public function testDefaultGracePeriod()
+    /** @test */
+    public function shouldSetConfigValue()
+    {
+        $key = md5(uniqid(microtime(true), true));
+        $value = hash('sha1', uniqid(microtime(true), true));
+
+        $this->client->config->set($key, $value);
+        $this->assertEquals($value, $this->client->config->get($key));
+    }
+
+    /** @test */
+    public function shouldGetDefaultValue()
+    {
+        $this->assertEquals(null, $this->client->config->get('foo.bar.baz'));
+        $this->assertEquals('xyz', $this->client->config->get('foo.bar.baz', 'xyz'));
+    }
+
+    /** @test */
+    public function shouldGetDefaultGracePeriod()
     {
         $val = $this->client->config->get('grace-period');
         $this->assertEquals(10, $val);
     }
 
-    public function testSetHeartbeat()
+    /** @test */
+    public function shouldSetHeartbeat()
     {
         $this->client->config->set('heartbeat', 10);
         $val = $this->client->config->get('heartbeat');
         $this->assertEquals(10, $val);
     }
 
-    public function testItUsesDefaultValueWhenConfigNotSet()
+    /** @test */
+    public function shouldClearTheConfigValue()
     {
-        $val = $this->client->config->get('__blah__', 'val');
-        $this->assertEquals('val', $val);
-    }
+        $key = md5(uniqid(microtime(true), true));
+        $value = hash('sha1', uniqid(microtime(true), true));
 
-    public function testItDoesSetTheConfigValue()
-    {
-        $this->client->config->set('__blah__', 'val');
-        $val = $this->client->config->get('__blah__');
-        $this->assertEquals('val', $val);
-    }
+        $this->client->config->set($key, $value);
+        $this->client->config->clear($key);
 
-    public function testItDoesClearTheConfigValue()
-    {
-        $this->client->config->set('__blah__', 'val');
-        $this->client->config->clear('__blah__');
-        $val = $this->client->config->get('__blah__');
-        $this->assertNull($val);
+        $this->assertNull($this->client->config->get($key));
     }
 }

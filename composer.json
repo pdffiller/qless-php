@@ -60,6 +60,7 @@
     "scripts": {
         "fix-lint": "./vendor/bin/phpcbf",
         "lint": "./vendor/bin/phpcs",
-        "test": "./vendor/bin/phpunit"
+        "test": "./vendor/bin/phpunit",
+        "bench": "./vendor/bin/phpunit --group performance --dont-report-useless-tests --no-coverage --no-logging"
     }
 }

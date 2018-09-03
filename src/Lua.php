@@ -86,7 +86,6 @@ class Lua
 
         if ($error !== null) {
             $this->handleError($error);
-            return null;
         }
 
         return $result;

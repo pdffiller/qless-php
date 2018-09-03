@@ -6,13 +6,12 @@ use Qless\Demo\Worker;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
-require_once dirname(__FILE__) . '/../vendor/autoload.php';
-require_once dirname(__FILE__) . '/bootstrap.php';
+require_once __DIR__ . '/../tests/bootstrap.php';
 
 $logger = new Logger('APP');
 $logger->pushHandler(new StreamHandler(STDOUT, Logger::DEBUG));
 
-$client = new Client(REDIS_HOST, REDIS_PORT);
+$client = new Client(REDIS_HOST, REDIS_PORT, REDIS_TIMEOUT);
 $queue = new Queue('testQueue1', $client);
 
 $payload = ['payload' => 'otherData'];

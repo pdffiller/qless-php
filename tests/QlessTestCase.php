@@ -2,8 +2,9 @@
 
 namespace Qless\Tests;
 
-use Qless\Client;
 use PHPUnit\Framework\TestCase;
+use Qless\Client;
+use Qless\Tests\Support\RedisAwareTrait;
 
 /**
  * Qless\Tests\QlessTestCase
@@ -14,14 +15,10 @@ use PHPUnit\Framework\TestCase;
  */
 abstract class QlessTestCase extends TestCase
 {
+    use RedisAwareTrait;
+
     /**  @var Client */
     protected $client;
-
-    /** @var string */
-    protected $redisHost;
-
-    /** @var int */
-    protected $redisPort;
 
     /**
      * {@inheritdoc}
@@ -30,13 +27,8 @@ abstract class QlessTestCase extends TestCase
      */
     public function setUp()
     {
-        $this->redisHost = getenv('REDIS_HOST') ?: '127.0.0.1';
-        $this->redisPort = getenv('REDIS_PORT') ?: 6379;
-
-        $this->client = new Client(
-            $this->redisHost,
-            $this->redisPort
-        );
+        $config = $this->getRedisConfig();
+        $this->client = new Client($config['host'], $config['port'], $config['timeout']);
     }
 
     /**
