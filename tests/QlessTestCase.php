@@ -27,11 +27,8 @@ abstract class QlessTestCase extends TestCase
      */
     public function setUp()
     {
-        $callback = function (string $host, int $port, float $timeout) {
-            return new Client($host, $port, $timeout);
-        };
-
-        $this->client = call_user_func_array($callback, $this->config());
+        $config = $this->getRedisConfig();
+        $this->client = new Client($config['host'], $config['port'], $config['timeout']);
     }
 
     /**

@@ -22,8 +22,10 @@ trait RedisAwareTrait
     protected function redis(): Redis
     {
         if ($this->instance instanceof Redis == false) {
+            $config = $this->getRedisConfig();
+
             $this->instance = new Redis();
-            call_user_func_array([$this->instance, 'connect'], $this->config());
+            $this->instance->connect($config['host'], $config['port'], $config['timeout']);
         }
 
         return $this->instance;
@@ -35,11 +37,11 @@ trait RedisAwareTrait
      * @param array $overrides
      * @return array
      */
-    protected function config(array $overrides = []): array
+    protected function getRedisConfig(array $overrides = []): array
     {
         return array_merge([
             'host'    => REDIS_HOST,
-            'port'    =>  REDIS_PORT,
+            'port'    => REDIS_PORT,
             'timeout' => REDIS_TIMEOUT,
         ], $overrides);
     }

@@ -6,7 +6,7 @@ use Qless\Queue;
 use Qless\Tests\Support\RedisAwareTrait;
 
 /**
- * Qless\Tests\LuaTester
+ * Qless\Tests\QueuePerformanceTest
  *
  * @group performance
  * @package Qless\Tests

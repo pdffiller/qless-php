@@ -515,6 +515,10 @@ class Worker
         ini_set("default_socket_timeout", -1);
         $l = $this->client->createListener(['ql:log']);
         $l->messages(function ($channel, $event) use ($l, $jid) {
+            if (is_object($event) == false) {
+                return;
+            }
+
             if (!in_array($event->event, ['lock_lost', 'canceled', 'completed', 'failed']) || $event->jid !== $jid) {
                 return;
             }
