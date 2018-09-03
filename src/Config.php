@@ -9,11 +9,14 @@ namespace Qless;
  */
 class Config
 {
-    /**
-     * @var Client
-     */
+    /** @var Client */
     private $client;
 
+    /**
+     * Config constructor.
+     *
+     * @param Client $client
+     */
     public function __construct(Client $client)
     {
         $this->client = $client;
@@ -23,13 +26,14 @@ class Config
      * Gets the value for the specified config name, falling back to the default if it does not exist
      *
      * @param string $name
-     * @param mixed  $default
+     * @param mixed $default
+     * @return mixed|null
      *
-     * @return mixed
+     * @throws QlessException
      */
-    public function get($name, $default = null)
+    public function get(string $name, $default = null)
     {
-        $res = $this->client->lua->run('config.get', [$name]);
+        $res = $this->client->call('config.get', $name);
 
         return $res === false ? $default : $res;
     }
@@ -39,19 +43,24 @@ class Config
      *
      * @param string          $name
      * @param string|int|bool $value
+     *
+     * @throws QlessException
      */
-    public function set($name, $value)
+    public function set(string $name, $value)
     {
-        $this->client->lua->run('config.set', [$name, $value]);
+        $this->client->call('config.set', $name, $value);
     }
 
     /**
      * Clears the specified config name
      *
      * @param string $name
+     * @return void
+     *
+     * @throws QlessException
      */
     public function clear($name)
     {
-        $this->client->lua->run('config.unset', [$name]);
+        $this->client->call('config.unset', $name);
     }
 }
