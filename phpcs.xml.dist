@@ -35,4 +35,5 @@
         patterns on the command line.
     -->
     <exclude-pattern>*.lua</exclude-pattern>
+    <exclude-pattern>tests/bootstrap.php</exclude-pattern>
 </ruleset>
