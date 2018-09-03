@@ -51,6 +51,7 @@ install:
 script:
   - composer lint
   - composer test
+  - composer bench
 
 after_success:
   - if [[ ! -z "${CODECOV_TOKEN}" ]]; then (bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"); fi;
