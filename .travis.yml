@@ -32,6 +32,7 @@ env:
   global:
   - REDIS_HOST="127.0.0.1"
   - REDIS_PORT="6379"
+  - REDIS_TIMEOUT="0.0"
 
 before_install:
   - if [[ ! -z "${GH_TOKEN}" ]]; then composer config github-oauth.github.com ${GH_TOKEN}; echo "Configured Github token"; fi;
