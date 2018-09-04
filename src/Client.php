@@ -13,7 +13,6 @@ use Qless\Resource as QResource;
  *
  * @method string put(string $worker, string $queue, string $jid, string $klass, array $data, int $delay)
  * @method string requeue(string $worker, string $queue, string $jid, string $klass, array $data, int $delay)
- * @method array pop(string $queue, string $worker, int $count)
  * @method int length(string $queue)
  * @method int heartbeat()
  * @method int retry(string $jid, string $queue, string $worker, int $delay = 0, string $group, string $message)
@@ -147,6 +146,23 @@ class Client
         ...$params
     ) {
         return $this->lua->run('recur', func_get_args());
+    }
+
+    /**
+     * Get the next job on the desired queue.
+     *
+     * @param string $queue
+     * @param string $worker
+     * @param int $count
+     * @return string|null
+     *
+     * @throws QlessException
+     */
+    public function pop(string $queue, string $worker, int $count)
+    {
+        $result = $this->lua->run('pop', [$queue, $worker, $count]);
+
+        return $result;
     }
 
     /**
