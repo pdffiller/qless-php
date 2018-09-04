@@ -64,36 +64,6 @@ class Client
     }
 
     /**
-     * Return the host for the Redis server
-     *
-     * @return string
-     */
-    public function getRedisHost(): string
-    {
-        return $this->redis['host'];
-    }
-
-    /**
-     * Return the port for the Redis server
-     *
-     * @return int
-     */
-    public function getRedisPort(): int
-    {
-        return $this->redis['port'];
-    }
-
-    /**
-     * Return the redis timeout.
-     *
-     * @return float
-     */
-    public function getRedisTimeout(): float
-    {
-        return $this->redis['port'];
-    }
-
-    /**
      * Create a new listener.
      *
      * @param $channels
@@ -103,18 +73,6 @@ class Client
     public function createListener($channels): Listener
     {
         return new Listener($this->redis, $channels);
-    }
-
-    /**
-     * Used for testing
-     *
-     * @param string $luaClass
-     *
-     * @internal
-     */
-    public function setLuaClass($luaClass)
-    {
-        $this->lua = new $luaClass($this->redis);
     }
 
     /**
@@ -180,7 +138,7 @@ class Client
     }
 
     /**
-     * Getting inaccessible properties.
+     * Returns the inaccessible property.
      *
      * @param string $prop
      * @return null|Config|Jobs|Lua
@@ -227,7 +185,6 @@ class Client
         return new Queue($name, $this);
     }
 
-
     /**
      * Creates a Resource instance.
      *
@@ -237,16 +194,6 @@ class Client
     public function getResource(string $name): QResource
     {
         return new QResource($this, $name);
-    }
-
-    /**
-     * Returns APIs for querying information about jobs.
-     *
-     * @return Jobs
-     */
-    public function getJobs(): Jobs
-    {
-        return $this->jobs;
     }
 
     /**
