@@ -97,8 +97,6 @@ class Jobs implements \ArrayAccess
         return json_decode($this->client->failed(), true);
     }
 
-    #region ArrayAccess
-
     /**
      * @inheritdoc
      */
@@ -138,6 +136,4 @@ class Jobs implements \ArrayAccess
     {
         throw new \LogicException('unset not supported');
     }
-
-    #endregion
 }

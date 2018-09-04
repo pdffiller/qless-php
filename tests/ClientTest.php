@@ -2,6 +2,9 @@
 
 namespace Qless\Tests;
 
+use Qless\Config;
+use Qless\Jobs;
+use Qless\Lua;
 use Qless\Queue;
 use Qless\Tests\Support\RedisAwareTrait;
 
@@ -13,6 +16,33 @@ use Qless\Tests\Support\RedisAwareTrait;
 class ClientTest extends QlessTestCase
 {
     use RedisAwareTrait;
+
+    /**
+     * @test
+     * @dataProvider inaccessiblePropertyDataProvider
+     *
+     * @param string $property
+     * @param $expected
+     */
+    public function shouldReturnExpectedValueOnMagicGet(string $property, $expected)
+    {
+        if ($expected === null) {
+            $this->assertSame($expected, $this->client->{$property});
+        } else {
+            $this->assertInstanceOf($expected, $this->client->{$property});
+        }
+    }
+
+    public function inaccessiblePropertyDataProvider()
+    {
+        return [
+            ['foo',    null],
+            ['job',    null],
+            ['jobs',   Jobs::class],
+            ['config', Config::class],
+            ['lua',    Lua::class],
+        ];
+    }
 
     /**
      * @test
@@ -54,7 +84,7 @@ class ClientTest extends QlessTestCase
         $this->assertArrayHasKey('expires', $actual);
 
         $this->assertGreaterThan($expires, $actual['expires']);
-        $this->assertLessThan($expires + 1, $actual['expires']);
+        $this->assertLessThan($expires + 2, $actual['expires']);
 
         $heartbeat = 60;
         $realDate  = intval($actual['expires'] - $heartbeat);
@@ -65,6 +95,12 @@ class ClientTest extends QlessTestCase
             $this->getExpectedJob($jName, $cName, $qName, $wName, $expires, $realDate, $data),
             [$actual]
         );
+    }
+
+    /** @test */
+    public function shouldReturnEmptyStringWhenJobDoesNotExist()
+    {
+        $this->assertEquals('{}', $this->client->pop('non-existent-queue', 'worker-1', 1));
     }
 
     public function popDataProvider()
