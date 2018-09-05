@@ -13,7 +13,6 @@ use Qless\Resource as QResource;
  *
  * @method string put(string $worker, string $queue, string $jid, string $klass, array $data, int $delay)
  * @method string requeue(string $worker, string $queue, string $jid, string $klass, array $data, int $delay)
- * @method array pop(string $queue, string $worker, int $count)
  * @method int length(string $queue)
  * @method int heartbeat()
  * @method int retry(string $jid, string $queue, string $worker, int $delay = 0, string $group, string $message)
@@ -65,36 +64,6 @@ class Client
     }
 
     /**
-     * Return the host for the Redis server
-     *
-     * @return string
-     */
-    public function getRedisHost(): string
-    {
-        return $this->redis['host'];
-    }
-
-    /**
-     * Return the port for the Redis server
-     *
-     * @return int
-     */
-    public function getRedisPort(): int
-    {
-        return $this->redis['port'];
-    }
-
-    /**
-     * Return the redis timeout.
-     *
-     * @return float
-     */
-    public function getRedisTimeout(): float
-    {
-        return $this->redis['port'];
-    }
-
-    /**
      * Create a new listener.
      *
      * @param $channels
@@ -104,18 +73,6 @@ class Client
     public function createListener($channels): Listener
     {
         return new Listener($this->redis, $channels);
-    }
-
-    /**
-     * Used for testing
-     *
-     * @param string $luaClass
-     *
-     * @internal
-     */
-    public function setLuaClass($luaClass)
-    {
-        $this->lua = new $luaClass($this->redis);
     }
 
     /**
@@ -150,6 +107,23 @@ class Client
     }
 
     /**
+     * Get the next job on the desired queue.
+     *
+     * @param string $queue
+     * @param string $worker
+     * @param int $count
+     * @return string|null
+     *
+     * @throws QlessException
+     */
+    public function pop(string $queue, string $worker, int $count)
+    {
+        $result = $this->lua->run('pop', [$queue, $worker, $count]);
+
+        return $result;
+    }
+
+    /**
      * Call a specific q-less command.
      *
      * @param string $command
@@ -164,7 +138,7 @@ class Client
     }
 
     /**
-     * Getting inaccessible properties.
+     * Returns the inaccessible property.
      *
      * @param string $prop
      * @return null|Config|Jobs|Lua
@@ -211,7 +185,6 @@ class Client
         return new Queue($name, $this);
     }
 
-
     /**
      * Creates a Resource instance.
      *
@@ -221,16 +194,6 @@ class Client
     public function getResource(string $name): QResource
     {
         return new QResource($this, $name);
-    }
-
-    /**
-     * Returns APIs for querying information about jobs.
-     *
-     * @return Jobs
-     */
-    public function getJobs(): Jobs
-    {
-        return $this->jobs;
     }
 
     /**
