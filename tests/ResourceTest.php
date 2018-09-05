@@ -2,6 +2,8 @@
 
 namespace Qless\Tests;
 
+use Qless\Resource;
+
 /**
  * Qless\Tests\ResourceTest
  *
@@ -9,110 +11,124 @@ namespace Qless\Tests;
  */
 class ResourceTest extends QlessTestCase
 {
-    public function testResourceDoesNotExist()
+    /** @test */
+    public function shouldCorrectDetermineIfTheResourceDoesNotExist()
     {
-        $r = $this->client->getResource('test-resource');
+        $resource = new Resource($this->client, 'test-resource-1');
 
-        $this->assertFalse($r->exists());
+        $this->assertFalse($resource->exists());
     }
 
-    public function testDefaultMaxIsZero()
+    /** @test */
+    public function shouldUseByDefaultZeroAsMaximumNumberOfUnits()
     {
-        $r = $this->client->getResource('test-resource');
+        $resource = new Resource($this->client, 'test-resource-2');
 
-        $this->assertEquals(0, $r->getMax());
+        $this->assertEquals(0, $resource->getMax());
     }
 
-    public function testCanSetMax()
+    /** @test */
+    public function shouldSetMaximumNumberOfUnits()
     {
-        $r = $this->client->getResource('test-resource');
-        $r->setMax(10);
-        $this->assertEquals(10, $r->getMax());
+        $resource = new Resource($this->client, 'test-resource-3');
+        $resource->setMax(10);
+
+        $this->assertEquals(10, $resource->getMax());
     }
 
-    public function testCanSetAndResetMax()
+    /** @test */
+    public function shouldSetAndResetMaximumNumberOfUnits()
     {
-        $r = $this->client->getResource('test-resource');
-        $r->setMax(10);
-        $this->assertEquals(10, $r->getMax());
-        $r->setMax(20);
-        $this->assertEquals(20, $r->getMax());
+        $resource = new Resource($this->client, 'test-resource-4');
+
+        $resource->setMax(10);
+        $this->assertEquals(10, $resource->getMax());
+
+        $resource->setMax(20);
+        $this->assertEquals(20, $resource->getMax());
     }
 
-    public function testExistsAfterSettingMax()
+    /** @test */
+    public function shouldFindResourceAfterSettingMaximumNumberOfUnits()
     {
-        $r = $this->client->getResource('test-resource');
-        $this->assertFalse($r->exists());
-        $r->setMax(10);
-        $this->assertTrue($r->exists());
+        $resource = new Resource($this->client, 'test-resource-5');
+        $this->assertFalse($resource->exists());
+
+        $resource->setMax(10);
+        $this->assertTrue($resource->exists());
     }
 
-    public function testCanDelete()
+    /** @test */
+    public function shouldDeleteResource()
     {
-        $r = $this->client->getResource('test-resource');
-        $this->assertFalse($r->exists());
-        $r->setMax(10);
-        $this->assertTrue($r->exists());
-        $res = $r->delete();
-        $this->assertTrue($res);
-        $this->assertFalse($r->exists());
+        $resource = new Resource($this->client, 'test-resource-6');
+
+        $this->assertFalse($resource->exists());
+
+        $resource->setMax(10);
+        $this->assertTrue($resource->exists());
+
+        $this->assertTrue($resource->delete());
+        $this->assertFalse($resource->exists());
     }
 
-    public function testGetLockCountIsZeroForNewResource()
+    /** @test */
+    public function shouldDoNothingWhenDeletingNonExistentResource()
     {
-        $r = $this->client->getResource('test-resource');
-        $r->setMax(1);
-        $c = $r->getLockCount();
-        $this->assertEquals(0, $c);
+        $resource = new Resource($this->client, 'test-resource-7');
+
+        $this->assertFalse($resource->exists());
+        $this->assertFalse($resource->delete());
     }
 
+    /** @test */
+    public function shouldReceiveZeroForLockCountIfResourceIsNew()
+    {
+        $resource = new Resource($this->client, 'test-resource-8');
+
+        $resource->setMax(1);
+        $this->assertEquals(0, $resource->getLockCount());
+    }
+
+    /** @test */
     public function testJobLocksResource()
     {
-        $r = $this->client->getResource('r-1');
-        $r->setMax(1);
+        $resource = new Resource($this->client, 'test-resource-9');
+        $resource->setMax(1);
 
-        $this->put('j-1', ['r-1']);
+        $this->put('test-resource-9-1', ['test-resource-9']);
 
-        $lc = $r->getLockCount();
-        $this->assertEquals(1, $lc);
-        $l = $r->getLocks();
-        $this->assertEquals(['j-1'], $l);
-
-        $pc = $r->getPendingCount();
-        $this->assertEquals(0, $pc);
+        $this->assertEquals(1, $resource->getLockCount());
+        $this->assertEquals(['test-resource-9-1'], $resource->getLocks());
+        $this->assertEquals(0, $resource->getPendingCount());
     }
 
+    /** @test */
     public function testJobLocksResourceAndSecondIsPending()
     {
-        $r = $this->client->getResource('r-1');
-        $r->setMax(1);
+        $resource = new Resource($this->client, 'test-resource-10');
+        $resource->setMax(1);
 
-        $this->put('j-1', ['r-1']);
-        $this->put('j-2', ['r-1']);
+        $this->put('test-resource-10-1', ['test-resource-10']);
+        $this->put('test-resource-10-2', ['test-resource-10']);
 
-        $lc = $r->getLockCount();
-        $this->assertEquals(1, $lc);
-        $l = $r->getLocks();
-        $this->assertEquals(['j-1'], $l);
-
-        $pc = $r->getPendingCount();
-        $this->assertEquals(1, $pc);
-        $p = $r->getPending();
-        $this->assertEquals(['j-2'], $p);
+        $this->assertEquals(1, $resource->getLockCount());
+        $this->assertEquals(['test-resource-10-1'], $resource->getLocks());
+        $this->assertEquals(1, $resource->getPendingCount());
+        $this->assertEquals(['test-resource-10-2'], $resource->getPending());
     }
 
-    private function put($jid, $res)
+    private function put(string $jid, array $res)
     {
-        $res = json_encode($res, JSON_UNESCAPED_SLASHES);
         $this->client->put(
             null,
             'q-1',
             $jid,
             'k',
-            json_encode(null, JSON_UNESCAPED_UNICODE),
+            json_encode([], JSON_UNESCAPED_SLASHES),
             0,
             'resources',
-            $res
+            json_encode($res, JSON_UNESCAPED_SLASHES)
         );
     }
 }
