@@ -2,9 +2,11 @@
 
 namespace Qless\Tests;
 
+use Qless\Subscriber;
+use Redis;
 use Qless\Config;
 use Qless\Jobs;
-use Qless\Lua;
+use Qless\LuaScript;
 use Qless\Queue;
 use Qless\Tests\Support\RedisAwareTrait;
 
@@ -16,6 +18,12 @@ use Qless\Tests\Support\RedisAwareTrait;
 class ClientTest extends QlessTestCase
 {
     use RedisAwareTrait;
+
+    /** @test */
+    public function shouldCreateASubscriber()
+    {
+        $this->assertInstanceOf(Subscriber::class, $this->client->createSubscriber([]));
+    }
 
     /**
      * @test
@@ -40,13 +48,13 @@ class ClientTest extends QlessTestCase
             ['job',    null],
             ['jobs',   Jobs::class],
             ['config', Config::class],
-            ['lua',    Lua::class],
+            ['lua',    LuaScript::class],
+            ['redis',  Redis::class],
         ];
     }
 
     /**
      * @test
-     * @covers \Qless\Client::pop
      * @dataProvider popDataProvider
      *
      * @param string $qName
@@ -115,6 +123,32 @@ class ClientTest extends QlessTestCase
                 ['performMethod' => 'myPerformMethod', 'payload' => 'message-' . mt_rand(1, 99)],
             ]
         ];
+    }
+
+    /** @test */
+    public function shouldReconnect()
+    {
+        $rcClient = new \ReflectionObject($this->client);
+
+        $rcLua = $rcClient->getProperty('lua');
+        $rcLua->setAccessible(true);
+
+        $lua = $rcLua->getValue($this->client);
+
+        $rcLua = new \ReflectionObject($lua);
+
+        $rcRedis = $rcLua->getProperty('redis');
+        $rcRedis->setAccessible(true);
+
+        /** @var \Redis $redis */
+        $redis = $rcRedis->getValue($lua);
+
+        $this->assertSame('+PONG', $redis->ping());
+
+        $redis->close();
+        $this->client->reconnect();
+
+        $this->assertSame('+PONG', $redis->ping());
     }
 
     protected function getExpectedJob(

@@ -2,7 +2,7 @@
 
 namespace Qless\Tests;
 
-use Qless\Listener;
+use Qless\Subscriber;
 use Qless\Tests\Support\RedisAwareTrait;
 
 /**
@@ -20,7 +20,7 @@ class ListenerTest extends QlessTestCase
         $events = [];
         $time   = time();
 
-        $listener = new Listener($this->getRedisConfig(), ['chan-1', 'chan-2']);
+        $listener = new Subscriber($this->redis(), ['chan-1', 'chan-2']);
 
         $callback = function ($channel, $event) use ($listener, $time, &$events) {
             if (time() - $time > 3 || count($events) > 3) {

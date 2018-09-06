@@ -2,6 +2,8 @@
 
 namespace Qless\Tests;
 
+use Qless\Queue;
+
 /**
  * Qless\Tests\JobsTest
  *
@@ -49,7 +51,7 @@ class JobsTest extends QlessTestCase
     {
         $this->put('j-1');
         $this->put('j-2');
-        $q  = $this->client->getQueue('q-1');
+        $q  = new Queue('q-1', $this->client);
         $q->pop('w-1')[0]->complete();
         $q->pop('w-1')[0]->complete();
 
@@ -64,7 +66,7 @@ class JobsTest extends QlessTestCase
         $this->put('j-2');
         $this->put('j-3');
         $this->put('j-4');
-        $q  = $this->client->getQueue('q-1');
+        $q  = new Queue('q-1', $this->client);
         $q->pop('w-1')[0]->fail('system', 'msg');
         $q->pop('w-1')[0]->fail('system', 'msg');
         $q->pop('w-1')[0]->fail('system', 'msg');
@@ -84,7 +86,7 @@ class JobsTest extends QlessTestCase
         $this->put('j-2');
         $this->put('j-3');
         $this->put('j-4');
-        $q  = $this->client->getQueue('q-1');
+        $q  = new Queue('q-1', $this->client);
         $q->pop('w-1')[0]->fail('system', 'msg');
         $q->pop('w-1')[0]->fail('system', 'msg');
         $q->pop('w-1')[0]->fail('system', 'msg');
@@ -100,7 +102,7 @@ class JobsTest extends QlessTestCase
         $this->put('j-1');
         $this->put('j-2');
 
-        $q  = $this->client->getQueue('q-1');
+        $q  = new Queue('q-1', $this->client);
         $q->pop('w-1');
 
         $j = $this->client->jobs['j-1'];
@@ -119,7 +121,7 @@ class JobsTest extends QlessTestCase
         ], $opts);
 
         $this->client->put(
-            null,
+            '',
             'q-1',
             $jid,
             'k',
