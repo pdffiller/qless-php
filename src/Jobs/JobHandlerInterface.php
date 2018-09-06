@@ -1,11 +1,11 @@
 <?php
 
-namespace Qless\Job;
+namespace Qless\Jobs;
 
 use Qless\Job;
 
 /**
- * Qless\Job\JobHandlerInterface
+ * Qless\Jobs\JobHandlerInterface
  *
  * @package Qless\Job
  */
