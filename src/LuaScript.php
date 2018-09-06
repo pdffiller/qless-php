@@ -42,7 +42,7 @@ class LuaScript
      */
     public function run($command, array $args)
     {
-        if ($this->sha === null) {
+        if (empty($this->sha)) {
             $this->reload();
         }
 
@@ -100,7 +100,7 @@ class LuaScript
         $res = $this->redis->script('exists', $this->sha);
 
         if ($res[0] !== 1) {
-            $this->sha = $this->redis->script('load', $script) || null;
+            $this->sha = $this->redis->script('load', $script);
         }
     }
 }
