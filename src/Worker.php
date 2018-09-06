@@ -4,8 +4,9 @@ namespace Qless;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Qless\Error\ErrorCodes;
-use Qless\Job\JobHandlerInterface;
+use Qless\Errors\ErrorCodes;
+use Qless\Jobs\JobHandlerInterface;
+use RuntimeException;
 
 /**
  * Qless\Worker
@@ -52,15 +53,16 @@ class Worker
     /** @var Job */
     private $job;
 
-    public function __construct($name, $queues, Client $client, $interval = 60)
+    public function __construct(string $name, array $queues, Client $client, int $interval = 60)
     {
         $this->workerName = $name;
-        $this->queues = [];
         $this->client = $client;
         $this->interval = $interval;
-        foreach ($queues as $queue) {
-            $this->queues[] = $this->client->getQueue($queue);
+
+        foreach ($queues as $name) {
+            $this->queues[] = new Queue($name, $client);
         }
+
         $this->logger = new NullLogger();
     }
 
@@ -149,7 +151,7 @@ class Worker
 
             // fork processes
             $this->childStart();
-            $this->watchdogStart();
+            $this->watchdogStart($this->client->createSubscriber(['ql:log']));
 
             // Parent process, sit and wait
             $proc_line = 'Forked ' . $this->childPID . ' at ' . strftime('%F %T');
@@ -246,10 +248,6 @@ class Worker
      */
     private function masterRegisterSigHandlers()
     {
-        if (!function_exists('pcntl_signal')) {
-            return;
-        }
-
         pcntl_signal(SIGTERM, [$this, 'shutDownNow'], false);
         pcntl_signal(SIGINT, [$this, 'shutDownNow'], false);
         pcntl_signal(SIGQUIT, [$this, 'shutdown'], false);
@@ -292,8 +290,13 @@ class Worker
             exit(0);
         }
 
-        $PID = Qless::fork();
-        if ($PID !== 0) {
+        // Fork child worker.
+        $pid = pcntl_fork();
+        if ($pid === -1) {
+            throw new RuntimeException('Unable to fork child worker.');
+        }
+
+        if ($pid !== 0) {
             // MASTER
             $this->childProcesses++;
 
@@ -308,7 +311,7 @@ class Worker
                 ['sec' => 0, 'usec' => 10000]
             );
 
-            return $PID;
+            return $pid;
         }
 
         $socket = $pair[1];
@@ -335,7 +338,7 @@ class Worker
             }
         });
 
-        return $PID;
+        return $pid;
     }
 
     /**
@@ -354,7 +357,7 @@ class Worker
         if (is_array($error_info)) {
             return sprintf(
                 '[%s] %s:%d %s',
-                call_user_func(new ErrorCodes, $error_info['type']) ?: 'UNKNOWN',
+                call_user_func(new ErrorCodes, $error_info['type']) ?: 'Unknown',
                 $error_info['file'],
                 $error_info['line'],
                 $error_info['message']
@@ -493,7 +496,7 @@ class Worker
         }
     }
 
-    private function watchdogStart()
+    private function watchdogStart(Subscriber $subscriber)
     {
         $socket = null;
         $this->watchdogPID = $this->fork($socket);
@@ -512,9 +515,9 @@ class Worker
         $this->updateProcLine($status);
         $this->logger->info($status, $this->logContext);
 
-        ini_set("default_socket_timeout", -1);
-        $l = $this->client->createListener(['ql:log']);
-        $l->messages(function ($channel, $event) use ($l, $jid) {
+        // @todo Move to a separated class
+        ini_set('default_socket_timeout', -1);
+        $subscriber->messages(function ($channel, $event) use ($subscriber, $jid) {
             if (is_object($event) == false) {
                 return;
             }
@@ -531,7 +534,7 @@ class Worker
                             $this->logContext
                         );
                         posix_kill($this->childPID, SIGKILL);
-                        $l->stop();
+                        $subscriber->stop();
                     }
                     break;
 
@@ -542,13 +545,13 @@ class Worker
                             $this->logContext
                         );
                         posix_kill($this->childPID, SIGKILL);
-                        $l->stop();
+                        $subscriber->stop();
                     }
                     break;
 
                 case 'completed':
                 case 'failed':
-                    $l->stop();
+                    $subscriber->stop();
                     break;
             }
         });
