@@ -37,18 +37,20 @@ class Job
      */
     private $job_data;
 
-    public function __construct(Client $client, $job_data)
+    private $priority;
+
+    public function __construct(Client $client, array $data)
     {
         $this->client      = $client;
-        $this->jid         = $job_data['jid'];
-        $this->klass_name  = $job_data['klass'];
-        $this->queue_name  = $job_data['queue'];
-        $this->data        = json_decode($job_data['data'], true);
-        $this->worker_name = $job_data['worker'];
-        $this->expires     = $job_data['expires'];
-        $this->priority    = $job_data['priority'];
-        $this->tags        = $job_data['tags'];
-        $this->job_data    = $job_data;
+        $this->jid         = $data['jid'];
+        $this->klass_name  = $data['klass'];
+        $this->queue_name  = $data['queue'];
+        $this->data        = json_decode($data['data'], true);
+        $this->worker_name = $data['worker'];
+        $this->expires     = $data['expires'];
+        $this->priority    = $data['priority'];
+        $this->tags        = $data['tags'];
+        $this->job_data    = $data;
     }
 
     /**
@@ -346,9 +348,8 @@ class Job
      * @throws QlessException If the heartbeat fails
      * @return int timestamp of the heartbeat
      */
-    public function heartbeat($data = null)
+    public function heartbeat(array $data = null)
     {
-        // (now, jid, worker, data)
         if (is_array($data)) {
             $data = json_encode($data, JSON_UNESCAPED_SLASHES);
         }
