@@ -3,7 +3,7 @@
 namespace Qless\Demo;
 
 use Qless\Job;
-use Qless\Job\JobHandlerInterface;
+use Qless\Jobs\JobHandlerInterface;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
