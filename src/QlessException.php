@@ -2,6 +2,8 @@
 
 namespace Qless;
 
+use Throwable;
+
 /**
  * Qless\QlessException
  *
@@ -11,21 +13,31 @@ namespace Qless;
  */
 class QlessException extends \Exception
 {
+    /** @var string|null */
     protected $area;
 
-    public function __construct($message, $area = null, $code = 0, \Exception $previous = null)
+    /**
+     * QlessException constructor.
+     *
+     * @param string         $message
+     * @param string|null    $area
+     * @param int            $code
+     * @param Throwable|null $previous
+     */
+    public function __construct($message, $area = null, $code = 0, Throwable $previous = null)
     {
-        parent::__construct($message, $code, $previous);
-
         $this->area = $area;
+
+        parent::__construct($message, $code, $previous);
     }
 
     /**
-     * @param string $error
+     * Factory method to create an exception class from an error message.
      *
+     * @param  string $error
      * @return QlessException
      */
-    public static function createExceptionFromError($error)
+    public static function createExceptionFromError(string $error)
     {
         if (preg_match('/^ERR.*user_script:\d+:\s*(?<area>[\w.]+)\(\):\s*(?<message>.*)/', $error, $matches) > 0) {
             $area    = $matches['area'];
@@ -47,10 +59,5 @@ class QlessException extends \Exception
             default:
                 return new QlessException($message, $area);
         }
-    }
-
-    public function getArea()
-    {
-        return $this->area;
     }
 }
