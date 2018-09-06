@@ -11,22 +11,27 @@ namespace Qless;
  */
 class Queue
 {
-    /**
-     * @var Client
-     */
+    /** @var Client */
     private $client;
-    /**
-     * @var string
-     */
+
+    /** @var string */
     private $name;
 
-    public function __construct($name, Client $client)
+    /**
+     * Queue constructor.
+     *
+     * @param string $name
+     * @param Client $client
+     */
+    public function __construct(string $name, Client $client)
     {
         $this->client = $client;
         $this->name   = $name;
     }
 
     /**
+     * Put the described job in this queue.
+     *
      * Either create a new job in the provided queue with the provided attributes,
      * or move that job into that queue. If the job is being serviced by a worker,
      * subsequent attempts by that worker to either `heartbeat` or `complete` the
@@ -53,6 +58,8 @@ class Queue
      *
      * @return string|float The job identifier or the time remaining before the job expires
      *                      if the job is already running.
+     *
+     * @throws QlessException
      */
     public function put(
         $klass,
@@ -68,7 +75,7 @@ class Queue
         $depends = []
     ) {
         return $this->client->put(
-            null,
+            '',
             $this->name,
             $jid ?: Qless::guidv4(),
             $klass,
@@ -94,22 +101,21 @@ class Queue
     /**
      * Get the next job on this queue.
      *
-     * @param     $worker - worker name popping the job.
-     * @param int $numJobs - number of jobs to pop off of the queue
+     * @param string $worker  Worker name popping the job.
+     * @param int    $numJobs Number of jobs to pop off of the queue.
      *
      * @return Job[]
+     *
+     * @throws QlessException
      */
-    public function pop($worker, $numJobs = 1)
+    public function pop(string $worker, int $numJobs = 1): array
     {
-        $results = $this->client
-            ->pop($this->name, $worker, $numJobs);
-
-        $jobs = json_decode($results, true);
+        $results = $this->client->pop($this->name, $worker, $numJobs);
 
         $returnJobs = [];
-        if (!empty($jobs)) {
-            foreach ($jobs as $job_data) {
-                $returnJobs[] = new Job($this->client, $job_data);
+        if ($results && $jobs = json_decode($results, true)) {
+            foreach ($jobs as $data) {
+                $returnJobs[] = new Job($this->client, $data);
             }
         }
 
@@ -117,7 +123,7 @@ class Queue
     }
 
     /**
-     * Create a recurring job.
+     * Make a recurring job in this queue.
      *
      * The `priority` argument should be negative to be run sooner rather than
      * later, and positive if it's less important. The `tags` argument should be
@@ -134,6 +140,8 @@ class Queue
      * @param array  $tags      An array of tags to add to the job.
      *
      * @return mixed
+     *
+     * @throws QlessException
      */
     public function recur(
         $klass,
