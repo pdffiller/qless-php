@@ -78,14 +78,14 @@ class Client
     }
 
     /**
-     * Factory method to create a new Listener.
+     * Factory method to create a new Subscriber instance.
      *
      * @param  array $channels An array of channels to subscribe to.
-     * @return Listener
+     * @return Subscriber
      */
-    public function createListener(array $channels): Listener
+    public function createSubscriber(array $channels): Subscriber
     {
-        return new Listener($this->redis, $channels);
+        return new Subscriber($this->redis, $channels);
     }
 
     /**
