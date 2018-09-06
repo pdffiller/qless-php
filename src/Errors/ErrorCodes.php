@@ -1,9 +1,9 @@
 <?php
 
-namespace Qless\Error;
+namespace Qless\Errors;
 
 /**
- * Qless\Error\ErrorCodes
+ * Qless\Errors\ErrorCodes
  *
  * @package Qless\Error
  */
