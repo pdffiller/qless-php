@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Move `Qless\Lua` to the `Qless\LuaScript`
 - Move `Qless\Listener` to the `Qless\Subscriber`
 - More code quality improvements to follow the SRP. Thus the code base for almost all classes has been changed
+- Move all the exceptions to the common namespace and implement the same `Qless\Exceptions\ExceptionInterface`
   
 ### Removed
 - Fully refactor the `Qless\Client` class and removed no longer used code

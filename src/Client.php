@@ -2,6 +2,7 @@
 
 namespace Qless;
 
+use Qless\Exceptions\QlessException;
 use Redis;
 
 /**

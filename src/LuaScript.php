@@ -2,6 +2,8 @@
 
 namespace Qless;
 
+use Qless\Exceptions\ExceptionFactory;
+use Qless\Exceptions\ExceptionInterface;
 use Redis;
 
 /**
@@ -38,7 +40,7 @@ class LuaScript
      * @param  array  $args
      * @return mixed|null
      *
-     * @throws QlessException
+     * @throws ExceptionInterface
      */
     public function run($command, array $args)
     {
@@ -78,13 +80,13 @@ class LuaScript
      * @param  string $error
      * @return void
      *
-     * @throws QlessException
+     * @throws ExceptionInterface
      */
     private function handleError(string $error)
     {
         $this->redis->clearLastError();
 
-        throw QlessException::createExceptionFromError($error);
+        throw ExceptionFactory::fromErrorMessage($error);
     }
 
     /**

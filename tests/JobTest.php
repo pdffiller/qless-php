@@ -13,7 +13,7 @@ class JobTest extends QlessTestCase
 {
     /**
      * @test shouldThrow
-     * @expectedException \Qless\JobLostException
+     * @expectedException \Qless\Exceptions\JobLostException
      */
     public function testHeartbeatForInvalidJobThrows()
     {
@@ -154,7 +154,7 @@ class JobTest extends QlessTestCase
     }
 
     /**
-     * @expectedException \Qless\QlessException
+     * @expectedException \Qless\Exceptions\QlessException
      */
     public function testCancelThrowsExceptionWithDependents()
     {
@@ -240,7 +240,7 @@ class JobTest extends QlessTestCase
     }
 
     /**
-     * @expectedException \Qless\InvalidJobException
+     * @expectedException \Qless\Exceptions\InvalidJobException
      */
     public function testThrowsInvalidJobExceptionWhenRequeuingCancelledJob()
     {

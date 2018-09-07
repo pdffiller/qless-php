@@ -4,7 +4,7 @@ namespace Qless;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Qless\Errors\ErrorCodes;
+use Qless\Exceptions\ErrorCodes;
 use Qless\Jobs\JobHandlerInterface;
 use RuntimeException;
 
@@ -684,21 +684,4 @@ class Worker
         $processTitle = 'qless-' . Qless::VERSION . ': ' . $status;
         cli_set_process_title($processTitle);
     }
-}
-
-function pcntl_sig_name($sig_no)
-{
-    static $pcntl_contstants;
-    if (!isset($pcntl_contstants)) {
-        $a                = get_defined_constants(true)["pcntl"];
-        $f                = array_filter(array_keys($a), function ($k) {
-            return strpos($k, 'SIG') === 0 && strpos($k, 'SIG_') === false;
-        });
-        $pcntl_contstants = array_flip(array_intersect_key($a, array_flip($f)));
-        unset($a, $f);
-    }
-
-    return isset($pcntl_contstants[$sig_no])
-        ? $pcntl_contstants[$sig_no]
-        : 'UNKNOWN';
 }
