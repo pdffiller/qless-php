@@ -2,7 +2,7 @@
 
 namespace Qless\Tests\Error;
 
-use Qless\Errors\ErrorCodes;
+use Qless\Exceptions\ErrorCodes;
 use Qless\Tests\QlessTestCase;
 
 /**

@@ -64,7 +64,7 @@ class ClientTest extends QlessTestCase
      * @param int    $expires
      * @param array  $data
      *
-     * @throws \Qless\QlessException
+     * @throws \Qless\Exceptions\QlessException;
      */
     public function shouldGetTheNextJobOnTheDesiredQueue(
         string $qName,

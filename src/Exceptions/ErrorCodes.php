@@ -1,11 +1,11 @@
 <?php
 
-namespace Qless\Errors;
+namespace Qless\Exceptions;
 
 /**
- * Qless\Errors\ErrorCodes
+ * Qless\Exceptions\ErrorCodes
  *
- * @package Qless\Error
+ * @package Qless\Exceptions
  */
 class ErrorCodes
 {
@@ -29,7 +29,7 @@ class ErrorCodes
     /**
      * Get error's constant name.
      *
-     * @param int $value
+     * @param  int $value
      * @return string|null
      */
     public function __invoke($value)

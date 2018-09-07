@@ -2,6 +2,8 @@
 
 namespace Qless;
 
+use Qless\Exceptions\QlessException;
+
 /**
  * Qless\Resource
  *
