@@ -3,6 +3,7 @@
 namespace Qless\Tests;
 
 use Qless\Queue;
+use Qless\Demo\Worker;
 
 /**
  * Qless\Tests\JobTest
@@ -12,10 +13,79 @@ use Qless\Queue;
 class JobTest extends QlessTestCase
 {
     /**
-     * @test shouldThrow
-     * @expectedException \Qless\Exceptions\JobLostException
+     * @test
+     * @expectedException \Qless\Exceptions\RuntimeException
+     * @expectedExceptionMessage Could not find job class Sample\TestWorkerImpl.
      */
-    public function testHeartbeatForInvalidJobThrows()
+    public function shouldThrowsExpectedExceptionWhenGetInstanceWithNonExistentClass()
+    {
+        $queue = new Queue('testQueue', $this->client);
+
+        $this->client->config->set('heartbeat', -10);
+        $this->client->config->set('grace-period', 0);
+
+        $queue->put(
+            'Sample\TestWorkerImpl',
+            'jobTestDEF',
+            ['performMethod' => 'myPerformMethod', 'payload' => 'otherData']
+        );
+
+        $job1 = $queue->pop('worker-1')[0];
+        $queue->pop('worker-2');
+
+        $job1->getInstance();
+    }
+
+    /**
+     * @test
+     * @expectedException \Qless\Exceptions\RuntimeException
+     * @expectedExceptionMessage Job class "stdClass" does not contain perform method "myPerformMethod".
+     */
+    public function shouldThrowsExpectedExceptionWhenGetInstanceWithNonExistentPerformMethod()
+    {
+        $queue = new Queue('testQueue', $this->client);
+
+        $this->client->config->set('heartbeat', -10);
+        $this->client->config->set('grace-period', 0);
+
+        $queue->put(
+            \stdClass::class,
+            'jobTestDEF',
+            ['performMethod' => 'myPerformMethod', 'payload' => 'otherData']
+        );
+
+        $job1 = $queue->pop('worker-1')[0];
+        $queue->pop('worker-2');
+
+        $job1->getInstance();
+    }
+
+    /** @test */
+    public function shouldGetWorkerInstance()
+    {
+        $queue = new Queue('testQueue', $this->client);
+
+        $this->client->config->set('heartbeat', -10);
+        $this->client->config->set('grace-period', 0);
+
+        $queue->put(
+            Worker::class,
+            'jobTestDEF',
+            ['performMethod' => 'myPerformMethod', 'payload' => 'otherData']
+        );
+
+        $job1 = $queue->pop('worker-1')[0];
+        $queue->pop('worker-2');
+
+        $this->assertInstanceOf(Worker::class, $job1->getInstance());
+    }
+
+    /**
+     * @test
+     * @expectedException \Qless\Exceptions\JobLostException
+     * @expectedExceptionMessage Job given out to another worker: worker-2
+     */
+    public function shouldThrowIOnCallingHeartbeatForInvalidJob()
     {
         $queue = new Queue('testQueue', $this->client);
 

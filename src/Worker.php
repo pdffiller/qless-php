@@ -116,7 +116,7 @@ class Worker
         $this->logger->info('{type}: Worker started', $this->logContext);
         $this->logger->info(
             '{type}: monitoring the following queues (in order), {queues}',
-            ['type'=>$this->who, 'queues' => implode(', ', $this->queues)]
+            ['type' => $this->who, 'queues' => implode(', ', $this->queues)]
         );
 
         $did_work = false;

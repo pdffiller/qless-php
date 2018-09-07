@@ -3,6 +3,7 @@
 namespace Qless;
 
 use ArrayAccess;
+use Qless\Exceptions\ExceptionInterface;
 use Qless\Exceptions\UnsupportedFeatureException;
 
 /**
@@ -44,6 +45,8 @@ class Jobs implements ArrayAccess
      * @param string $jid the job identifier to fetch
      *
      * @return Job|null
+     *
+     * @throws ExceptionInterface
      */
     public function get(string $jid)
     {
@@ -126,6 +129,8 @@ class Jobs implements ArrayAccess
      * {@inheritdoc}
      *
      * @return Job|null
+     *
+     * @throws ExceptionInterface
      */
     public function offsetGet($jid)
     {

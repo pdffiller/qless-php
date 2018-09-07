@@ -449,7 +449,7 @@ class Job
         if (!method_exists($this->klass_name, $this->data['performMethod'])) {
             throw new RuntimeException(
                 sprintf(
-                    'Job class "%s" does not contain perform method %s.',
+                    'Job class "%s" does not contain perform method "%s".',
                     $this->klass_name,
                     $this->data['performMethod']
                 )
