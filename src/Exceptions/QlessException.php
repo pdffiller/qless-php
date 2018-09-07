@@ -2,8 +2,6 @@
 
 namespace Qless\Exceptions;
 
-use RuntimeException;
-
 /**
  * Qless\Exceptions\QlessException
  *
@@ -11,7 +9,6 @@ use RuntimeException;
  *
  * @package Qless\Exceptions
  */
-class QlessException extends RuntimeException implements ExceptionInterface
+class QlessException extends RuntimeException
 {
-    use AreaAwareTrait;
 }

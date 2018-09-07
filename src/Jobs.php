@@ -2,18 +2,24 @@
 
 namespace Qless;
 
+use ArrayAccess;
+use Qless\Exceptions\UnsupportedFeatureException;
+
 /**
  * Qless\Jobs
  *
  * @package Qless
  */
-class Jobs implements \ArrayAccess
+class Jobs implements ArrayAccess
 {
-    /**
-     * @var Client
-     */
+    /** @var Client */
     private $client;
 
+    /**
+     * Jobs constructor.
+     *
+     * @param Client $client
+     */
     public function __construct(Client $client)
     {
         $this->client = $client;
@@ -27,7 +33,7 @@ class Jobs implements \ArrayAccess
      *
      * @return string[]
      */
-    public function completed($offset = 0, $count = 25)
+    public function completed(int $offset = 0, int $count = 25)
     {
         return $this->client->jobs('complete', $offset, $count);
     }
@@ -39,7 +45,7 @@ class Jobs implements \ArrayAccess
      *
      * @return Job|null
      */
-    public function get($jid)
+    public function get(string $jid)
     {
         return $this->offsetGet($jid);
     }
@@ -49,19 +55,25 @@ class Jobs implements \ArrayAccess
      *
      * @param string[] $jids
      *
-     * @return array|Job[]
+     * @return Job[]
      */
-    public function multiget($jids)
+    public function multiget(array $jids): array
     {
         if (empty($jids)) {
             return [];
         }
 
+
         $results = call_user_func_array([$this->client, 'multiget'], $jids);
-        $jobs    = json_decode($results, true);
-        $ret     = [];
-        foreach ($jobs as $job_data) {
-            $job                = new Job($this->client, $job_data);
+        $jobs = json_decode($results, true);
+
+        if (!is_array($jobs)) {
+            return [];
+        }
+
+        $ret = [];
+        foreach ($jobs as $data) {
+            $job = new Job($this->client, $data);
             $ret[$job->getId()] = $job;
         }
 
@@ -71,20 +83,21 @@ class Jobs implements \ArrayAccess
     /**
      * Fetches a report of failed jobs for the specified group
      *
-     * @param bool $group
-     * @param int  $start
-     * @param int  $limit
+     * @param string|bool $group
+     * @param int         $start
+     * @param int         $limit
      *
-     * @return \Iterator|Job[]
+     * @return array
      */
-    public function failedForGroup($group, $start = 0, $limit = 25)
+    public function failedForGroup($group, int $start = 0, int $limit = 25): array
     {
-        $results         = json_decode($this->client->failed($group, $start, $limit), true);
-        if (!empty($results['jobs'])) {
+        $results = json_decode($this->client->failed($group, $start, $limit), true);
+
+        if (isset($results['jobs']) && !empty($results['jobs'])) {
             $results['jobs'] = $this->multiget($results['jobs']);
         }
 
-        return $results;
+        return is_array($results) ? $results : [];
     }
 
     /**
@@ -92,13 +105,17 @@ class Jobs implements \ArrayAccess
      *
      * @return array
      */
-    public function failed()
+    public function failed(): array
     {
-        return json_decode($this->client->failed(), true);
+        $results = json_decode($this->client->failed(), true);
+
+        return is_array($results) ? $results : [];
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
+     *
+     * @return bool
      */
     public function offsetExists($jid)
     {
@@ -106,34 +123,41 @@ class Jobs implements \ArrayAccess
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
+     *
+     * @return Job|null
      */
     public function offsetGet($jid)
     {
-        $job_data = $this->client->get($jid);
-        if ($job_data === false) {
-            $job_data = $this->client->{'recur.get'}($jid);
-            if ($job_data === false) {
+        $data = $this->client->get($jid);
+
+        if ($data === false) {
+            $data = $this->client->call('recur.get', $jid);
+            if ($data === false) {
                 return null;
             }
         }
 
-        return new Job($this->client, json_decode($job_data, true));
+        return new Job($this->client, json_decode($data, true));
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
+     *
+     * @throws UnsupportedFeatureException
      */
     public function offsetSet($offset, $value)
     {
-        throw new \LogicException('set not supported');
+        throw new UnsupportedFeatureException('Setting a job is not supported using Jobs class');
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
+     *
+     * @throws UnsupportedFeatureException
      */
     public function offsetUnset($offset)
     {
-        throw new \LogicException('unset not supported');
+        throw new UnsupportedFeatureException('Deleting a job is not supported using Jobs class');
     }
 }
