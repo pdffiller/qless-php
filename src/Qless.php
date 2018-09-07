@@ -9,26 +9,12 @@ namespace Qless;
  */
 class Qless
 {
-    const VERSION = '1.0.0';
+    const VERSION = '2.0.0';
 
     /**
-     * @return int
-     * @throws \RuntimeException
+     * @todo Use uuid library
+     * @return string
      */
-    public static function fork()
-    {
-        if (!function_exists('pcntl_fork')) {
-            return -1;
-        }
-
-        $pid = pcntl_fork();
-        if ($pid === -1) {
-            throw new \RuntimeException('Unable to fork child worker.');
-        }
-
-        return $pid;
-    }
-
     public static function guidv4()
     {
         $data = openssl_random_pseudo_bytes(16);

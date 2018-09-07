@@ -38,6 +38,6 @@ abstract class QlessTestCase extends TestCase
      */
     public function tearDown()
     {
-        $this->client->lua->flush();
+        $this->client->flush();
     }
 }

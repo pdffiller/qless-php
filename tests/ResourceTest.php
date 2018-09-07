@@ -121,7 +121,7 @@ class ResourceTest extends QlessTestCase
     private function put(string $jid, array $res)
     {
         $this->client->put(
-            null,
+            '',
             'q-1',
             $jid,
             'k',

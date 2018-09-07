@@ -2,7 +2,7 @@
 
 namespace Qless;
 
-use Qless\Resource as QResource;
+use Redis;
 
 /**
  * Qless\Client
@@ -11,11 +11,13 @@ use Qless\Resource as QResource;
  *
  * @package Qless
  *
- * @method string put(string $worker, string $queue, string $jid, string $klass, array $data, int $delay)
- * @method string requeue(string $worker, string $queue, string $jid, string $klass, array $data, int $delay)
+ * @method string put(string $worker, string $queue, string $jid, string $klass, string $data, int $delay, ...$args)
+ * @method string recur(string $queue, string $jid, string $klass, string $data, string $spec, ...$args)
+ * @method string requeue(string $worker, string $queue, string $jid, string $klass, string $data, int $delay, ...$args)
+ * @method string pop(string $queue, string $worker, int $count)
  * @method int length(string $queue)
- * @method int heartbeat()
- * @method int retry(string $jid, string $queue, string $worker, int $delay = 0, string $group, string $message)
+ * @method int heartbeat(...$args)
+ * @method int retry(string $jid, string $queue, string $worker, int $delay, string $group, string $message)
  * @method int cancel(string $jid)
  * @method int unrecur(string $jid)
  * @method int fail(string $jid, string $worker, string $group, string $message, string $data = null)
@@ -29,21 +31,30 @@ use Qless\Resource as QResource;
  *
  * @property-read Jobs jobs
  * @property-read Config config
- * @property-read Lua lua
+ * @property-read LuaScript lua
  */
 class Client
 {
-    /** @var Lua */
+    /** @var LuaScript */
     private $lua;
 
     /** @var Config */
     private $config;
 
-    /** @var array */
-    private $redis = [];
-
     /** @var Jobs */
     private $jobs;
+
+    /** @var Redis */
+    private $redis;
+
+    /** @var string */
+    protected $redisHost;
+
+    /** @var int */
+    protected $redisPort = 6379;
+
+    /** @var float */
+    protected $redisTimeout = 0.0;
 
     /**
      * Client constructor.
@@ -54,107 +65,27 @@ class Client
      */
     public function __construct(string $host = '127.0.0.1', int $port = 6379, float $timeout = 0.0)
     {
-        $this->redis['host']  = $host;
-        $this->redis['port']  = $port;
-        $this->redis['timeout']  = $timeout;
+        $this->redisHost = $host;
+        $this->redisPort = $port;
+        $this->redisTimeout = $timeout;
 
-        $this->lua    = new Lua($this->redis);
+        $this->redis = new Redis();
+        $this->connect();
+
+        $this->lua    = new LuaScript($this->redis);
         $this->config = new Config($this);
         $this->jobs   = new Jobs($this);
     }
 
     /**
-     * Create a new listener.
+     * Factory method to create a new Subscriber instance.
      *
-     * @param $channels
-     *
-     * @return Listener
+     * @param  array $channels An array of channels to subscribe to.
+     * @return Subscriber
      */
-    public function createListener($channels): Listener
+    public function createSubscriber(array $channels): Subscriber
     {
-        return new Listener($this->redis, $channels);
-    }
-
-    /**
-     * @param string $klass     The class with the 'performMethod' specified in the data.
-     * @param string $jid       The specified job id, if false is specified, a jid will be generated.
-     * @param mixed  $data      An array of parameters for job.
-     * @param int    $interval  The recurring interval in seconds.
-     * @param int    $offset    A delay before the first run in seconds.
-     * @param int    $retries   Number of times the job can retry when it runs.
-     * @param int    $priority  A negative priority will run sooner.
-     * @param array  $resources An array of resource identifiers this job must acquire before being processed.
-     * @param array  $tags      An array of tags to add to the job.
-     * @param mixed  $params    Additional parameters.
-     *
-     * @return string
-     *
-     * @throws QlessException
-     */
-    public function recur(
-        string $klass,
-        string $jid,
-        array $data,
-        int $interval,
-        int $offset,
-        int $retries,
-        int $priority,
-        array $resources,
-        array $tags,
-        ...$params
-    ) {
-        return $this->lua->run('recur', func_get_args());
-    }
-
-    /**
-     * Get the next job on the desired queue.
-     *
-     * @param string $queue
-     * @param string $worker
-     * @param int $count
-     * @return string|null
-     *
-     * @throws QlessException
-     */
-    public function pop(string $queue, string $worker, int $count)
-    {
-        $result = $this->lua->run('pop', [$queue, $worker, $count]);
-
-        return $result;
-    }
-
-    /**
-     * Call a specific q-less command.
-     *
-     * @param string $command
-     * @param $arguments
-     * @return mixed
-     *
-     * @throws QlessException
-     */
-    public function __call(string $command, array $arguments)
-    {
-        return $this->lua->run($command, $arguments);
-    }
-
-    /**
-     * Returns the inaccessible property.
-     *
-     * @param string $prop
-     * @return null|Config|Jobs|Lua
-     */
-    public function __get($prop)
-    {
-        switch ($prop) {
-            case 'jobs':
-                return $this->jobs;
-            case 'config':
-                return $this->config;
-            case 'lua':
-                return $this->lua;
-            default:
-                return null;
-        }
+        return new Subscriber($this->redis, $channels);
     }
 
     /**
@@ -175,25 +106,49 @@ class Client
     }
 
     /**
-     * Creates a Queue instance.
+     * Call a specific q-less command.
      *
-     * @param string $name The name of a queue.
-     * @return Queue
+     * @param string $command
+     * @param $arguments
+     * @return mixed
+     *
+     * @throws QlessException
      */
-    public function getQueue($name): Queue
+    public function __call(string $command, array $arguments)
     {
-        return new Queue($name, $this);
+        return $this->lua->run($command, $arguments);
     }
 
     /**
-     * Creates a Resource instance.
+     * Gets the inaccessible, internal properties.
      *
-     * @param string $name The name of a resource.
-     * @return QResource
+     * @param  string $prop
+     * @return Config|Jobs|LuaScript|Redis|null
      */
-    public function getResource(string $name): QResource
+    public function __get(string $prop)
     {
-        return new QResource($this, $name);
+        switch ($prop) {
+            case 'jobs':
+                return $this->jobs;
+            case 'config':
+                return $this->config;
+            case 'lua':
+                return $this->lua;
+            case 'redis':
+                return $this->redis;
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Removes all the entries from the default Redis database.
+     *
+     * @return void
+     */
+    public function flush()
+    {
+        $this->redis->flushDB();
     }
 
     /**
@@ -203,6 +158,17 @@ class Client
      */
     public function reconnect()
     {
-        $this->lua->reconnect();
+        $this->redis->close();
+        $this->connect();
+    }
+
+    /**
+     * Perform connection to the Redis server.
+     *
+     * @return void
+     */
+    private function connect()
+    {
+        $this->redis->connect($this->redisHost, $this->redisPort, $this->redisTimeout);
     }
 }

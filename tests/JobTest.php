@@ -12,19 +12,24 @@ use Qless\Queue;
 class JobTest extends QlessTestCase
 {
     /**
+     * @test shouldThrow
      * @expectedException \Qless\JobLostException
      */
     public function testHeartbeatForInvalidJobThrows()
     {
-        $queue = new Queue("testQueue", $this->client);
+        $queue = new Queue('testQueue', $this->client);
+
         $this->client->config->set('heartbeat', -10);
         $this->client->config->set('grace-period', 0);
 
-        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
-        $queue->put("Sample\\TestWorkerImpl", "jobTestDEF", $testData);
+        $queue->put(
+            'Sample\TestWorkerImpl',
+            'jobTestDEF',
+            ['performMethod' => 'myPerformMethod', 'payload' => 'otherData']
+        );
 
-        $job1 = $queue->pop("worker-1")[0];
-        $queue->pop("worker-2");
+        $job1 = $queue->pop('worker-1')[0];
+        $queue->pop('worker-2');
         $job1->heartbeat();
     }
 

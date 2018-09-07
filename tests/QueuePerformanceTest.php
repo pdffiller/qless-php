@@ -29,22 +29,7 @@ class QueuePerformanceTest extends QlessTestCase
         $cb(self::TEST_TIME, __METHOD__);
     }
 
-    public function testPerfPuttingThenPoppingJobs()
-    {
-        $queue = new Queue("testQueue", $this->client);
-        $cb = $this->getProfilerForCallback(function ($e) use ($queue) {
-            $queue->put("Sample\\TestWorkerImpl", $e, []);
-        });
-
-        $cb(self::TEST_TIME, __METHOD__);
-
-        $cb = $this->getProfilerForCallback(function ($e) use ($queue) {
-            $queue->pop('worker');
-        });
-        $cb(self::TEST_TIME, __METHOD__);
-    }
-
-    public function testPerfDirectRedis()
+    public function testPerfDirectPutToRedis()
     {
         $redis = $this->redis();
 
@@ -55,7 +40,22 @@ class QueuePerformanceTest extends QlessTestCase
         $cb(self::TEST_TIME, __METHOD__);
     }
 
-    public function testPerfQueueLength()
+    public function testPerfPuttingThenPopping()
+    {
+        $queue = new Queue("testQueue", $this->client);
+        $cb = $this->getProfilerForCallback(function ($e) use ($queue) {
+            $queue->put("Sample\\TestWorkerImpl", $e, []);
+        });
+
+        $cb(self::TEST_TIME, __METHOD__ . ' (put)');
+
+        $cb = $this->getProfilerForCallback(function ($e) use ($queue) {
+            $queue->pop('worker');
+        });
+        $cb(self::TEST_TIME, __METHOD__. ' (pop)');
+    }
+
+    public function testPerfGettingQueueLength()
     {
         $queue = new Queue("testQueue", $this->client);
         $cb = $this->getProfilerForCallback(function ($e) use ($queue) {

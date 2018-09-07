@@ -3,7 +3,7 @@
 namespace Qless\Tests\Stubs;
 
 use Qless\Job;
-use Qless\Job\JobHandlerInterface;
+use Qless\Jobs\JobHandlerInterface;
 
 /**
  * Qless\Tests\Stubs\WorkerStub

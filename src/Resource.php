@@ -39,7 +39,7 @@ class Resource
      */
     public function exists(): bool
     {
-        return $this->client->lua->run('resource.exists', [$this->name]) === 1;
+        return $this->client->call('resource.exists', $this->name) == 1;
     }
 
     /**
@@ -51,7 +51,7 @@ class Resource
      */
     public function getLockCount(): int
     {
-        return (int) $this->client->lua->run('resource.lock_count', [$this->name]);
+        return (int) $this->client->call('resource.lock_count', $this->name);
     }
 
     /**
@@ -63,7 +63,7 @@ class Resource
      */
     public function getLocks(): array
     {
-        $data = $this->client->lua->run('resource.locks', [$this->name]);
+        $data = $this->client->call('resource.locks', $this->name);
 
         return $data ? json_decode($data, true) : [];
     }
@@ -77,7 +77,7 @@ class Resource
      */
     public function getPendingCount(): int
     {
-        return (int) $this->client->lua->run('resource.pending_count', [$this->name]);
+        return (int) $this->client->call('resource.pending_count', $this->name);
     }
 
     /**
@@ -89,7 +89,7 @@ class Resource
      */
     public function getPending(): array
     {
-        $data = $this->client->lua->run('resource.pending', [$this->name]);
+        $data = $this->client->call('resource.pending', $this->name);
 
         return $data ? json_decode($data, true) : [];
     }
@@ -103,20 +103,20 @@ class Resource
      */
     public function delete(): bool
     {
-        return $this->client->lua->run('resource.unset', [$this->name]) === 1;
+        return $this->client->call('resource.unset', $this->name) == 1;
     }
 
     /**
      * Update units available for this resource.
      *
-     * @param int $max
+     * @param  int $max
      * @return void
      *
      * @throws QlessException
      */
     public function setMax(int $max)
     {
-        $this->client->lua->run('resource.set', [$this->name, $max]);
+        $this->client->call('resource.set', $this->name, $max);
         $this->max = null;
     }
 
@@ -130,7 +130,7 @@ class Resource
     public function getMax(): int
     {
         if ($this->max === null) {
-            $this->max = (int) $this->client->lua->run('resource.get', [$this->name]);
+            $this->max = (int) $this->client->call('resource.get', $this->name);
         }
 
         return $this->max;

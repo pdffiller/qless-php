@@ -2,15 +2,16 @@
 
 namespace Qless;
 
-use PHP_CodeSniffer\Tokenizers\PHP;
 use Redis;
 
 /**
- * Qless\Listener
+ * Qless\Subscriber
+ *
+ * A class used for subscribing to messages in a thread.
  *
  * @package Qless
  */
-class Listener
+class Subscriber
 {
     /** @var Redis */
     private $redis;
@@ -19,20 +20,14 @@ class Listener
     private $channels;
 
     /**
-     * Listener constructor.
+     * Subscriber constructor.
      *
-     * @param array $config
+     * @param Redis $redis
      * @param array $channels
      */
-    public function __construct(array $config, array $channels)
+    public function __construct(Redis $redis, array $channels)
     {
-        $this->redis = new Redis();
-        $this->redis->connect(
-            $config['host'] ?? '127.0.0.1',
-            $config['port'] ?? 6379,
-            $config['timeout'] ?? 0.0
-        );
-
+        $this->redis = $redis;
         $this->channels  = $channels;
     }
 
