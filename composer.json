@@ -23,12 +23,13 @@
         }
     ],
     "require": {
-        "php": ">=7.0 <8.0",
+        "php": ">=7.1 <8.0",
         "ext-json": "*",
         "ext-pcntl": "*",
-        "ext-redis": "*",
         "ext-posix": "*",
+        "ext-redis": "*",
         "ext-sockets": "*",
+        "phpstan/phpstan": "0.10.*",
         "psr/log": "^1.0"
     },
     "conflict": {
