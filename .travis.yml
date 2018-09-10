@@ -50,7 +50,7 @@ install:
 script:
   - composer lint
   - composer analyse
-  - composer test
+  - composer test --disallow-test-output
   - composer bench
 
 after_success:
