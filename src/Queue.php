@@ -3,6 +3,8 @@
 namespace Qless;
 
 use Qless\Exceptions\QlessException;
+use Qless\Exceptions\RuntimeException;
+use Ramsey\Uuid\Uuid;
 
 /**
  * Qless\Queue
@@ -61,6 +63,7 @@ class Queue
      * @return string|float The job identifier or the time remaining before the job expires
      *                      if the job is already running.
      *
+     * @throws RuntimeException
      * @throws QlessException
      */
     public function put(
@@ -76,10 +79,16 @@ class Queue
         $tags = [],
         $depends = []
     ) {
+        try {
+            $jid = $jid ?: Uuid::uuid4();
+        } catch (\Exception $e) {
+            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+        }
+
         return $this->client->put(
             '',
             $this->name,
-            $jid ?: Qless::guidv4(),
+            $jid,
             $klass,
             json_encode($data, JSON_UNESCAPED_SLASHES),
             $delay,
@@ -143,6 +152,7 @@ class Queue
      *
      * @return mixed
      *
+     * @throws RuntimeException
      * @throws QlessException
      */
     public function recur(
@@ -156,9 +166,15 @@ class Queue
         $resources = [],
         $tags = []
     ) {
+        try {
+            $jid = $jid ?: Uuid::uuid4();
+        } catch (\Exception $e) {
+            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+        }
+
         return $this->client->recur(
             $this->name,
-            $jid ?: Qless::guidv4(),
+            $jid,
             $klass,
             json_encode($data, JSON_UNESCAPED_SLASHES),
             'interval',
