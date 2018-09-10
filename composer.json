@@ -23,12 +23,13 @@
         }
     ],
     "require": {
-        "php": ">=7.0 <8.0",
+        "php": ">=7.1 <8.0",
         "ext-json": "*",
         "ext-pcntl": "*",
-        "ext-redis": "*",
         "ext-posix": "*",
+        "ext-redis": "*",
         "ext-sockets": "*",
+        "phpstan/phpstan": "0.10.*",
         "psr/log": "^1.0"
     },
     "conflict": {
@@ -58,9 +59,10 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "scripts": {
-        "fix-lint": "./vendor/bin/phpcbf",
-        "lint": "./vendor/bin/phpcs",
-        "test": "./vendor/bin/phpunit",
-        "bench": "./vendor/bin/phpunit --group performance --dont-report-useless-tests --no-coverage --no-logging"
+        "fix-lint": "phpcbf",
+        "lint": "phpcs",
+        "test": "phpunit",
+        "bench": "phpunit --group performance --dont-report-useless-tests --no-coverage --no-logging",
+        "analyse": "phpstan analyse -l 1 src"
     }
 }

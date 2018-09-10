@@ -4,7 +4,6 @@ dist: trusty
 language: php
 
 php:
-  - '7.0'
   - '7.1'
   - '7.2'
   - nightly
@@ -50,6 +49,7 @@ install:
 
 script:
   - composer lint
+  - composer analyse
   - composer test
   - composer bench
 
