@@ -29,6 +29,7 @@
         <ini name="date.timezone" value="UTC"/>
         <ini name="display_errors" value="on"/>
         <ini name="display_startup_errors" value="on"/>
+        <!-- uncomment to override redis server for testing -->
         <!-- env name="REDIS_HOST" value="127.0.0.1"/ -->
         <!-- env name="REDIS_PORT" value="6379"/ -->
         <!-- env name="REDIS_TIMEOUT" value="0.0"/ -->
