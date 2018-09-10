@@ -5,8 +5,9 @@ namespace Qless;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qless\Exceptions\ErrorCodes;
+use Qless\Exceptions\InvalidArgumentException;
+use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\JobHandlerInterface;
-use RuntimeException;
 
 /**
  * Qless\Worker
@@ -77,19 +78,20 @@ class Worker
      * @param string $fqcl The fully qualified class name.
      * @return void
      *
-     * @throws \RuntimeException
+     * @throws RuntimeException
+     * @throws InvalidArgumentException
      */
     public function registerJobPerformHandler($fqcl)
     {
         if (!class_exists($fqcl)) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 sprintf('Could not find job perform class %s.', $fqcl)
             );
         }
 
         $interfaces = class_implements($fqcl);
         if ($interfaces === false || in_array(JobHandlerInterface::class, $interfaces, true) == false) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 sprintf(
                     'Provided Job class "%s" does not implement %s interface.',
                     $fqcl,
@@ -114,7 +116,7 @@ class Worker
         $this->logger->info('{type}: Worker started', $this->logContext);
         $this->logger->info(
             '{type}: monitoring the following queues (in order), {queues}',
-            ['type'=>$this->who, 'queues' => implode(', ', $this->queues)]
+            ['type' => $this->who, 'queues' => implode(', ', $this->queues)]
         );
 
         $did_work = false;
@@ -274,9 +276,10 @@ class Worker
     /**
      * Forks and creates a socket pair for communication between parent and child process
      *
-     * @param resource $socket
-     *
+     * @param  resource $socket
      * @return int PID if master or 0 if child
+     *
+     * @throws RuntimeException
      */
     private function fork(&$socket)
     {
@@ -435,7 +438,7 @@ class Worker
                 $job->perform();
             }
             $this->logger->notice('{type}: Job {job} has finished', $context);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $context['stack'] = $e->getMessage();
 
             $this->logger->critical('{type}: {job} has failed {stack}', $context);

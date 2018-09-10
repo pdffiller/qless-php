@@ -3,6 +3,7 @@
 namespace Qless;
 
 use Qless\Exceptions\QlessException;
+use Qless\Exceptions\RuntimeException;
 
 /**
  * Qless\Job
@@ -203,6 +204,7 @@ class Job
     /**
      * Get the list of tags associated with this job
      *
+     * @todo This may return a string
      * @return string[]
      */
     public function getTags()
@@ -211,19 +213,17 @@ class Job
     }
 
     /**
-     * Add the specified tags to this job
+     * Add the specified tags to this job.
      *
-     * @param string $tags... list of tags to remove from this job
-     *
-     * @return string[] the new list of tags
+     * @param  string ...$tags A list of tags to remove from this job.
+     * @return void
      */
-    public function tag($tags)
+    public function tag(...$tags)
     {
         $tags = func_get_args();
-        $this->tags = json_decode(
-            call_user_func_array([$this->client, 'call'], array_merge(['tag', 'add', $this->jid], $tags)),
-            true
-        );
+        $response = call_user_func_array([$this->client, 'call'], array_merge(['tag', 'add', $this->jid], $tags));
+
+        $this->tags = json_decode($response, true);
     }
 
     /**
@@ -345,10 +345,12 @@ class Job
     }
 
     /**
-     * @param bool|null $data
+     * Set the timestamp of the new heartbeat.
+     *
+     * @param  array|null $data
+     * @return int
      *
      * @throws QlessException If the heartbeat fails
-     * @return int timestamp of the heartbeat
      */
     public function heartbeat(array $data = null)
     {
@@ -356,8 +358,9 @@ class Job
             $data = json_encode($data, JSON_UNESCAPED_SLASHES);
         }
 
-        return $this->expires = $this->client
-            ->heartbeat($this->jid, $this->worker_name, $data);
+        $this->expires = $this->client->heartbeat($this->jid, $this->worker_name, $data);
+
+        return $this->expires;
     }
 
     /**
@@ -407,18 +410,18 @@ class Job
      * @param $message
      *
      * @return bool
-     * return values -
      */
     public function fail($group, $message)
     {
         $jsonData = json_encode($this->data, JSON_UNESCAPED_SLASHES);
 
-        return $this->client
-            ->fail($this->jid, $this->worker_name, $group, $message, $jsonData);
+        return $this->client->fail($this->jid, $this->worker_name, $group, $message, $jsonData);
     }
 
     /**
      * Timeout this job
+     *
+     * @return void
      */
     public function timeout()
     {
@@ -428,24 +431,28 @@ class Job
     /**
      * Get the instance of the class specified on this job.  This instance will
      * be used to call the payload['performMethod']
-     * @return mixed
-     * @throws \Exception
+     *
+     * @return object
+     *
+     * @throws RuntimeException
      */
     public function getInstance()
     {
-        if (!is_null($this->instance)) {
+        if ($this->instance !== null) {
             return $this->instance;
         }
 
         if (!class_exists($this->klass_name)) {
-            throw new \Exception(
-                'Could not find job class ' . $this->klass_name . '.'
-            );
+            throw new RuntimeException("Could not find job class {$this->klass_name}.");
         }
 
         if (!method_exists($this->klass_name, $this->data['performMethod'])) {
-            throw new \Exception(
-                'Job class ' . $this->klass_name . ' does not contain perform method ' . $this->data['performMethod']
+            throw new RuntimeException(
+                sprintf(
+                    'Job class "%s" does not contain perform method "%s".',
+                    $this->klass_name,
+                    $this->data['performMethod']
+                )
             );
         }
 

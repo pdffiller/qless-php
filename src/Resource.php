@@ -2,7 +2,7 @@
 
 namespace Qless;
 
-use Qless\Exceptions\QlessException;
+use Qless\Exceptions\ExceptionInterface;
 
 /**
  * Qless\Resource
@@ -37,7 +37,7 @@ class Resource
      *
      * @return bool
      *
-     * @throws QlessException
+     * @throws ExceptionInterface
      */
     public function exists(): bool
     {
@@ -49,7 +49,7 @@ class Resource
      *
      * @return int
      *
-     * @throws QlessException
+     * @throws ExceptionInterface
      */
     public function getLockCount(): int
     {
@@ -61,7 +61,7 @@ class Resource
      *
      * @return string[]
      *
-     * @throws QlessException
+     * @throws ExceptionInterface
      */
     public function getLocks(): array
     {
@@ -75,7 +75,7 @@ class Resource
      *
      * @return int
      *
-     * @throws QlessException
+     * @throws ExceptionInterface
      */
     public function getPendingCount(): int
     {
@@ -87,7 +87,7 @@ class Resource
      *
      * @return string[]
      *
-     * @throws QlessException
+     * @throws ExceptionInterface
      */
     public function getPending(): array
     {
@@ -101,7 +101,7 @@ class Resource
      *
      * @return bool
      *
-     * @throws QlessException
+     * @throws ExceptionInterface
      */
     public function delete(): bool
     {
@@ -114,7 +114,7 @@ class Resource
      * @param  int $max
      * @return void
      *
-     * @throws QlessException
+     * @throws ExceptionInterface
      */
     public function setMax(int $max)
     {
@@ -127,7 +127,7 @@ class Resource
      *
      * @return int
      *
-     * @throws QlessException
+     * @throws ExceptionInterface
      */
     public function getMax(): int
     {

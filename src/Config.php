@@ -2,7 +2,7 @@
 
 namespace Qless;
 
-use Qless\Exceptions\QlessException;
+use Qless\Exceptions\ExceptionInterface;
 
 /**
  * Qless\Config
@@ -31,7 +31,7 @@ class Config
      * @param mixed $default
      * @return mixed|null
      *
-     * @throws QlessException
+     * @throws ExceptionInterface
      */
     public function get(string $name, $default = null)
     {
@@ -46,7 +46,7 @@ class Config
      * @param string          $name
      * @param string|int|bool $value
      *
-     * @throws QlessException
+     * @throws ExceptionInterface
      */
     public function set(string $name, $value)
     {
@@ -59,7 +59,7 @@ class Config
      * @param string $name
      * @return void
      *
-     * @throws QlessException
+     * @throws ExceptionInterface
      */
     public function clear($name)
     {
