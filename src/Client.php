@@ -2,6 +2,7 @@
 
 namespace Qless;
 
+use Qless\Events\Subscriber;
 use Qless\Exceptions\ExceptionInterface;
 use Redis;
 
@@ -21,7 +22,7 @@ use Redis;
  * @method int retry(string $jid, string $queue, string $worker, int $delay, string $group, string $message)
  * @method int cancel(string $jid)
  * @method int unrecur(string $jid)
- * @method int fail(string $jid, string $worker, string $group, string $message, string $data = null)
+ * @method bool|string fail(string $jid, string $worker, string $group, string $message, string $data = null)
  * @method string[] jobs(string $state, int $offset = 0, int $count = 25)
  * @method string get(string $jid)
  * @method string multiget(string[] $jid)
@@ -29,6 +30,10 @@ use Redis;
  * @method void timeout(string $jid)
  * @method string failed(string $group = false, int $start = 0, int $limit = 25)
  * @method string[] tag(string $op, $tags)
+ * @method string stats(string $queueName, int $date)
+ * @method void pause(string $queueName, ...$args)
+ * @method bool|int paused(string $queueName)
+ * @method void unpause(string $queueName, ...$args)
  *
  * @property-read Jobs $jobs
  * @property-read Config $config

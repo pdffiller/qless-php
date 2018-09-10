@@ -1,5 +1,7 @@
 <?php
 
+use Qless\Events\Event;
+
 require_once 'bootstrap.php';
 
 $redisConfig = [
@@ -13,9 +15,10 @@ $redis->connect($redisConfig['host'], $redisConfig['port'], $redisConfig['timeou
 
 sleep(2);
 
-$redis->publish('chan-1', json_encode(['event' => 'event #1 to channel 1']));
-$redis->publish('chan-1', json_encode(['event' => 'event #2 to channel 1']));
-$redis->publish('chan-2', json_encode(['event' => 'event #3 to channel 2']));
-$redis->publish('chan-2', json_encode(['event' => 'event #4 to channel 2']));
-$redis->publish('chan-3', json_encode(['event' => 'event #5 to channel 3']));
-$redis->publish('chan-2', json_encode(['event' => 'event #6 to channel 4']));
+$redis->publish('chan-1', json_encode(['event' => Event::CANCELED]));
+$redis->publish('chan-1', json_encode(['event' => Event::COMPLETED]));
+$redis->publish('chan-2', json_encode(['event' => Event::FAILED]));
+$redis->publish('chan-2', json_encode(['event' => Event::LOCK_LOST]));
+$redis->publish('chan-3', json_encode(['event' => Event::PUT]));
+$redis->publish('chan-2', json_encode(['event' => Event::CONFIG_SET]));
+$redis->publish('chan-4', json_encode(['event' => Event::CONFIG_UNSET]));

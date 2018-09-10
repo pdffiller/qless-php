@@ -13,11 +13,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added all the required PHP extensions to the Composer's `require` section so that
   now Composer will check dependencies on library installation time
 - Added support of default Worker's `perform` method
+- Added `Qless\Events\Event` DTO and `Qless\Events\EventsFactory`
 
 ### Changed
 - PHP 5.x is no longer supported. Minimal required version is 7.1
 - Move `Qless\Lua` to the `Qless\LuaScript`
-- Move `Qless\Listener` to the `Qless\Subscriber`
+- Move `Qless\Listener` to the `Qless\Events\Subscriber`
 - More code quality improvements to follow the SRP. Thus the code base for almost all classes has been changed
 - Move all the exceptions to the common namespace and implement the same `Qless\Exceptions\ExceptionInterface`
   

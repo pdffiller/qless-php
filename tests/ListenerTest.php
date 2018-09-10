@@ -2,7 +2,8 @@
 
 namespace Qless\Tests;
 
-use Qless\Subscriber;
+use Qless\Events\Event;
+use Qless\Events\Subscriber;
 use Qless\Tests\Support\RedisAwareTrait;
 
 /**
@@ -37,23 +38,11 @@ class ListenerTest extends QlessTestCase
 
         $listener->messages($callback);
 
-        $event1 = new \stdClass();
-        $event1->event = 'event #1 to channel 1';
-
-        $event2 = new \stdClass();
-        $event2->event = 'event #2 to channel 1';
-
-        $event3 = new \stdClass();
-        $event3->event = 'event #3 to channel 2';
-
-        $event4 = new \stdClass();
-        $event4->event = 'event #4 to channel 2';
-
         $this->assertEquals([
-            ['chan-1' => $event1],
-            ['chan-1' => $event2],
-            ['chan-2' => $event3],
-            ['chan-2' => $event4],
+            ['chan-1' => new Event(Event::CANCELED)],
+            ['chan-1' => new Event(Event::COMPLETED)],
+            ['chan-2' => new Event(Event::FAILED)],
+            ['chan-2' => new Event(Event::LOCK_LOST)],
         ], $events);
     }
 }
