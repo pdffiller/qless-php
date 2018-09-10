@@ -17,6 +17,31 @@ For more see the [Contatta/qless-php license](https://github.com/Contatta/qless-
 
 Documentation is borrowed from [seomoz/qless](https://github.com/seomoz/qless).
 
+## Contents
+
+- [Philosophy and Nomenclature](#philosophy-and-nomenclature)
+- [Features](#features)
+- [Usage](#usage)
+  - [Enqueing Jobs](#enqueing-jobs)
+  - [Running A Worker](#running-a-worker)
+  - [Web Interface](#web-interface)
+  - [Job Dependencies](#job-dependencies)
+  - [Priority](#priority)
+  - [Scheduled Jobs](#scheduled-jobs)
+  - [Recurring Jobs](#recurring-jobs)
+  - [Configuration Options](#configuration-options)
+  - [Tagging / Tracking](#tagging--tracking)
+  - [Notifications](#notifications)
+  - [Heartbeating](#heartbeating)
+  - [Stats](#stats)
+  - [Time](#time)
+  - [Ensuring Job Uniqueness](#ensuring-job-uniqueness)
+  - [Setting Default Job Options](#setting-default-job-options)
+  - [Testing Jobs](#testing-jobs)
+- [Demo](#demo)
+- [Contributing and Developing](#contributing-and-developing)
+- [License](#license)
+
 ## Philosophy and Nomenclature
 
 A `job` is a unit of work identified by a job id or `jid`. A `queue` can contain several jobs that are scheduled to be
@@ -59,10 +84,6 @@ a job if the error is likely not a transient one; otherwise, that worker should 
 1. **Notifications** -- Tracked jobs emit events on pubsub channels as they get
   completed, failed, put, popped, etc. Use these events to get notified of
   progress on jobs you're interested in.
-
-## Contributing and Developing
-
-Please see [CONTRIBUTING.md](https://github.com/pdffiller/qless-php/blob/master/CONTRIBUTING.md).
 
 ## Usage
 
@@ -130,9 +151,13 @@ Please see [CONTRIBUTING.md](https://github.com/pdffiller/qless-php/blob/master/
 
 **`@todo`**
 
-### Demo
+## Demo
 
 See the [`./demo/`](https://github.com/pdffiller/qless-php/tree/master/demo) directory contents for a simple example.
+
+## Contributing and Developing
+
+Please see [CONTRIBUTING.md](https://github.com/pdffiller/qless-php/blob/master/CONTRIBUTING.md).
 
 ## License
 
