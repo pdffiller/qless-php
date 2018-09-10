@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Increased test coverage
 - Added all the required PHP extensions to the Composer's `require` section so that
   now Composer will check dependencies on library installation time
+- Added support of default Worker's `perform` method
 
 ### Changed
 - PHP 5.x is no longer supported. Minimal required version is 7.1

@@ -393,7 +393,7 @@ class Job
         try {
             $instance = $this->getInstance();
 
-            $performMethod = $this->data['performMethod'];
+            $performMethod = $this->getPerformMethod();
 
             $instance->$performMethod($this);
         } catch (\Exception $e) {
@@ -430,7 +430,7 @@ class Job
 
     /**
      * Get the instance of the class specified on this job.  This instance will
-     * be used to call the payload['performMethod']
+     * be used to call the payload['performMethod'] (or "perform" if not specified)
      *
      * @return object
      *
@@ -446,12 +446,14 @@ class Job
             throw new RuntimeException("Could not find job class {$this->klass_name}.");
         }
 
-        if (!method_exists($this->klass_name, $this->data['performMethod'])) {
+        $performMethod = $this->getPerformMethod();
+
+        if (!method_exists($this->klass_name, $performMethod)) {
             throw new RuntimeException(
                 sprintf(
                     'Job class "%s" does not contain perform method "%s".',
                     $this->klass_name,
-                    $this->data['performMethod']
+                    $performMethod
                 )
             );
         }
@@ -459,5 +461,19 @@ class Job
         $this->instance = new $this->klass_name;
 
         return $this->instance;
+    }
+
+    /**
+     * Gets method to execute on the instance (defaults to "perform").
+     *
+     * @return string
+     */
+    protected function getPerformMethod(): string
+    {
+        if (is_array($this->data) && array_key_exists('performMethod', $this->data)) {
+            return $this->data['performMethod'];
+        }
+
+        return 'perform';
     }
 }

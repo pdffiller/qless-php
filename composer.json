@@ -29,6 +29,7 @@
         "ext-posix": "*",
         "ext-redis": "*",
         "ext-sockets": "*",
+        "infection/infection": "0.10.*",
         "phpstan/phpstan": "0.10.*",
         "psr/log": "^1.0"
     },
@@ -61,7 +62,7 @@
     "scripts": {
         "fix-lint": "phpcbf",
         "lint": "phpcs",
-        "test": "phpunit",
+        "test": "phpunit --disallow-test-output",
         "bench": "phpunit --group performance --dont-report-useless-tests --no-coverage --no-logging",
         "analyse": "phpstan analyse -l 1 src"
     }

@@ -20,7 +20,7 @@ class LuaScript
     /** @var Redis */
     private $redis;
 
-    /** @var string|null */
+    /** @var ?string */
     private $sha;
 
     /**
@@ -42,7 +42,7 @@ class LuaScript
      *
      * @throws ExceptionInterface
      */
-    public function run($command, array $args)
+    public function run(string $command, array $args)
     {
         if (empty($this->sha)) {
             $this->reload();
@@ -69,7 +69,7 @@ class LuaScript
      * @param  array  $args
      * @return array
      */
-    private function normalizeCommandArgs(string $command, array $args)
+    private function normalizeCommandArgs(string $command, array $args): array
     {
         return array_merge([$command, microtime(true)], $args);
     }
@@ -82,7 +82,7 @@ class LuaScript
      *
      * @throws ExceptionInterface
      */
-    private function handleError(string $error)
+    private function handleError(string $error): void
     {
         $this->redis->clearLastError();
 
@@ -94,15 +94,15 @@ class LuaScript
      *
      * @return void
      */
-    private function reload()
+    private function reload(): void
     {
-        $script = file_get_contents(__DIR__ . '/qless-core/qless.lua', true);
-        $this->sha = sha1($script);
+        $file = __DIR__ . '/qless-core/qless.lua';
+        $this->sha = sha1_file($file);
 
         $res = $this->redis->script('exists', $this->sha);
 
         if ($res[0] !== 1) {
-            $this->sha = $this->redis->script('load', $script);
+            $this->sha = $this->redis->script('load', file_get_contents($file));
         }
     }
 }

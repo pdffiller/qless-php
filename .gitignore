@@ -9,3 +9,7 @@ vendor
 composer.lock
 phpunit.xml
 phpcs.xml
+
+infection.json
+infection-log.txt
+infection-log.json

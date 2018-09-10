@@ -22,7 +22,7 @@ class Worker
         $this->logger->pushHandler(new StreamHandler(STDOUT, Logger::DEBUG));
     }
 
-    public function myPerformMethod(Job $job)
+    public function myPerformMethod(Job $job): void
     {
         $this->logger->debug('We are in :', [__METHOD__]);
 
@@ -37,7 +37,20 @@ class Worker
         // jobId = instance_id:job_name:user_id:additional if always unique
     }
 
-    public function myThrowMethod(Job $job)
+    /**
+     * Default perform method.
+     *
+     * @param  Job $job
+     * @return void
+     */
+    public function perform(Job $job): void
+    {
+        $this->logger->debug('We are in :', [__METHOD__]);
+
+        $job->complete();
+    }
+
+    public function myThrowMethod(Job $job): void
     {
         $this->logger->debug('We are in: ', [__METHOD__]);
         sleep(2);
@@ -45,7 +58,7 @@ class Worker
         throw new \Exception('Sample job exception message.');
     }
 
-    public function exitMethod(Job $job)
+    public function exitMethod(Job $job): void
     {
         $this->logger->debug('We are in :', [__METHOD__]);
         sleep(1);

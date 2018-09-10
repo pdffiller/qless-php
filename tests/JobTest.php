@@ -60,6 +60,30 @@ class JobTest extends QlessTestCase
         $job1->getInstance();
     }
 
+    /**
+     * @test
+     * @expectedException \Qless\Exceptions\RuntimeException
+     * @expectedExceptionMessage Job class "Qless\Demo\Worker" does not contain perform method "myPerformMethod2".
+     */
+    public function shouldThrowsExpectedExceptionWhenGetInstanceWithInvalidPerformMethod()
+    {
+        $queue = new Queue('testQueue', $this->client);
+
+        $this->client->config->set('heartbeat', -10);
+        $this->client->config->set('grace-period', 0);
+
+        $queue->put(
+            Worker::class,
+            'jobTestDEF',
+            ['performMethod' => 'myPerformMethod2', 'payload' => 'otherData']
+        );
+
+        $job1 = $queue->pop('worker-1')[0];
+        $queue->pop('worker-2');
+
+        $job1->getInstance();
+    }
+
     /** @test */
     public function shouldGetWorkerInstance()
     {
@@ -73,6 +97,22 @@ class JobTest extends QlessTestCase
             'jobTestDEF',
             ['performMethod' => 'myPerformMethod', 'payload' => 'otherData']
         );
+
+        $job1 = $queue->pop('worker-1')[0];
+        $queue->pop('worker-2');
+
+        $this->assertInstanceOf(Worker::class, $job1->getInstance());
+    }
+
+    /** @test */
+    public function shouldGetWorkerInstanceWithDefaultPerformMethod()
+    {
+        $queue = new Queue('testQueue', $this->client);
+
+        $this->client->config->set('heartbeat', -10);
+        $this->client->config->set('grace-period', 0);
+
+        $queue->put(Worker::class, 'jobTestDEF', ['payload' => 'otherData']);
 
         $job1 = $queue->pop('worker-1')[0];
         $queue->pop('worker-2');
