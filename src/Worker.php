@@ -133,7 +133,7 @@ class Worker
 
             if ($did_work) {
                 $this->logger->debug('{type}: Looking for work', $this->logContext);
-                $this->updateProcLine(
+                $this->setProcessStatus(
                     'Waiting for ' . implode(',', $this->queues) . ' with interval ' . $this->interval
                 );
                 $did_work = false;
@@ -157,7 +157,7 @@ class Worker
 
             // Parent process, sit and wait
             $proc_line = 'Forked ' . $this->childPID . ' at ' . strftime('%F %T');
-            $this->updateProcLine($proc_line);
+            $this->setProcessStatus($proc_line);
             $this->logger->info($proc_line, $this->logContext);
 
             while ($this->childProcesses > 0) {
@@ -411,7 +411,7 @@ class Worker
         $this->who        = 'child:' . $this->workerName;
         $this->logContext = ['type' => $this->who];
         $status           = 'Processing ' . $jid . ' since ' . strftime('%F %T');
-        $this->updateProcLine($status);
+        $this->setProcessStatus($status);
         $this->logger->info($status, $this->logContext);
         $this->childPerform($this->job);
 
@@ -515,7 +515,7 @@ class Worker
         $this->who        = 'watchdog:' . $this->workerName;
         $this->logContext = ['type' => $this->who];
         $status           = 'watching events for ' . $jid . ' since ' . strftime('%F %T');
-        $this->updateProcLine($status);
+        $this->setProcessStatus($status);
         $this->logger->info($status, $this->logContext);
 
         // @todo Move to a separated class
@@ -682,9 +682,14 @@ class Worker
         $this->watchdogKill();
     }
 
-    protected function updateProcLine($status)
+    /**
+     * Sets the process status.
+     *
+     * @param  string $status
+     * @return void
+     */
+    protected function setProcessStatus(string $status): void
     {
-        $processTitle = 'qless-' . Qless::VERSION . ': ' . $status;
-        cli_set_process_title($processTitle);
+        cli_set_process_title('qless-php: ' . $status);
     }
 }

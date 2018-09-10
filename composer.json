@@ -31,7 +31,8 @@
         "ext-sockets": "*",
         "infection/infection": "0.10.*",
         "phpstan/phpstan": "0.10.*",
-        "psr/log": "^1.0"
+        "psr/log": "^1.0",
+        "ramsey/uuid": "3.8.*"
     },
     "conflict": {
         "contatta/qless-php": "*"
