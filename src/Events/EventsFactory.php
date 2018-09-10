@@ -36,7 +36,6 @@ class EventsFactory
             $data['message'] ?? null,
             $data['option'] ?? null,
             $data['message'] ?? null
-
         );
     }
 }
