@@ -4,6 +4,8 @@ namespace Qless;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qless\Events\Event;
+use Qless\Events\Subscriber;
 use Qless\Exceptions\ErrorCodes;
 use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\RuntimeException;
@@ -16,9 +18,9 @@ use Qless\Jobs\JobHandlerInterface;
  */
 class Worker
 {
-    const PROCESS_TYPE_MASTER = 0;
-    const PROCESS_TYPE_JOB = 1;
-    const PROCESS_TYPE_WATCHDOG = 2;
+    private const PROCESS_TYPE_MASTER = 0;
+    private const PROCESS_TYPE_JOB = 1;
+    private const PROCESS_TYPE_WATCHDOG = 2;
 
     private $processType = self::PROCESS_TYPE_MASTER;
 
@@ -394,7 +396,6 @@ class Worker
         return $jobFailedMessage;
     }
 
-
     private function childStart()
     {
         $socket = null;
@@ -423,15 +424,16 @@ class Worker
     /**
      * Process a single job.
      *
-     * @param Job $job The job to be processed.
+     * @param  Job $job The job to be processed.
+     * @return void
      */
-    public function childPerform(Job $job)
+    public function childPerform(Job $job): void
     {
         $context = ['job' => $job->getId(), 'type' => $this->who];
 
         try {
             if ($this->jobPerformClass) {
-                /** @var object $performClass */
+                /** @var JobHandlerInterface $performClass */
                 $performClass = new $this->jobPerformClass;
                 $performClass->perform($job);
             } else {
@@ -447,34 +449,32 @@ class Worker
     }
 
     /**
-     * @param $status
-     *
+     * @param  int $status The status parameter supplied to a successful call to pcntl_* functions.
      * @return bool
      */
-    private function childProcessStatus($status)
+    private function childProcessStatus(int $status): bool
     {
         switch (true) {
             case pcntl_wifexited($status):
                 $code = pcntl_wexitstatus($status);
-                if (($res = $this->handleProcessExitStatus($this->childPID, self::PROCESS_TYPE_JOB, $code)) !== false) {
+                $res = $this->handleProcessExitStatus($this->childPID, self::PROCESS_TYPE_JOB, $code);
+
+                if ($res !== false) {
                     $this->job->fail('system:fatal', $res);
                 }
                 return true;
-
             case pcntl_wifsignaled($status):
                 $sig = pcntl_wtermsig($status);
                 if ($sig !== SIGKILL) {
                     $this->childProcessUnhandledSignal($sig);
                 }
                 return true;
-
             case pcntl_wifstopped($status):
                 $sig = pcntl_wstopsig($status);
                 $this->logger->info(
                     sprintf("child %d was stopped with signal %s\n", $this->childPID, pcntl_sig_name($sig))
                 );
                 return false;
-
             default:
                 $this->logger->error(sprintf("unexpected status for child %d; exiting\n", $this->childPID));
                 exit(1);
@@ -520,18 +520,18 @@ class Worker
 
         // @todo Move to a separated class
         ini_set('default_socket_timeout', -1);
-        $subscriber->messages(function ($channel, $event) use ($subscriber, $jid) {
-            if (is_object($event) == false) {
+        $subscriber->messages(function (string $channel, Event $event = null) use ($subscriber, $jid) {
+            if ($event instanceof Event == false) {
                 return;
             }
 
-            if (!in_array($event->event, ['lock_lost', 'canceled', 'completed', 'failed']) || $event->jid !== $jid) {
+            if ($event->valid() == false || $event->getJid() !== $jid) {
                 return;
             }
 
-            switch ($event->event) {
-                case 'lock_lost':
-                    if ($event->worker === $this->workerName) {
+            switch ($event->getType()) {
+                case Event::LOCK_LOST:
+                    if ($event->getWorker() === $this->workerName) {
                         $this->logger->info(
                             "{type}: sending SIGKILL to child {$this->childPID}; job handed out to another worker",
                             $this->logContext
@@ -540,9 +540,8 @@ class Worker
                         $subscriber->stop();
                     }
                     break;
-
-                case 'canceled':
-                    if ($event->worker === $this->workerName) {
+                case Event::CANCELED:
+                    if ($event->getWorker() === $this->workerName) {
                         $this->logger->info(
                             "{type}: sending SIGKILL to child {$this->childPID}; job canceled",
                             $this->logContext
@@ -551,9 +550,8 @@ class Worker
                         $subscriber->stop();
                     }
                     break;
-
-                case 'completed':
-                case 'failed':
+                case Event::COMPLETED:
+                case Event::FAILED:
                     $subscriber->stop();
                     break;
             }
@@ -566,22 +564,20 @@ class Worker
     }
 
     /**
-     * @param $status
-     *
+     * @param  int $status The status parameter supplied to a successful call to pcntl_* functions.
      * @return bool
      */
-    private function watchdogProcessStatus($status)
+    private function watchdogProcessStatus(int $status): bool
     {
         switch (true) {
             case pcntl_wifexited($status):
                 $code = pcntl_wexitstatus($status);
                 $this->handleProcessExitStatus($this->watchdogPID, self::PROCESS_TYPE_WATCHDOG, $code);
                 return true;
-
             case pcntl_wifsignaled($status):
                 $sig = pcntl_wtermsig($status);
                 if ($sig !== SIGKILL) {
-                    $this->logger->warn(
+                    $this->logger->warning(
                         sprintf(
                             "watchdog %d terminated with unhandled signal %s\n",
                             $this->watchdogPID,
@@ -590,14 +586,12 @@ class Worker
                     );
                 }
                 return true;
-
             case pcntl_wifstopped($status):
                 $sig = pcntl_wstopsig($status);
-                $this->logger->warn(
+                $this->logger->warning(
                     sprintf("watchdog %d was stopped with signal %s\n", $this->watchdogPID, pcntl_sig_name($sig))
                 );
                 return false;
-
             default:
                 $this->logger->error(sprintf("unexpected status for watchdog %d; exiting\n", $this->childPID));
                 exit(1);

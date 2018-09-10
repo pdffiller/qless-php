@@ -2,13 +2,13 @@
 
 namespace Qless\Tests;
 
-use Qless\Subscriber;
-use Redis;
 use Qless\Config;
+use Qless\Events\Subscriber;
 use Qless\Jobs;
 use Qless\LuaScript;
 use Qless\Queue;
 use Qless\Tests\Support\RedisAwareTrait;
+use Redis;
 
 /**
  * Qless\Tests\ClientTest
@@ -195,5 +195,48 @@ class ClientTest extends QlessTestCase
 
             ]
         ];
+    }
+
+    /** @test */
+    public function shouldRetrieveStats()
+    {
+        $queue = new Queue('some-queue', $this->client);
+        $queue->put('Xxx\Yyy', 'job-42', ['some-data']);
+
+        $stats = $this->client->stats('some-queue', time());
+
+        $this->assertNotEmpty($stats);
+        $this->assertTrue(is_string($stats));
+
+        $stats = json_decode($stats, true);
+
+        $this->assertArrayHasKey('failed', $stats);
+        $this->assertArrayHasKey('retries', $stats);
+        $this->assertArrayHasKey('failures', $stats);
+        $this->assertArrayHasKey('wait', $stats);
+        $this->assertArrayHasKey('run', $stats);
+
+        $this->assertCount(5, $stats);
+
+        $this->assertTrue(is_array($stats['wait']));
+        $this->assertCount(4, $stats['wait']);
+
+        $this->assertTrue(is_array($stats['run']));
+        $this->assertCount(4, $stats['run']);
+    }
+
+    /** @test */
+    public function shouldPauseTheQueue()
+    {
+        $queue = new Queue('some-queue', $this->client);
+        $queue->put('Xxx\Yyy', 'job-42', ['some-data']);
+
+        $this->assertTrue($this->client->paused('some-queue') === false);
+
+        $this->client->pause('some-queue');
+        $this->assertTrue($this->client->paused('some-queue') === 1);
+
+        $this->client->unpause('some-queue');
+        $this->assertTrue($this->client->paused('some-queue') === false);
     }
 }
