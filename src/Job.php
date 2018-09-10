@@ -388,7 +388,7 @@ class Job
      *
      * @return bool
      */
-    public function perform()
+    public function perform(): bool
     {
         try {
             $instance = $this->getInstance();
@@ -396,7 +396,7 @@ class Job
             $performMethod = $this->getPerformMethod();
 
             $instance->$performMethod($this);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->fail('system:fatal', $e->getMessage());
 
             return false;
@@ -406,12 +406,14 @@ class Job
     }
 
     /**
-     * @param $group
-     * @param $message
+     * Mark the current Job as failed, with the provided group, and a more specific message.
      *
-     * @return bool
+     * @param string $group   Some phrase that might be one of several categorical modes of failure
+     * @param string $message Something more job-specific, like perhaps a traceback.
+     *
+     * @return bool|string The id of the failed Job if successful, or FALSE on failure.
      */
-    public function fail($group, $message)
+    public function fail(string $group, string $message)
     {
         $jsonData = json_encode($this->data, JSON_UNESCAPED_SLASHES);
 
@@ -419,11 +421,11 @@ class Job
     }
 
     /**
-     * Timeout this job
+     * Timeout this Job.
      *
      * @return void
      */
-    public function timeout()
+    public function timeout(): void
     {
         $this->client->timeout($this->jid);
     }

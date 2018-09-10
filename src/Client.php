@@ -30,9 +30,9 @@ use Redis;
  * @method string failed(string $group = false, int $start = 0, int $limit = 25)
  * @method string[] tag(string $op, $tags)
  *
- * @property-read Jobs jobs
- * @property-read Config config
- * @property-read LuaScript lua
+ * @property-read Jobs $jobs
+ * @property-read Config $config
+ * @property-read LuaScript $lua
  */
 class Client
 {
@@ -93,7 +93,7 @@ class Client
      * Call a specific q-less command.
      *
      * @param string $command
-     * @param mixed $arguments
+     * @param mixed ...$arguments
      * @return mixed|null
      *
      * @throws ExceptionInterface
@@ -110,7 +110,7 @@ class Client
      * Call a specific q-less command.
      *
      * @param string $command
-     * @param $arguments
+     * @param array $arguments
      * @return mixed
      *
      * @throws ExceptionInterface

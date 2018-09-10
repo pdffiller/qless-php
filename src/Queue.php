@@ -2,6 +2,8 @@
 
 namespace Qless;
 
+use Qless\Exceptions\ExceptionInterface;
+use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\QlessException;
 use Qless\Exceptions\RuntimeException;
 use Ramsey\Uuid\Uuid;
@@ -193,25 +195,25 @@ class Queue
 
 
     /**
-     * Cancels a job using the specified identifier
+     * Cancels a job using the specified identifier.
      *
-     * @param $jid
+     * @param string $jid
      *
      * @return int
      */
-    public function cancel($jid)
+    public function cancel(string $jid)
     {
         return $this->client->cancel($jid);
     }
 
     /**
-     * Remove a recurring job using the specified identifier
+     * Remove a recurring job using the specified identifier.
      *
-     * @param $jid
+     * @param string $jid
      *
      * @return int
      */
-    public function unrecur($jid)
+    public function unrecur(string $jid)
     {
         return $this->client->unrecur($jid);
     }
@@ -221,99 +223,154 @@ class Queue
      *
      * @return int
      */
-    public function length()
+    public function length(): int
     {
-        return $this->client->length($this->name);
+        return (int) $this->client->length($this->name);
     }
 
+    /**
+     * @param  string $name
+     * @return int
+     *
+     * @throws InvalidArgumentException
+     * @throws ExceptionInterface
+     */
     public function __get($name)
     {
         switch ($name) {
             case 'heartbeat':
-                $cfg = $this->client->config;
+                $fallback = $this->client->config->get('heartbeat', 60);
 
-                return intval($cfg->get("{$this->name}-heartbeat", $cfg->get('heartbeat', 60)));
-
+                return (int) $this->client->config->get("{$this->name}-heartbeat", $fallback);
             default:
-                throw new \InvalidArgumentException("Undefined property '$name'");
+                throw new InvalidArgumentException("Undefined property '$name'");
         }
     }
 
-    public function __set($name, $value)
+    /**
+     *
+     * @param  string $name
+     * @param  mixed  $value
+     * @return void
+     *
+     * @throws InvalidArgumentException
+     * @throws ExceptionInterface
+     */
+    public function __set(string $name, $value): void
     {
         switch ($name) {
             case 'heartbeat':
                 if (!is_int($value)) {
-                    throw new \InvalidArgumentException('heartbeat must be an int');
+                    throw new InvalidArgumentException('heartbeat must be an int');
                 }
 
                 $this->client
                     ->config
                     ->set("{$this->name}-heartbeat", $value);
-
                 break;
-
             default:
-                throw new \InvalidArgumentException("Undefined property '$name'");
+                throw new InvalidArgumentException("Undefined property '{$name}'");
         }
     }
 
-    public function __unset($name)
+    /**
+     * @param  string $name
+     * @return void
+     */
+    public function __unset(string $name): void
     {
         switch ($name) {
             case 'heartbeat':
-                $this->client
-                    ->config
-                    ->clear("{$this->name}-heartbeat");
-
+                try {
+                    $this->client
+                        ->config
+                        ->clear("{$this->name}-heartbeat");
+                } catch (\Throwable $e) {
+                    // The unset shouldn't throw any exception. Thus do nothing
+                }
                 break;
-
             default:
-                throw new \InvalidArgumentException("Undefined property '$name'");
+                // The unset shouldn't throw any exception. Thus do nothing
         }
     }
 
     /**
-     * Retrieve stats from the queue
+     * Return the current statistics for a given queue on a given date.
      *
-     * @param int $date The date for which stats to retrieve as a unix timestamp
+     * The results are returned are a JSON blob:
+     * <code>
+     * {
+     *     # These are unimplemented as of yet
+     *     'failed': 3,
+     *     'retries': 5,
+     *     'failures': 5,
+     *     'wait': {
+     *         'total'    : ...,
+     *         'mean'     : ...,
+     *         'variance' : ...,
+     *         'histogram': [
+     *             ...
+     *         ]
+     *     },
+     *     'run': {
+     *         'total'    : ...,
+     *         'mean'     : ...,
+     *         'variance' : ...,
+     *         'histogram': [
+     *             ...
+     *         ]
+     *     },
+     * }
+     * </code>
      *
+     * @param  int $date The date for which stats to retrieve as a unix timestamp.
      * @return array
+     *
+     * @throws QlessException
      */
-    public function stats($date = null)
+    public function stats(?int $date = null): array
     {
-        $date = $date ? : time();
+        $date = $date ?: time();
 
-        return $this->client->stats($this->name, $date);
+        return json_decode($this->client->stats($this->name, $date), true);
     }
 
     /**
-     * Pauses the queue so it will not process any more jobs
+     * Pauses this queue so it will not process any more Jobs.
+     *
+     * @return void
      */
-    public function pause()
+    public function pause(): void
     {
         $this->client->pause($this->name);
     }
 
     /**
-     * Resumes the queue so it will continue processing jobs
+     * Resumes the queue so it will continue processing jobs.
+     *
+     * @return void
      */
-    public function resume()
+    public function resume(): void
     {
         $this->client->unpause($this->name);
     }
 
     /**
-     * Specifies whether the queue is paused
+     * Checks if this queue is paused.
      *
      * @return bool
      */
-    public function isPaused()
+    public function isPaused(): bool
     {
-        return $this->client->paused($this->name) === 1;
+        return (bool) $this->client->paused($this->name);
     }
 
-    public function __toString()
+    /**
+     * Gets this queue name.
+     *
+     * @return string
+     */
+    public function __toString(): string
     {
         return $this->name;
     }
