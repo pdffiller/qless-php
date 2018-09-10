@@ -18,3 +18,4 @@ TODO             text eol=lf linguist-documentation
 .gitattributes   text eol=lf linguist-vendored=false
 .gitmodules      text eol=lf linguist-vendored=false
 .travis.yml      text eol=lf linguist-language=YAML linguist-vendored=false
+phpstan.neon     text eol=lf linguist-language=YAML linguist-vendored=false

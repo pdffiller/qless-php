@@ -49,6 +49,7 @@ install:
 
 script:
   - composer lint
+  - composer analyse
   - composer test
   - composer bench
 
