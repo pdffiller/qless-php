@@ -225,7 +225,7 @@ class Queue
      */
     public function length(): int
     {
-        return (int) $this->client->length($this->name);
+        return $this->client->length($this->name);
     }
 
     /**
