@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Fully refactor the `Qless\Client` class and removed no longer used code
 - Removed no longer required `Qless\Qless::fork` and `pcntl_fork` check
 - Removed no longer needed `Qless\Qless` class
+- Removed no longer needed `Qless\Job::fromJobData`
 
 ### Fixed
 - Fixed demo

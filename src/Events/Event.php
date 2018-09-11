@@ -97,14 +97,14 @@ final class Event
         return isset($this->validTypes[$this->type]);
     }
 
-    public function getJid(): string
-    {
-        return $this->jid;
-    }
-
     public function getType(): string
     {
         return $this->type;
+    }
+
+    public function getJid(): ?string
+    {
+        return $this->jid;
     }
 
     /**

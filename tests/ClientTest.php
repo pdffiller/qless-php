@@ -271,4 +271,47 @@ class ClientTest extends QlessTestCase
 
         $this->assertEquals(0, $this->client->length('some-queue-3'));
     }
+
+    /**
+     * @test
+     * @expectedException \Qless\Exceptions\QlessException
+     * @expectedExceptionMessage Job is not currently running: waiting
+     */
+    public function shouldThrowExpectedExceptionOnCompleteRunningJob()
+    {
+        $queue = new Queue('some-queue', $this->client);
+        $queue->put('Xxx\Yyy', 'job-42', ['some-data']);
+
+        $this->client->complete('job-42', 'worker-1', 'some-queue', '{}');
+    }
+
+    /**
+     * @test
+     * @expectedException \Qless\Exceptions\InvalidJobException
+     * @expectedExceptionMessage Job does not exist
+     */
+    public function shouldThrowExpectedExceptionOnCompleteNonExistingJob()
+    {
+        $queue = new Queue('some-queue', $this->client);
+        $queue->put('Xxx\Yyy', 'job-43', ['some-data']);
+
+        $job = $queue->pop('worker-1');
+        $job[0]->cancel();
+
+        $this->client->complete('job-43', 'worker-1', 'some-queue', '{}');
+    }
+
+    /** @test */
+    public function shouldCompleteJob()
+    {
+        $queue = new Queue('some-queue', $this->client);
+        $queue->put('Xxx\Yyy', 'job-44', ['some-data']);
+
+        $this->client->pop('some-queue', 'worker-1', 1);
+
+        $this->assertEquals(
+            'complete',
+            $this->client->complete('job-44', 'worker-1', 'some-queue', '{}')
+        );
+    }
 }

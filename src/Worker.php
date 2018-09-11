@@ -142,7 +142,7 @@ class Worker
             }
 
             $job = $this->reserve();
-            if (!$job) {
+            if ($job === null) {
                 if ($this->interval == 0) {
                     break;
                 }
@@ -218,17 +218,18 @@ class Worker
     }
 
     /**
-     * @return bool|Job
+     * @return null|Job
      */
-    public function reserve()
+    public function reserve(): ?Job
     {
         foreach ($this->queues as $queue) {
             $job = $queue->pop($this->workerName);
-            if ($job) {
+            if (isset($job[0])) {
                 return $job[0];
             }
         }
-        return false;
+
+        return null;
     }
 
     public function startup()
@@ -338,9 +339,14 @@ class Worker
             $this->logger->debug('Sending error to master', $this->logContext);
             $data = serialize($error);
 
-            while (($len = socket_write($socket, $data)) > 0) {
+            do {
+                $len = socket_write($socket, $data);
+                if ($len === false || $len === 0) {
+                    break;
+                }
+
                 $data = substr($data, $len);
-            }
+            } while (is_numeric($len) && $len > 0);
         });
 
         return $pid;
@@ -379,7 +385,7 @@ class Worker
      * @param int $childType
      * @param int $exitStatus
      *
-     * @return bool|string FALSE if exit status indicates success; otherwise, a string containing the error messages.
+     * @return false|string FALSE if exit status indicates success; otherwise, a string containing the error messages.
      */
     private function handleProcessExitStatus(int $pid, int $childType, int $exitStatus)
     {
@@ -404,7 +410,7 @@ class Worker
         return $jobFailedMessage;
     }
 
-    private function childStart()
+    private function childStart(): void
     {
         $socket = null;
         $this->childPID = $this->fork($socket);
@@ -413,13 +419,18 @@ class Worker
             return;
         }
 
+        if ($this->job instanceof Job == false) {
+            return;
+        }
+
         $this->processType = self::PROCESS_TYPE_JOB;
         $this->clearSigHandlers();
 
-        $jid              = $this->job->getId();
-        $this->who        = 'child:' . $this->workerName;
+        $jid = $this->job->getId();
+        $this->who = 'child:' . $this->workerName;
         $this->logContext = ['type' => $this->who];
-        $status           = 'Processing ' . $jid . ' since ' . strftime('%F %T');
+        $status = 'Processing ' . $jid . ' since ' . strftime('%F %T');
+
         $this->setProcessStatus($status);
         $this->logger->info($status, $this->logContext);
         $this->childPerform($this->job);
@@ -467,7 +478,7 @@ class Worker
                 $code = pcntl_wexitstatus($status);
                 $res = $this->handleProcessExitStatus($this->childPID, self::PROCESS_TYPE_JOB, $code);
 
-                if ($res !== false) {
+                if ($res !== false && $this->job instanceof Job) {
                     $this->job->fail('system:fatal', $res);
                 }
                 return true;
@@ -507,7 +518,7 @@ class Worker
         }
     }
 
-    private function watchdogStart(Subscriber $subscriber)
+    private function watchdogStart(Subscriber $subscriber): void
     {
         $socket = null;
         $this->watchdogPID = $this->fork($socket);
@@ -516,13 +527,18 @@ class Worker
             return;
         }
 
+        if ($this->job instanceof Job == false) {
+            return;
+        }
+
         $this->processType = self::PROCESS_TYPE_WATCHDOG;
         $this->clearSigHandlers();
 
-        $jid              = $this->job->getId();
-        $this->who        = 'watchdog:' . $this->workerName;
+        $jid = $this->job->getId();
+        $this->who = 'watchdog:' . $this->workerName;
         $this->logContext = ['type' => $this->who];
-        $status           = 'watching events for ' . $jid . ' since ' . strftime('%F %T');
+        $status = 'watching events for ' . $jid . ' since ' . strftime('%F %T');
+
         $this->setProcessStatus($status);
         $this->logger->info($status, $this->logContext);
 

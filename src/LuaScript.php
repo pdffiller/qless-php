@@ -4,6 +4,7 @@ namespace Qless;
 
 use Qless\Exceptions\ExceptionFactory;
 use Qless\Exceptions\ExceptionInterface;
+use Qless\Exceptions\RuntimeException;
 use Redis;
 
 /**
@@ -23,6 +24,9 @@ class LuaScript
     /** @var ?string */
     private $sha;
 
+    /** @var string */
+    private $corePath;
+
     /**
      * Lua constructor.
      *
@@ -31,6 +35,7 @@ class LuaScript
     public function __construct(Redis $redis)
     {
         $this->redis = $redis;
+        $this->corePath = __DIR__ . '/qless-core/qless.lua';
     }
 
     /**
@@ -41,6 +46,7 @@ class LuaScript
      * @return mixed|null
      *
      * @throws ExceptionInterface
+     * @throws RuntimeException
      */
     public function run(string $command, array $args)
     {
@@ -93,16 +99,23 @@ class LuaScript
      * Reloads the qless-core code.
      *
      * @return void
+     *
+     * @throws RuntimeException
      */
     private function reload(): void
     {
-        $file = __DIR__ . '/qless-core/qless.lua';
-        $this->sha = sha1_file($file);
+        $this->sha = (string) @sha1_file($this->corePath);
+
+        if (empty($this->sha)) {
+            throw new RuntimeException(
+                'Unable to locate qless-core file at path: ' . $this->corePath
+            );
+        }
 
         $res = $this->redis->script('exists', $this->sha);
 
         if ($res[0] !== 1) {
-            $this->sha = $this->redis->script('load', file_get_contents($file));
+            $this->sha = $this->redis->script('load', file_get_contents($this->corePath));
         }
     }
 }

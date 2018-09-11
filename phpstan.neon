@@ -2,3 +2,4 @@ parameters:
   reportUnmatchedIgnoredErrors: false
   ignoreErrors:
     - '#Method Redis::evalsha\(\) invoked with 2 parameters, 0 required#'
+    - '#Parameter \#2 \$callback of method Redis::subscribe\(\) expects string, Closure\(Redis, string, string|null\): mixed given#'

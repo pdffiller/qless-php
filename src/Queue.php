@@ -65,8 +65,8 @@ class Queue
      * @return string|float The job identifier or the time remaining before the job expires
      *                      if the job is already running.
      *
+     * @throws ExceptionInterface
      * @throws RuntimeException
-     * @throws QlessException
      */
     public function put(
         $klass,
@@ -82,9 +82,20 @@ class Queue
         $depends = []
     ) {
         try {
-            $jid = $jid ?: Uuid::uuid4();
+            $jid = $jid ?: Uuid::uuid4()->toString();
         } catch (\Exception $e) {
-            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+            throw new RuntimeException($e->getMessage(), null, $e->getCode(), $e);
+        }
+
+        $data = json_encode($data, JSON_UNESCAPED_SLASHES);
+        if (empty($data)) {
+            throw new RuntimeException(
+                sprintf(
+                    'Unable to encode payload to put the described job "%s" to the "%s" queue.',
+                    $jid,
+                    $this->name
+                )
+            );
         }
 
         return $this->client->put(
@@ -92,7 +103,7 @@ class Queue
             $this->name,
             $jid,
             $klass,
-            json_encode($data, JSON_UNESCAPED_SLASHES),
+            $data,
             $delay,
             'priority',
             $priority,
@@ -154,8 +165,8 @@ class Queue
      *
      * @return mixed
      *
+     * @throws ExceptionInterface
      * @throws RuntimeException
-     * @throws QlessException
      */
     public function recur(
         $klass,
@@ -169,16 +180,27 @@ class Queue
         $tags = []
     ) {
         try {
-            $jid = $jid ?: Uuid::uuid4();
+            $jid = $jid ?: Uuid::uuid4()->toString();
         } catch (\Exception $e) {
-            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+            throw new RuntimeException($e->getMessage(), null, $e->getCode(), $e);
+        }
+
+        $data = json_encode($data, JSON_UNESCAPED_SLASHES);
+        if (empty($data)) {
+            throw new RuntimeException(
+                sprintf(
+                    'Unable to encode payload to make a recurring job "%s" for the "%s" queue.',
+                    $jid,
+                    $this->name
+                )
+            );
         }
 
         return $this->client->recur(
             $this->name,
             $jid,
             $klass,
-            json_encode($data, JSON_UNESCAPED_SLASHES),
+            $data,
             'interval',
             $interval,
             $offset,
