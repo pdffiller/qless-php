@@ -47,6 +47,16 @@ install:
         --no-progress \
         --no-suggest
 
+before_script:
+  - phpenv which php
+  - php -v
+  - php -m | grep -e 'json\|pcntl\|posix\|redis\|sockets'
+  - php --ri json
+  - php --ri pcntl
+  - php --ri posix
+  - php --ri redis
+  - php --ri sockets
+
 script:
   - composer lint
   - composer analyse

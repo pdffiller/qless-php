@@ -50,7 +50,10 @@
     "autoload": {
         "psr-4": {
             "Qless\\": "src/"
-        }
+        },
+        "files": [
+            "src/helpers.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
@@ -65,6 +68,6 @@
         "lint": "phpcs",
         "test": "phpunit --disallow-test-output",
         "bench": "phpunit --group performance --dont-report-useless-tests --no-coverage --no-logging",
-        "analyse": "phpstan analyse -l 1 src"
+        "analyse": "phpstan analyse -l 4 src"
     }
 }

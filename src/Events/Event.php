@@ -46,7 +46,7 @@ final class Event
     /** @var null|mixed */
     private $value;
 
-    /** @var string[] */
+    /** @var array<string, bool> */
     private $validTypes = [
         Event::LOCK_LOST    => true,
         Event::CANCELED     => true,

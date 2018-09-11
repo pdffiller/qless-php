@@ -17,7 +17,7 @@ class Resource
     /** @var string */
     private $name;
 
-    /** @var int */
+    /** @var int|null */
     private $max;
 
     /**
@@ -41,7 +41,7 @@ class Resource
      */
     public function exists(): bool
     {
-        return $this->client->call('resource.exists', $this->name) == 1;
+        return (bool) $this->client->call('resource.exists', $this->name);
     }
 
     /**
@@ -105,7 +105,7 @@ class Resource
      */
     public function delete(): bool
     {
-        return $this->client->call('resource.unset', $this->name) == 1;
+        return (bool) $this->client->call('resource.unset', $this->name);
     }
 
     /**

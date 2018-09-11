@@ -239,4 +239,36 @@ class ClientTest extends QlessTestCase
         $this->client->unpause('some-queue');
         $this->assertTrue($this->client->paused('some-queue') === false);
     }
+
+    /** @test */
+    public function shouldGetJob()
+    {
+        $queue = new Queue('some-queue', $this->client);
+        $queue->put('Xxx\Yyy', 'job-42', ['some-data']);
+
+        $actual = $this->client->get('job-42');
+
+        $this->assertNotEmpty($actual);
+        $this->assertJson($actual);
+
+        $this->assertFalse($this->client->get('job-43'));
+    }
+
+    /** @test */
+    public function shouldCorrectDetermineLength()
+    {
+        $queue = new Queue('some-queue-2', $this->client);
+
+        $this->assertEquals(0, $this->client->length('some-queue-2'));
+
+        $queue->put('Xxx\Yyy', 'job-42', ['some-data']);
+        $this->assertEquals(1, $this->client->length('some-queue-2'));
+
+        $job = $queue->pop('worker-1');
+        $job[0]->complete();
+
+        $this->assertEquals(0, $this->client->length('some-queue-2'));
+
+        $this->assertEquals(0, $this->client->length('some-queue-3'));
+    }
 }

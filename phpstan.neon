@@ -1,3 +1,4 @@
 parameters:
-  autoload_files:
-    - %rootDir%/../../../src/helpers.php
+  reportUnmatchedIgnoredErrors: false
+  ignoreErrors:
+    - '#Method Redis::evalsha\(\) invoked with 2 parameters, 0 required#'

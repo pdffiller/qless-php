@@ -53,7 +53,7 @@ class Worker
     /** @var LoggerInterface */
     private $logger;
 
-    /** @var Job */
+    /** @var Job|null */
     private $job;
 
     public function __construct(string $name, array $queues, Client $client, int $interval = 60)
@@ -92,7 +92,7 @@ class Worker
         }
 
         $interfaces = class_implements($fqcl);
-        if ($interfaces === false || in_array(JobHandlerInterface::class, $interfaces, true) == false) {
+        if (in_array(JobHandlerInterface::class, $interfaces, true) == false) {
             throw new InvalidArgumentException(
                 sprintf(
                     'Provided Job class "%s" does not implement %s interface.',
@@ -198,10 +198,10 @@ class Worker
             foreach ($this->sockets as $socket) {
                 socket_close($socket);
             }
-            $this->sockets                      = [];
-            $this->job                          = null;
+            $this->sockets  = [];
+            $this->job = null;
             $this->logContext['job.identifier'] = null;
-            $did_work                           = true;
+            $did_work = true;
 
             /**
              * We need to reconnect due to bug in Redis library that always sends QUIT on destruction of \Redis
@@ -373,25 +373,33 @@ class Worker
     }
 
     /**
-     * @param int $PID
-     * @param string $child_type
+     * Handle process exit status.
+     *
+     * @param int $pid
+     * @param int $childType
      * @param int $exitStatus
      *
-     * @return bool|string false if exit status indicates success; otherwise, a string containing the error messages
+     * @return bool|string FALSE if exit status indicates success; otherwise, a string containing the error messages.
      */
-    private function handleProcessExitStatus($PID, $child_type, $exitStatus)
+    private function handleProcessExitStatus(int $pid, int $childType, int $exitStatus)
     {
-        $child_type = $child_type === self::PROCESS_TYPE_JOB ? "child" : "watchdog";
+        switch ($childType) {
+            case self::PROCESS_TYPE_JOB:
+                $childType = 'child';
+                break;
+            default:
+                $childType = 'watchdog';
+        }
 
         if ($exitStatus === 0) {
-            $this->logger->debug("{type}: {$child_type} process exited successfully", $this->logContext);
-
+            $this->logger->debug("{type}: {$childType} process exited successfully", $this->logContext);
             return false;
         }
 
-        $error = $this->readErrorFromSocket($this->sockets[$PID]);
-        $jobFailedMessage = $error ?: "{$child_type} process failed with status: {$exitStatus}";
-        $this->logger->error("{type}: fatal error in {$child_type} process: {$jobFailedMessage}", $this->logContext);
+        $error = $this->readErrorFromSocket($this->sockets[$pid]);
+        $jobFailedMessage = $error ?: "{$childType} process failed with status: {$exitStatus}";
+
+        $this->logger->error("{type}: fatal error in {$childType} process: {$jobFailedMessage}", $this->logContext);
 
         return $jobFailedMessage;
     }
