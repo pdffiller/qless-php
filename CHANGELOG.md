@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Removed no longer required `Qless\Qless::fork` and `pcntl_fork` check
 - Removed no longer needed `Qless\Qless` class
 - Removed no longer needed `Qless\Job::fromJobData`
+- Removed no longer supported `Qless\Resource`
 
 ### Fixed
 - Fixed demo
