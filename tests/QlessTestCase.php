@@ -25,7 +25,7 @@ abstract class QlessTestCase extends TestCase
      *
      * @return void
      */
-    public function setUp()
+    public function setUp(): void
     {
         $config = $this->getRedisConfig();
         $this->client = new Client($config['host'], $config['port'], $config['timeout']);
@@ -36,7 +36,7 @@ abstract class QlessTestCase extends TestCase
      *
      * @return void
      */
-    public function tearDown()
+    public function tearDown(): void
     {
         $this->client->flush();
     }

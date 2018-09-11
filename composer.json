@@ -68,6 +68,6 @@
         "lint": "phpcs",
         "test": "phpunit --disallow-test-output",
         "bench": "phpunit --group performance --dont-report-useless-tests --no-coverage --no-logging",
-        "analyse": "phpstan analyse -l 4 src"
+        "analyse": "phpstan analyse -l max src"
     }
 }

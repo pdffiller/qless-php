@@ -22,7 +22,7 @@ trait AreaAwareTrait
      * @param int            $code
      * @param Throwable|null $previous
      */
-    public function __construct(string $message, string $area = null, $code = 0, Throwable $previous = null)
+    public function __construct(string $message, string $area = null, int $code = 0, Throwable $previous = null)
     {
         $this->area = $area;
 

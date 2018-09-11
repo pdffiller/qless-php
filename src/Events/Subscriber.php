@@ -45,13 +45,11 @@ class Subscriber
     public function messages(callable $callback)
     {
         $factory = $this->eventsFactory;
+        $callback = function (Redis $redis, string $channel, ?string $data = null) use ($callback, $factory) {
+            call_user_func($callback, $channel, $factory->fromData($data));
+        };
 
-        $this->redis->subscribe(
-            $this->channels,
-            function (Redis $redis, $channel, $data) use ($callback, $factory) {
-                call_user_func($callback, $channel, $factory->fromData($data));
-            }
-        );
+        $this->redis->subscribe($this->channels, $callback);
     }
 
     /**
