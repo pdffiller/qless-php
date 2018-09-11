@@ -62,8 +62,7 @@ class Queue
      * @param array       $tags
      * @param array       $depends   A list of JIDs this job must wait on before executing
      *
-     * @return string|float The job identifier or the time remaining before the job expires
-     *                      if the job is already running.
+     * @return string The job identifier.
      *
      * @throws ExceptionInterface
      * @throws RuntimeException
@@ -125,15 +124,16 @@ class Queue
     /**
      * Get the next job on this queue.
      *
-     * @param string $worker  Worker name popping the job.
-     * @param int    $numJobs Number of jobs to pop off of the queue.
+     * @param string|null $worker  Worker name popping the job.
+     * @param int         $numJobs Number of jobs to pop off of the queue.
      *
      * @return Job[]
      *
      * @throws QlessException
      */
-    public function pop(string $worker, int $numJobs = 1): array
+    public function pop(?string $worker = null, int $numJobs = 1): array
     {
+        $worker = $worker ?: $this->client->getWorkerName();
         $results = $this->client->pop($this->name, $worker, $numJobs);
 
         $returnJobs = [];

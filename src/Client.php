@@ -54,13 +54,16 @@ class Client
     private $redis;
 
     /** @var string */
-    protected $redisHost;
+    private $redisHost;
 
     /** @var int */
-    protected $redisPort = 6379;
+    private $redisPort = 6379;
 
     /** @var float */
-    protected $redisTimeout = 0.0;
+    private $redisTimeout = 0.0;
+
+    /** @var string */
+    private $workerName;
 
     /**
      * Client constructor.
@@ -74,6 +77,7 @@ class Client
         $this->redisHost = $host;
         $this->redisPort = $port;
         $this->redisTimeout = $timeout;
+        $this->workerName = gethostname() . '-' . getmypid();
 
         $this->redis = new Redis();
         $this->connect();
@@ -81,6 +85,16 @@ class Client
         $this->lua    = new LuaScript($this->redis);
         $this->config = new Config($this);
         $this->jobs   = new Jobs($this);
+    }
+
+    /**
+     * Gets internal worker name.
+     *
+     * @return string
+     */
+    public function getWorkerName(): string
+    {
+        return $this->workerName;
     }
 
     /**
