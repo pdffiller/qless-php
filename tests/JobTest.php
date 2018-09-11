@@ -3,7 +3,7 @@
 namespace Qless\Tests;
 
 use Qless\Queue;
-use Qless\Demo\Worker;
+use Qless\Tests\Stubs\WorkerStub2;
 
 /**
  * Qless\Tests\JobTest
@@ -61,17 +61,20 @@ class JobTest extends QlessTestCase
     /**
      * @test
      * @expectedException \Qless\Exceptions\RuntimeException
-     * @expectedExceptionMessage Job class "Qless\Demo\Worker" does not contain perform method "myPerformMethod2".
      */
     public function shouldThrowsExpectedExceptionWhenGetInstanceWithInvalidPerformMethod()
     {
+        $this->expectExceptionMessage(
+            'Job class "Qless\Tests\Stubs\WorkerStub2" does not contain perform method "myPerformMethod2".'
+        );
+
         $queue = new Queue('testQueue', $this->client);
 
         $this->client->config->set('heartbeat', -10);
         $this->client->config->set('grace-period', 0);
 
         $queue->put(
-            Worker::class,
+            WorkerStub2::class,
             ['performMethod' => 'myPerformMethod2', 'payload' => 'otherData']
         );
 
@@ -90,14 +93,14 @@ class JobTest extends QlessTestCase
         $this->client->config->set('grace-period', 0);
 
         $queue->put(
-            Worker::class,
+            WorkerStub2::class,
             ['performMethod' => 'myPerformMethod', 'payload' => 'otherData']
         );
 
         $job1 = $queue->pop('worker-1')[0];
         $queue->pop('worker-2');
 
-        $this->assertInstanceOf(Worker::class, $job1->getInstance());
+        $this->assertInstanceOf(WorkerStub2::class, $job1->getInstance());
     }
 
     /** @test */
@@ -108,12 +111,12 @@ class JobTest extends QlessTestCase
         $this->client->config->set('heartbeat', -10);
         $this->client->config->set('grace-period', 0);
 
-        $queue->put(Worker::class, ['payload' => 'otherData']);
+        $queue->put(WorkerStub2::class, ['payload' => 'otherData']);
 
         $job1 = $queue->pop('worker-1')[0];
         $queue->pop('worker-2');
 
-        $this->assertInstanceOf(Worker::class, $job1->getInstance());
+        $this->assertInstanceOf(WorkerStub2::class, $job1->getInstance());
     }
 
     /**

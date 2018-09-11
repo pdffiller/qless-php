@@ -89,7 +89,64 @@ a job if the error is likely not a transient one; otherwise, that worker should 
 
 ### Enqueing Jobs
 
-**`@todo`**
+First things first, create a Qless Client.
+The Client accepts all the same arguments that you'd use when constructing a Redis client.
+
+```php
+use Qless\Client;
+
+// Connect to localhost
+$client = new Client();
+
+// Connect to somewhere else
+$client = new Client('foo.bar.com', 1234);
+```
+
+Jobs should be classes that define a `perform` method, which must accept a single `Qless\Job` argument:
+
+```php
+use Qless\Job;
+
+class MyJobClass
+{
+    /**
+     * @param Job $job Is an instance of `Qless\Job` and provides access to
+     *                 the payload data via `$job->getData()`, a means to cancel
+     *                 the job (`$job->cancel()`), and more.
+     */
+    public function perform(Job $job): void
+    {
+        // ...
+        echo 'Perform ', $job->getId(), ' job', PHP_EOL;
+    }
+}
+```
+
+Now you can access a queue, and add a job to that queue.
+
+```php
+use Qless\Client;
+use Qless\Queue;
+use Qless\Demo\Enqueing\MyJobClass;
+
+// Connect to localhost
+$client = new Client(REDIS_HOST, REDIS_PORT, REDIS_TIMEOUT);
+
+// This references a new or existing queue 'testing'
+$queue = new Queue('testing', $client);
+
+// Let's add a job, with some data. Returns Job ID
+$jid = $queue->put(MyJobClass::class, ['hello' => 'howdy']);
+// $jid here is "696c752a-7060-49cd-b227-a9fcfe9f681b"
+
+// Now we can ask for a job
+$job = $queue->pop();
+// $job here is an array of the Qless\Job instances
+
+// And we can do the work associated with it!
+$job[0]->perform();
+// Perform 316eb06a-30d2-4d66-ad0d-33361306a7a1 job
+```
 
 ### Running A Worker
 
