@@ -168,7 +168,6 @@ class ClientTest extends QlessTestCase
                 'failure'      => [],
                 'expires'      => $expires,
                 'remaining'    => 5,
-                'interval'     => 0,
                 'klass'        => $cName,
                 'tracked'      => false,
                 'tags'         => [],
@@ -188,10 +187,9 @@ class ClientTest extends QlessTestCase
                 ],
                 'dependencies' => [],
                 'dependents'   => [],
-                'result_data'  => [],
-                'resources'    => [],
                 'priority'     => 0,
                 'worker'       => $wName,
+                'spawned_from_jid' => false
 
             ]
         ];
@@ -231,13 +229,13 @@ class ClientTest extends QlessTestCase
         $queue = new Queue('some-queue', $this->client);
         $queue->put('Xxx\Yyy', ['some-data'], 'job-42');
 
-        $this->assertTrue($this->client->paused('some-queue') === false);
+        $this->assertFalse($queue->isPaused());
 
         $this->client->pause('some-queue');
-        $this->assertTrue($this->client->paused('some-queue') === 1);
+        $this->assertTrue($queue->isPaused());
 
         $this->client->unpause('some-queue');
-        $this->assertTrue($this->client->paused('some-queue') === false);
+        $this->assertFalse($queue->isPaused());
     }
 
     /** @test */
@@ -275,7 +273,7 @@ class ClientTest extends QlessTestCase
     /**
      * @test
      * @expectedException \Qless\Exceptions\QlessException
-     * @expectedExceptionMessage Job is not currently running: waiting
+     * @expectedExceptionMessage Job job-42 is not currently running: waiting
      */
     public function shouldThrowExpectedExceptionOnCompleteRunningJob()
     {
@@ -287,8 +285,8 @@ class ClientTest extends QlessTestCase
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\InvalidJobException
-     * @expectedExceptionMessage Job does not exist
+     * @expectedException \Qless\Exceptions\QlessException
+     * @expectedExceptionMessage Job job-43 does not exist
      */
     public function shouldThrowExpectedExceptionOnCompleteNonExistingJob()
     {

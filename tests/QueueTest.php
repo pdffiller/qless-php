@@ -105,16 +105,6 @@ class QueueTest extends QlessTestCase
         $this->assertEquals(array_reverse($jids), $results);
     }
 
-    public function testRunningJobIsNotReplaced()
-    {
-        $queue = new Queue("testQueue", $this->client);
-        $res = $queue->put("Sample\\TestWorkerImpl", [], "jid-1");
-        $this->assertEquals('jid-1', $res);
-        $jobs = $queue->pop("worker");
-        $res = $queue->put("Sample\\TestWorkerImpl", [], "jid-1", 0, 5, false);
-        $this->assertGreaterThan(0, $res);
-    }
-
     public function testRunningJobIsReplaced()
     {
         $queue = new Queue("testQueue", $this->client);
@@ -172,19 +162,6 @@ class QueueTest extends QlessTestCase
 
         $job = $queue->pop('worker')[0];
         $this->assertEquals('jid-high', $job->getId());
-    }
-
-    public function testJobWithIntervalIsThrottled()
-    {
-        $queue = new Queue("testQueue", $this->client);
-
-        $queue->put("Sample\\TestWorkerImpl", [], "jid-1", 0, 5, true, 0, [], 60);
-        $job = $queue->pop('worker')[0];
-        $job->complete();
-
-        $queue->put("Sample\\TestWorkerImpl", [], "jid-1", 0, 5, true, 0, [], 60);
-        $job = $queue->pop('worker');
-        $this->assertEmpty($job);
     }
 
     public function testItUsesGlobalHeartbeatValueWhenNotSet()

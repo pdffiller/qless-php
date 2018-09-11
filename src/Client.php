@@ -32,7 +32,7 @@ use Redis;
  * @method string[] tag(string $op, $tags)
  * @method string stats(string $queueName, int $date)
  * @method void pause(string $queueName, ...$args)
- * @method bool|int paused(string $queueName)
+ * @method string queues(string $queueName)
  * @method void unpause(string $queueName, ...$args)
  *
  * @property-read Jobs $jobs
