@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   now Composer will check dependencies on library installation time
 - Added support of default Worker's `perform` method
 - Added `Qless\Events\Event` DTO and `Qless\Events\EventsFactory`
+- Added `Qless\Client::getWorkerName` to provide default worker name
 
 ### Changed
 - PHP 5.x is no longer supported. Minimal required version is 7.1
@@ -22,7 +23,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Move `Qless\Listener` to the `Qless\Events\Subscriber`
 - More code quality improvements to follow the SRP. Thus the code base for almost all classes has been changed
 - Move all the exceptions to the common namespace and implement the same `Qless\Exceptions\ExceptionInterface`
-- Changed `Qless\Queue::put` signature from the `put($className, $jid, $data, ...)` to the `put(string className, array $data, ?string $jid = null, ...)`
+- Changed `Qless\Queue::put` signature from the `put($className, $jid, $data, ...)`
+  to the `put(string className, array $data, ?string $jid = null, ...)`
+- Now `Qless\Queue::pop` does not require the mandatory presence of the worker name as its 1st argument.
+  If the the worker name is not passed the `Qless\Client::getWorkerName` will be used
 
 ### Removed
 - Fully refactor the `Qless\Client` class and removed no longer used code
