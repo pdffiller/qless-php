@@ -64,7 +64,7 @@ class ClientTest extends QlessTestCase
      * @param int    $expires
      * @param array  $data
      *
-     * @throws \Qless\Exceptions\QlessException;
+     * @throws \Qless\Exceptions\ExceptionInterface
      */
     public function shouldGetTheNextJobOnTheDesiredQueue(
         string $qName,
@@ -75,7 +75,7 @@ class ClientTest extends QlessTestCase
         array $data
     ) {
         $queue = new Queue($qName, $this->client);
-        $queue->put($cName, $jName, $data);
+        $queue->put($cName, $data, $jName);
 
         $actual = $this->client->pop($qName, $wName, 1);
 
@@ -201,7 +201,7 @@ class ClientTest extends QlessTestCase
     public function shouldRetrieveStats()
     {
         $queue = new Queue('some-queue', $this->client);
-        $queue->put('Xxx\Yyy', 'job-42', ['some-data']);
+        $queue->put('Xxx\Yyy', ['some-data']);
 
         $stats = $this->client->stats('some-queue', time());
 
@@ -229,7 +229,7 @@ class ClientTest extends QlessTestCase
     public function shouldPauseTheQueue()
     {
         $queue = new Queue('some-queue', $this->client);
-        $queue->put('Xxx\Yyy', 'job-42', ['some-data']);
+        $queue->put('Xxx\Yyy', ['some-data'], 'job-42');
 
         $this->assertTrue($this->client->paused('some-queue') === false);
 
@@ -244,7 +244,7 @@ class ClientTest extends QlessTestCase
     public function shouldGetJob()
     {
         $queue = new Queue('some-queue', $this->client);
-        $queue->put('Xxx\Yyy', 'job-42', ['some-data']);
+        $queue->put('Xxx\Yyy', ['some-data'], 'job-42');
 
         $actual = $this->client->get('job-42');
 
@@ -261,7 +261,7 @@ class ClientTest extends QlessTestCase
 
         $this->assertEquals(0, $this->client->length('some-queue-2'));
 
-        $queue->put('Xxx\Yyy', 'job-42', ['some-data']);
+        $queue->put('Xxx\Yyy', ['some-data'], 'job-42');
         $this->assertEquals(1, $this->client->length('some-queue-2'));
 
         $job = $queue->pop('worker-1');
@@ -280,7 +280,7 @@ class ClientTest extends QlessTestCase
     public function shouldThrowExpectedExceptionOnCompleteRunningJob()
     {
         $queue = new Queue('some-queue', $this->client);
-        $queue->put('Xxx\Yyy', 'job-42', ['some-data']);
+        $queue->put('Xxx\Yyy', ['some-data'], 'job-42');
 
         $this->client->complete('job-42', 'worker-1', 'some-queue', '{}');
     }
@@ -293,7 +293,7 @@ class ClientTest extends QlessTestCase
     public function shouldThrowExpectedExceptionOnCompleteNonExistingJob()
     {
         $queue = new Queue('some-queue', $this->client);
-        $queue->put('Xxx\Yyy', 'job-43', ['some-data']);
+        $queue->put('Xxx\Yyy', ['some-data'], 'job-43');
 
         $job = $queue->pop('worker-1');
         $job[0]->cancel();
@@ -305,7 +305,7 @@ class ClientTest extends QlessTestCase
     public function shouldCompleteJob()
     {
         $queue = new Queue('some-queue', $this->client);
-        $queue->put('Xxx\Yyy', 'job-44', ['some-data']);
+        $queue->put('Xxx\Yyy', ['some-data'], 'job-44');
 
         $this->client->pop('some-queue', 'worker-1', 1);
 
