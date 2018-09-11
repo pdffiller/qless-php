@@ -20,20 +20,20 @@ $testData1 = ['performMethod' => 'myPerformMethod'];
 $testData2 = ['performMethod' => 'exitMethod'];
 $testData3 = ['performMethod' => 'myThrowMethod'];
 
-if ($queue->put(Worker::class, 'jobTest-1', $testData1 + $payload)) {
-    $logger->debug('Successfully put on queue the job with ID: jobTest-1.');
+if ($queue->put(Worker::class, $testData1 + $payload)) {
+    $logger->debug('Successfully put on queue the job.');
 } else {
     $logger->error('Failed put on queue.');
 }
 
-if ($queue->put(Worker::class, 'jobTest-2', $testData2 + $payload)) {
-    $logger->debug('Successfully put on queue the job with ID: jobTest-2.');
+if ($queue->put(Worker::class, $testData2 + $payload)) {
+    $logger->debug('Successfully put on queue the job.');
 } else {
     $logger->error('Failed put on queue.');
 }
 
-if ($queue->put(Worker::class, 'jobTest-3', $testData3 + $payload)) {
-    $logger->debug('Successfully put on queue the job with ID: jobTest-3.');
+if ($queue->put(Worker::class, $testData3 + $payload)) {
+    $logger->debug('Successfully put on queue the job.');
 } else {
     $logger->error('Failed put on queue.');
 }

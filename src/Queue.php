@@ -49,18 +49,18 @@ class Queue
      * argument should be in how many seconds the instance should be considered
      * actionable.
      *
-     * @param string $klass     The class with the 'performMethod' specified in the data.
-     * @param string $jid       The specified job id, if false is specified, a jid will be generated.
-     * @param mixed  $data      An array of parameters for job.
-     * @param int    $delay     The specified delay to run job.
-     * @param int    $retries   Number of retries allowed.
-     * @param bool   $replace   False to prevent the job from being replaced if it is already running.
-     * @param int    $priority  A greater priority will execute before jobs of lower priority.
-     * @param array  $resources A list of resource identifiers this job must acquire before being processed.
-     * @param float  $interval  The minimum number of seconds required to transpire before the next
-     *                          instance of this job can run.
-     * @param array  $tags
-     * @param array  $depends   A list of JIDs this job must wait on before executing
+     * @param string      $className The class with the 'performMethod' specified in the data.
+     * @param array       $data      An array of parameters for job.
+     * @param string|null $jid       The specified job id, if not a specified, a jid will be generated.
+     * @param int         $delay     The specified delay to run job.
+     * @param int         $retries   Number of retries allowed.
+     * @param bool        $replace   False to prevent the job from being replaced if it is already running.
+     * @param int         $priority  A greater priority will execute before jobs of lower priority.
+     * @param array       $resources A list of resource identifiers this job must acquire before being processed.
+     * @param float       $interval  The minimum number of seconds required to transpire before the next
+     *                               instance of this job can run.
+     * @param array       $tags
+     * @param array       $depends   A list of JIDs this job must wait on before executing
      *
      * @return string|float The job identifier or the time remaining before the job expires
      *                      if the job is already running.
@@ -69,9 +69,9 @@ class Queue
      * @throws RuntimeException
      */
     public function put(
-        $klass,
-        $jid,
-        $data,
+        string $className,
+        array $data,
+        ?string $jid = null,
         $delay = 0,
         $retries = 5,
         $replace = true,
@@ -102,7 +102,7 @@ class Queue
             '',
             $this->name,
             $jid,
-            $klass,
+            $className,
             $data,
             $delay,
             'priority',

@@ -23,7 +23,7 @@ class QueuePerformanceTest extends QlessTestCase
     {
         $queue = new Queue("testQueue", $this->client);
         $cb = $this->getProfilerForCallback(function ($e) use ($queue) {
-            $queue->put("Sample\\TestWorkerImpl", $e, []);
+            $queue->put("Sample\\TestWorkerImpl", [], $e);
         });
 
         $cb(self::TEST_TIME, __METHOD__);
@@ -44,7 +44,7 @@ class QueuePerformanceTest extends QlessTestCase
     {
         $queue = new Queue("testQueue", $this->client);
         $cb = $this->getProfilerForCallback(function ($e) use ($queue) {
-            $queue->put("Sample\\TestWorkerImpl", $e, []);
+            $queue->put("Sample\\TestWorkerImpl", [], $e);
         });
 
         $cb(self::TEST_TIME, __METHOD__ . ' (put)');
