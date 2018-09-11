@@ -17,18 +17,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - PHP 5.x is no longer supported. Minimal required version is 7.1
+- Updated qless-core
 - Move `Qless\Lua` to the `Qless\LuaScript`
 - Move `Qless\Listener` to the `Qless\Events\Subscriber`
 - More code quality improvements to follow the SRP. Thus the code base for almost all classes has been changed
 - Move all the exceptions to the common namespace and implement the same `Qless\Exceptions\ExceptionInterface`
 - Changed `Qless\Queue::put` signature from the `put($className, $jid, $data, ...)` to the `put(string className, array $data, ?string $jid = null, ...)`
-  
+
 ### Removed
 - Fully refactor the `Qless\Client` class and removed no longer used code
 - Removed no longer required `Qless\Qless::fork` and `pcntl_fork` check
 - Removed no longer needed `Qless\Qless` class
 - Removed no longer needed `Qless\Job::fromJobData`
-- Removed no longer supported `Qless\Resource`
+- Removed no longer supported by qless-core `Qless\Resource`, `Qless\Job::getResources` and `Qless\Job::getInterval`
+- The `Qless\Client::paused` no longer provided by qless-core (but we're saved `Qless\Queue::isPaused`)
 
 ### Fixed
 - Fixed demo

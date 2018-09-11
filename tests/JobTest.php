@@ -118,8 +118,8 @@ class JobTest extends QlessTestCase
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\JobLostException
-     * @expectedExceptionMessage Job given out to another worker: worker-2
+     * @expectedException \Qless\Exceptions\QlessException
+     * @expectedExceptionMessageRegExp "Job .* given out to another worker: worker-2 "
      */
     public function shouldThrowIOnCallingHeartbeatForInvalidJob()
     {
@@ -326,7 +326,6 @@ class JobTest extends QlessTestCase
         $job->requeue();
 
         $job = $queue->pop('worker-1')[0];
-        $this->assertEquals(5, $job->getInterval());
         $this->assertEquals(1, $job->getPriority());
         $this->assertEquals(['tag1','tag2'], $job->getTags());
     }
@@ -342,7 +341,6 @@ class JobTest extends QlessTestCase
         $job->requeue(['tags' => ['nnn']]);
 
         $job = $queue->pop('worker-1')[0];
-        $this->assertEquals(5, $job->getInterval());
         $this->assertEquals(1, $job->getPriority());
         $this->assertEquals(['nnn'], $job->getTags());
     }

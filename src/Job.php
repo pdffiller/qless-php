@@ -127,16 +127,6 @@ class Job
     }
 
     /**
-     * Returns a list of requires resources before this job can be processed
-     *
-     * @return string[]
-     */
-    public function getResources()
-    {
-        return $this->jobData['resources'];
-    }
-
-    /**
      * Returns the throttle interval for this job
      *
      * @return float
@@ -280,7 +270,6 @@ class Job
 
     /**
      * Options:
-     *
      * optional values to replace when re-queuing job
      *
      * * int delay          delay (in seconds)
@@ -289,12 +278,11 @@ class Job
      * * int retries        replacement number of retries
      * * string[] tags      replacement tags
      * * string[] depends   replacement list of JIDs this job is dependent on
-     * * string[] resources replacement list of resource IDs required before this job can be processed
      *
-     * @param array $opts optional values
+     * @param  array $opts optional values
      * @return string
      */
-    public function requeue($opts = [])
+    public function requeue(array $opts = []): string
     {
         $opts = array_merge(
             [
@@ -304,8 +292,6 @@ class Job
                 'retries'   => $this->getOriginalRetries(),
                 'tags'      => $this->getTags(),
                 'depends'   => $this->getDependencies(),
-                'resources' => $this->getResources(),
-                'interval'  => $this->getInterval()
             ],
             $opts
         );
@@ -327,11 +313,7 @@ class Job
                 'retries',
                 $opts['retries'],
                 'depends',
-                json_encode($opts['depends'], JSON_UNESCAPED_SLASHES),
-                'resources',
-                json_encode($opts['resources'], JSON_UNESCAPED_SLASHES),
-                'interval',
-                floatval($opts['interval'])
+                json_encode($opts['depends'], JSON_UNESCAPED_SLASHES)
             );
     }
 
@@ -367,9 +349,7 @@ class Job
      */
     public function heartbeat(array $data = null)
     {
-        if (is_array($data)) {
-            $data = json_encode($data, JSON_UNESCAPED_SLASHES);
-        }
+        $data = json_encode($data ?: [], JSON_UNESCAPED_SLASHES);
 
         $this->expires = $this->client->heartbeat($this->jid, $this->workerName, $data);
 

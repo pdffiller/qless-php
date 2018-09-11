@@ -384,7 +384,9 @@ class Queue
      */
     public function isPaused(): bool
     {
-        return (bool) $this->client->paused($this->name);
+        $stat = json_decode($this->client->queues($this->name), true);
+
+        return isset($stat['name']) && $stat['name'] === $this->name && $stat['paused'] == true;
     }
 
     /**
