@@ -2,7 +2,7 @@
 
 namespace Qless\Tests\Stubs;
 
-use Qless\Job;
+use Qless\Jobs\Job;
 use Qless\Jobs\JobHandlerInterface;
 
 /**
@@ -18,7 +18,7 @@ class WorkerStub implements JobHandlerInterface
      * @param Job $job
      * @return void
      */
-    public function perform(Job $job)
+    public function perform(Job $job): void
     {
     }
 }

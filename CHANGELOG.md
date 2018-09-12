@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Updated qless-core
 - Move `Qless\Lua` to the `Qless\LuaScript`
 - Move `Qless\Listener` to the `Qless\Events\Subscriber`
+- Move `Qless\Job` to the `Qless\Jobs\Job`
+- Move `Qless\Jobs` to the `Qless\Jobs\Collection`
 - More code quality improvements to follow the SRP. Thus the code base for almost all classes has been changed
 - Move all the exceptions to the common namespace and implement the same `Qless\Exceptions\ExceptionInterface`
 - Changed `Qless\Queue::put` signature from the `put($className, $jid, $data, ...)`

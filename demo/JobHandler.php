@@ -2,10 +2,10 @@
 
 namespace Qless\Demo;
 
-use Qless\Job;
-use Qless\Jobs\JobHandlerInterface;
-use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
+use Qless\Jobs\Job;
+use Qless\Jobs\JobHandlerInterface;
 
 /**
  * Qless\Demo\JobHandler
@@ -31,7 +31,7 @@ class JobHandler implements JobHandlerInterface
      *
      * @throws \Exception
      */
-    public function perform(Job $job)
+    public function perform(Job $job): void
     {
         $this->logger->debug('JobHandler: The job data is: ', $job->data);
 

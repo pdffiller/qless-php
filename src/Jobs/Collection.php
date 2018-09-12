@@ -1,23 +1,24 @@
 <?php
 
-namespace Qless;
+namespace  Qless\Jobs;
 
 use ArrayAccess;
+use Qless\Client;
 use Qless\Exceptions\ExceptionInterface;
 use Qless\Exceptions\UnsupportedFeatureException;
 
 /**
- * Qless\Jobs
+ * Qless\Jobs\Collection
  *
- * @package Qless
+ * @package Qless\Jobs
  */
-class Jobs implements ArrayAccess
+class Collection implements ArrayAccess
 {
     /** @var Client */
     private $client;
 
     /**
-     * Jobs constructor.
+     * Collection constructor.
      *
      * @param Client $client
      */
@@ -118,6 +119,7 @@ class Jobs implements ArrayAccess
     /**
      * {@inheritdoc}
      *
+     * @param  string $jid
      * @return bool
      */
     public function offsetExists($jid)
@@ -128,6 +130,7 @@ class Jobs implements ArrayAccess
     /**
      * {@inheritdoc}
      *
+     * @param  string $jid
      * @return Job|null
      *
      * @throws ExceptionInterface

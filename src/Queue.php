@@ -6,6 +6,7 @@ use Qless\Exceptions\ExceptionInterface;
 use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\QlessException;
 use Qless\Exceptions\RuntimeException;
+use Qless\Jobs\Job;
 use Ramsey\Uuid\Uuid;
 
 /**

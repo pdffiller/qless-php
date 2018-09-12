@@ -2,7 +2,7 @@
 
 namespace Qless\Demo\Enqueing;
 
-use Qless\Job;
+use Qless\Jobs\Job;
 
 class MyJobClass
 {
