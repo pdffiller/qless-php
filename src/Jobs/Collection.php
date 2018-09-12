@@ -1,18 +1,18 @@
 <?php
 
-namespace Qless;
+namespace  Qless\Jobs;
 
 use ArrayAccess;
+use Qless\Client;
 use Qless\Exceptions\ExceptionInterface;
 use Qless\Exceptions\UnsupportedFeatureException;
-use Qless\Jobs\Job;
 
 /**
- * Qless\Jobs
+ * Qless\Jobs\Collection
  *
- * @package Qless
+ * @package Qless\Jobs
  */
-class Jobs implements ArrayAccess
+class Collection implements ArrayAccess
 {
     /** @var Client */
     private $client;

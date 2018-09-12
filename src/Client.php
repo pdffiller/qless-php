@@ -5,6 +5,7 @@ namespace Qless;
 use Qless\Events\Subscriber;
 use Qless\Exceptions\ExceptionInterface;
 use Qless\Exceptions\UnknownPropertyException;
+use Qless\Jobs\Collection as JobsCollection;
 use Redis;
 
 /**
@@ -36,7 +37,7 @@ use Redis;
  * @method string queues(string $queueName)
  * @method void unpause(string $queueName, ...$args)
  *
- * @property-read Jobs $jobs
+ * @property-read JobsCollection $jobs
  * @property-read Config $config
  * @property-read LuaScript $lua
  */
@@ -48,7 +49,7 @@ class Client
     /** @var Config */
     private $config;
 
-    /** @var Jobs */
+    /** @var JobsCollection */
     private $jobs;
 
     /** @var Redis */
@@ -85,7 +86,7 @@ class Client
 
         $this->lua    = new LuaScript($this->redis);
         $this->config = new Config($this);
-        $this->jobs   = new Jobs($this);
+        $this->jobs   = new JobsCollection($this);
     }
 
     /**

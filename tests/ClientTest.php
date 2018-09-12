@@ -4,7 +4,7 @@ namespace Qless\Tests;
 
 use Qless\Config;
 use Qless\Events\Subscriber;
-use Qless\Jobs;
+use Qless\Jobs\Collection;
 use Qless\LuaScript;
 use Qless\Queue;
 use Qless\Tests\Support\RedisAwareTrait;
@@ -40,7 +40,7 @@ class ClientTest extends QlessTestCase
     public function inaccessiblePropertyDataProvider()
     {
         return [
-            ['jobs',   Jobs::class],
+            ['jobs',   Collection::class],
             ['config', Config::class],
             ['lua',    LuaScript::class],
             ['redis',  Redis::class],
