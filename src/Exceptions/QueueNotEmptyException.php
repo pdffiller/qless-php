@@ -9,7 +9,6 @@ use LogicException;
  *
  * @package Qless\Exceptions
  */
-class QueueNotEmptyException extends LogicException implements ExceptionInterface
+class QueueNotEmptyException extends LogicException
 {
-    use AreaAwareTrait;
 }

@@ -4,6 +4,7 @@ namespace Qless;
 
 use Qless\Events\Subscriber;
 use Qless\Exceptions\ExceptionInterface;
+use Qless\Exceptions\UnknownPropertyException;
 use Redis;
 
 /**
@@ -140,14 +141,19 @@ class Client
     }
 
     /**
-     * Gets the inaccessible, internal properties.
+     * Gets the internal Client's properties.
      *
-     * @param  string $prop
-     * @return Config|Jobs|LuaScript|Redis|null
+     * Do not call this method directly as it is a PHP magic method that
+     * will be implicitly called when executing `$value = $job->property;`.
+     *
+     * @param  string $name
+     * @return mixed
+     *
+     * @throws UnknownPropertyException
      */
-    public function __get(string $prop)
+    public function __get(string $name)
     {
-        switch ($prop) {
+        switch ($name) {
             case 'jobs':
                 return $this->jobs;
             case 'config':
@@ -157,7 +163,7 @@ class Client
             case 'redis':
                 return $this->redis;
             default:
-                return null;
+                throw new UnknownPropertyException('Getting unknown property: ' . self::class . '::' . $name);
         }
     }
 
