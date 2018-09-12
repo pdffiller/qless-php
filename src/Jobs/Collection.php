@@ -18,7 +18,7 @@ class Collection implements ArrayAccess
     private $client;
 
     /**
-     * Jobs constructor.
+     * Collection constructor.
      *
      * @param Client $client
      */
@@ -119,6 +119,7 @@ class Collection implements ArrayAccess
     /**
      * {@inheritdoc}
      *
+     * @param  string $jid
      * @return bool
      */
     public function offsetExists($jid)
@@ -129,6 +130,7 @@ class Collection implements ArrayAccess
     /**
      * {@inheritdoc}
      *
+     * @param  string $jid
      * @return Job|null
      *
      * @throws ExceptionInterface

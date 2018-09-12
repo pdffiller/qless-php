@@ -313,4 +313,74 @@ class ClientTest extends QlessTestCase
             $this->client->complete('job-44', 'worker-1', 'some-queue', '{}')
         );
     }
+
+    /** @test */
+    public function shouldReturnAListOfQueues()
+    {
+        $this->client->flush();
+
+        (new Queue('some-queue-1', $this->client))->put('Xxx\Yyy', ['some-data'], 'job-44');
+        (new Queue('some-queue-2', $this->client))->put('Xxx\Yyy', ['some-data'], 'job-44');
+
+        $queue = $this->client->queues('some-queue-1');
+
+        $this->assertJson($queue);
+        $this->assertNotEmpty($queue);
+
+        $expected1 = [
+            'paused'    => false,
+            'running'   => 0,
+            'name'      => 'some-queue-1',
+            'waiting'   => 0,
+            'recurring' => 0,
+            'depends'   => 0,
+            'stalled'   => 0,
+            'scheduled' => 0,
+        ];
+
+        $this->assertEquals($expected1, json_decode($queue, true));
+
+        $expected2 = [
+            'paused'    => false,
+            'running'   => 0,
+            'name'      => 'some-queue-100',
+            'waiting'   => 0,
+            'recurring' => 0,
+            'depends'   => 0,
+            'stalled'   => 0,
+            'scheduled' => 0,
+        ];
+
+        $queue = $this->client->queues('some-queue-100');
+
+        $this->assertJson($queue);
+        $this->assertNotEmpty($queue);
+
+        $this->assertEquals($expected2, json_decode($queue, true));
+
+        $expected3 = [
+            [
+                'paused'    => false,
+                'running'   => 0,
+                'name'      => 'some-queue-1',
+                'waiting'   => 0,
+                'recurring' => 0,
+                'depends'   => 0,
+                'stalled'   => 0,
+                'scheduled' => 0,
+            ],
+            [
+                'paused'    => false,
+                'running'   => 0,
+                'name'      => 'some-queue-2', // NOTE: not some-queue-100
+                'waiting'   => 1,
+                'recurring' => 0,
+                'depends'   => 0,
+                'stalled'   => 0,
+                'scheduled' => 0,
+            ],
+        ];
+
+        $this->assertEquals($expected3, json_decode($this->client->queues(), true));
+    }
 }

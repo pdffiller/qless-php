@@ -33,7 +33,7 @@ class Worker
     private $client;
 
     private $shutdown = false;
-    private $workerName;
+    private $name;
     private $childPID = null;
 
     private $watchdogPID = null;
@@ -59,7 +59,7 @@ class Worker
 
     public function __construct(string $name, array $queues, Client $client, int $interval = 60)
     {
-        $this->workerName = $name;
+        $this->name = $name;
         $this->client = $client;
         $this->interval = $interval;
 
@@ -114,7 +114,8 @@ class Worker
         declare(ticks=1);
 
         $this->startup();
-        $this->who = 'master:' . $this->workerName;
+
+        $this->who = 'master:' . $this->name;
         $this->logContext = [ 'type' => $this->who, 'job.identifier' => null ];
         $this->logger->info('{type}: Worker started', $this->logContext);
         $this->logger->info(
@@ -223,7 +224,7 @@ class Worker
     {
         foreach ($this->queues as $queue) {
             /** @var \Qless\Jobs\Job|null $job */
-            $job = $queue->pop($this->workerName);
+            $job = $queue->pop($this->name);
             if ($job !== null) {
                 return $job;
             }
@@ -427,7 +428,7 @@ class Worker
         $this->clearSigHandlers();
 
         $jid = $this->job->jid;
-        $this->who = 'child:' . $this->workerName;
+        $this->who = 'child:' . $this->name;
         $this->logContext = ['type' => $this->who];
         $status = 'Processing ' . $jid . ' since ' . strftime('%F %T');
 
@@ -535,7 +536,7 @@ class Worker
         $this->clearSigHandlers();
 
         $jid = $this->job->jid;
-        $this->who = 'watchdog:' . $this->workerName;
+        $this->who = 'watchdog:' . $this->name;
         $this->logContext = ['type' => $this->who];
         $status = 'watching events for ' . $jid . ' since ' . strftime('%F %T');
 
@@ -555,7 +556,7 @@ class Worker
 
             switch ($event->getType()) {
                 case Event::LOCK_LOST:
-                    if ($event->getWorker() === $this->workerName) {
+                    if ($event->getWorker() === $this->name) {
                         $this->logger->info(
                             "{type}: sending SIGKILL to child {$this->childPID}; job handed out to another worker",
                             $this->logContext
@@ -565,7 +566,7 @@ class Worker
                     }
                     break;
                 case Event::CANCELED:
-                    if ($event->getWorker() === $this->workerName) {
+                    if ($event->getWorker() === $this->name) {
                         $this->logger->info(
                             "{type}: sending SIGKILL to child {$this->childPID}; job canceled",
                             $this->logContext
