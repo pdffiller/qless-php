@@ -34,23 +34,27 @@ class ClientTest extends QlessTestCase
      */
     public function shouldReturnExpectedValueOnMagicGet(string $property, $expected)
     {
-        if ($expected === null) {
-            $this->assertSame($expected, $this->client->{$property});
-        } else {
-            $this->assertInstanceOf($expected, $this->client->{$property});
-        }
+        $this->assertInstanceOf($expected, $this->client->{$property});
     }
 
     public function inaccessiblePropertyDataProvider()
     {
         return [
-            ['foo',    null],
-            ['job',    null],
             ['jobs',   Jobs::class],
             ['config', Config::class],
             ['lua',    LuaScript::class],
             ['redis',  Redis::class],
         ];
+    }
+
+    /**
+     * @test
+     * @expectedException \Qless\Exceptions\UnknownPropertyException
+     * @expectedExceptionMessage Getting unknown property: Qless\Client::foo
+     */
+    public function shouldThrowExceptionWhenGetInaccessibleProperty()
+    {
+        $this->client->foo;
     }
 
     /**
