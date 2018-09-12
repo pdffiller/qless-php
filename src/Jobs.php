@@ -5,6 +5,7 @@ namespace Qless;
 use ArrayAccess;
 use Qless\Exceptions\ExceptionInterface;
 use Qless\Exceptions\UnsupportedFeatureException;
+use Qless\Jobs\Job;
 
 /**
  * Qless\Jobs

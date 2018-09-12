@@ -5,7 +5,7 @@ namespace Qless\Tests;
 use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\TestCase;
 use Qless\Client;
-use Qless\Job;
+use Qless\Jobs\Job;
 use Qless\Tests\Support\RedisAwareTrait;
 
 /**

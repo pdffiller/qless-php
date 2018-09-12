@@ -1,15 +1,16 @@
 <?php
 
-namespace Qless;
+namespace Qless\Jobs;
 
+use Qless\Client;
 use Qless\Exceptions\QlessException;
 use Qless\Exceptions\RuntimeException;
 use Qless\Exceptions\UnknownPropertyException;
 
 /**
- * Qless\Job
+ * Qless\Jobs\Job
  *
- * @package Qless
+ * @package Qless\Jobs
  *
  * @property-read string $jid
  * @property-read string $klass

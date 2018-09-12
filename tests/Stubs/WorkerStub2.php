@@ -2,7 +2,7 @@
 
 namespace Qless\Tests\Stubs;
 
-use Qless\Job;
+use Qless\Jobs\Job;
 
 /**
  * Qless\Tests\Stubs\WorkerStub2

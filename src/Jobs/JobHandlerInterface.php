@@ -2,8 +2,6 @@
 
 namespace Qless\Jobs;
 
-use Qless\Job;
-
 /**
  * Qless\Jobs\JobHandlerInterface
  *
@@ -14,8 +12,8 @@ interface JobHandlerInterface
     /**
      * The Job perform handler.
      *
-     * @param Job $job
+     * @param  Job $job
      * @return void
      */
-    public function perform(Job $job);
+    public function perform(Job $job): void;
 }

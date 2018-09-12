@@ -2,7 +2,6 @@
 
 namespace Qless\Tests;
 
-use Qless\Job;
 use Qless\Queue;
 
 /**

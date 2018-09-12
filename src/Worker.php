@@ -9,6 +9,7 @@ use Qless\Events\Subscriber;
 use Qless\Exceptions\ErrorCodes;
 use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\RuntimeException;
+use Qless\Jobs\Job;
 use Qless\Jobs\JobHandlerInterface;
 
 /**
@@ -221,7 +222,7 @@ class Worker
     public function reserve(): ?Job
     {
         foreach ($this->queues as $queue) {
-            /** @var \Qless\Job|null $job */
+            /** @var \Qless\Jobs\Job|null $job */
             $job = $queue->pop($this->workerName);
             if ($job !== null) {
                 return $job;
