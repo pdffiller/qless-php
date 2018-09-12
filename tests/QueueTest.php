@@ -22,7 +22,7 @@ class QueueTest extends QlessTestCase
         $job = $queue->pop();
 
         $this->assertIsJob($job);
-        $this->assertEquals('jid', $job->getId());
+        $this->assertEquals('jid', $job->jid);
     }
 
     public function testPutWithFalseJobIDGeneratesUUID()
@@ -76,7 +76,7 @@ class QueueTest extends QlessTestCase
         }
 
         $results = array_map(function () use ($queue) {
-            return $queue->pop()->getId();
+            return $queue->pop()->jid;
         }, $jids);
 
         $this->assertEquals($jids, $results);
@@ -95,7 +95,7 @@ class QueueTest extends QlessTestCase
         }
 
         $results = array_map(function () use ($queue) {
-            return $queue->pop()->getId();
+            return $queue->pop()->jid;
         }, $jids);
 
         $this->assertEquals(array_reverse($jids), $results);
@@ -160,7 +160,7 @@ class QueueTest extends QlessTestCase
         $queue->put('Xxx\Yyy', $data, "jid-high", 0, 0, true, 1);
         $queue->put('Xxx\Yyy', $data, "jid-3");
 
-        $this->assertEquals('jid-high', $queue->pop()->getId());
+        $this->assertEquals('jid-high', $queue->pop()->jid);
     }
 
     public function testItUsesGlobalHeartbeatValueWhenNotSet()

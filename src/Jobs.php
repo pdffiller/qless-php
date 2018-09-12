@@ -77,7 +77,7 @@ class Jobs implements ArrayAccess
         $ret = [];
         foreach ($jobs as $data) {
             $job = new Job($this->client, $data);
-            $ret[$job->getId()] = $job;
+            $ret[$job->jid] = $job;
         }
 
         return $ret;

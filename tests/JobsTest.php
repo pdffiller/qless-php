@@ -24,7 +24,7 @@ class JobsTest extends QlessTestCase
         $j = $this->client->jobs['j-1'];
 
         $this->assertNotNull($j);
-        $this->assertEquals('j-1', $j->getId());
+        $this->assertEquals('j-1', $j->jid);
     }
 
     public function testItReturnsExistingJobsKeyedByJobIdentifier()

@@ -151,7 +151,7 @@ class Worker
             }
 
             $this->job = $job;
-            $this->logContext['job.identifier'] = $job->getId();
+            $this->logContext['job.identifier'] = $job->jid;
 
             // fork processes
             $this->childStart();
@@ -425,7 +425,7 @@ class Worker
         $this->processType = self::PROCESS_TYPE_JOB;
         $this->clearSigHandlers();
 
-        $jid = $this->job->getId();
+        $jid = $this->job->jid;
         $this->who = 'child:' . $this->workerName;
         $this->logContext = ['type' => $this->who];
         $status = 'Processing ' . $jid . ' since ' . strftime('%F %T');
@@ -447,7 +447,7 @@ class Worker
      */
     public function childPerform(Job $job): void
     {
-        $context = ['job' => $job->getId(), 'type' => $this->who];
+        $context = ['job' => $job->jid, 'type' => $this->who];
 
         try {
             if ($this->jobPerformClass) {
@@ -533,7 +533,7 @@ class Worker
         $this->processType = self::PROCESS_TYPE_WATCHDOG;
         $this->clearSigHandlers();
 
-        $jid = $this->job->getId();
+        $jid = $this->job->jid;
         $this->who = 'watchdog:' . $this->workerName;
         $this->logContext = ['type' => $this->who];
         $status = 'watching events for ' . $jid . ' since ' . strftime('%F %T');
