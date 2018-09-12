@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   to the `put(string className, array $data, ?string $jid = null, ...)`
 - Now `Qless\Queue::pop` does not require the mandatory presence of the worker name as its 1st argument.
   If the the worker name is not passed the `Qless\Client::getWorkerName` will be used
+- Now calling `Qless\Queue::pop` without 2nd argument (number of jobs to pop off of the queue) will return
+  `Qless\Job|null` so that there is no need to play with arrays like `$job[0]->function()`
 
 ### Removed
 - Fully refactor the `Qless\Client` class and removed no longer used code

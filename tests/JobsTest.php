@@ -47,50 +47,61 @@ class JobsTest extends QlessTestCase
         $this->assertEmpty($j);
     }
 
-    public function testItReturnsCompletedJobs()
+    /** @test */
+    public function shouldReturnCompletedJobs()
     {
         $this->put('j-1');
         $this->put('j-2');
+
         $q  = new Queue('q-1', $this->client);
-        $q->pop('w-1')[0]->complete();
-        $q->pop('w-1')[0]->complete();
+
+        $q->pop()->complete();
+        $q->pop()->complete();
 
         $j = $this->client->jobs->completed();
         sort($j);
+
         $this->assertEquals(['j-1', 'j-2'], $j);
     }
 
-    public function testItReturnsFailedJobs()
+    /** @test */
+    public function shouldReturnFailedJobs()
     {
         $this->put('j-1');
         $this->put('j-2');
         $this->put('j-3');
         $this->put('j-4');
+
         $q  = new Queue('q-1', $this->client);
-        $q->pop('w-1')[0]->fail('system', 'msg');
-        $q->pop('w-1')[0]->fail('system', 'msg');
-        $q->pop('w-1')[0]->fail('system', 'msg');
-        $q->pop('w-1')[0]->fail('main', 'msg');
+
+        $q->pop()->fail('system', 'msg');
+        $q->pop()->fail('system', 'msg');
+        $q->pop()->fail('system', 'msg');
+        $q->pop()->fail('main', 'msg');
 
         $j = $this->client->jobs->failed();
+
         $this->assertEquals(3, $j['system']);
         $this->assertEquals(1, $j['main']);
     }
 
     /**
-     * @depends testItReturnsFailedJobs
+     * @test
+     * @depends shouldReturnFailedJobs
      */
-    public function testItReturnsFailedBySpecificGroup()
+    public function shouldReturnFailedBySpecificGroup()
     {
         $this->put('j-1');
         $this->put('j-2');
         $this->put('j-3');
         $this->put('j-4');
+
         $q  = new Queue('q-1', $this->client);
-        $q->pop('w-1')[0]->fail('system', 'msg');
-        $q->pop('w-1')[0]->fail('system', 'msg');
-        $q->pop('w-1')[0]->fail('system', 'msg');
-        $q->pop('w-1')[0]->fail('main', 'msg');
+
+        $q->pop()->fail('system', 'msg');
+        $q->pop()->fail('system', 'msg');
+        $q->pop()->fail('system', 'msg');
+        $q->pop()->fail('main', 'msg');
 
         $j = $this->client->jobs->failedForGroup('system');
 
@@ -103,7 +114,7 @@ class JobsTest extends QlessTestCase
         $this->put('j-2');
 
         $q  = new Queue('q-1', $this->client);
-        $q->pop('w-1');
+        $q->pop();
 
         $j = $this->client->jobs['j-1'];
         $this->assertNotNull($j);

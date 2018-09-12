@@ -217,15 +217,14 @@ class Worker
         }
     }
 
-    /**
-     * @return null|Job
-     */
+    /** @return null|Job */
     public function reserve(): ?Job
     {
         foreach ($this->queues as $queue) {
+            /** @var \Qless\Job|null $job */
             $job = $queue->pop($this->workerName);
-            if (isset($job[0])) {
-                return $job[0];
+            if ($job !== null) {
+                return $job;
             }
         }
 

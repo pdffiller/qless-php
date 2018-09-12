@@ -20,9 +20,6 @@ $jid = $queue->put(MyJobClass::class, ['hello' => 'howdy']);
 $job = $queue->pop();
 // $job here is an array of the Qless\Job instances
 
-assert(is_array($job));
-assert($job[0] instanceof Qless\Job);
-
 // And we can do the work associated with it!
-$job[0]->perform();
+$job->perform();
 // Perform 316eb06a-30d2-4d66-ad0d-33361306a7a1 job

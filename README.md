@@ -125,15 +125,8 @@ class MyJobClass
 Now you can access a queue, and add a job to that queue.
 
 ```php
-use Qless\Client;
-use Qless\Queue;
-use Qless\Demo\Enqueing\MyJobClass;
-
-// Connect to localhost
-$client = new Client(REDIS_HOST, REDIS_PORT, REDIS_TIMEOUT);
-
 // This references a new or existing queue 'testing'
-$queue = new Queue('testing', $client);
+$queue = new Qless\Queue('testing', $client);
 
 // Let's add a job, with some data. Returns Job ID
 $jid = $queue->put(MyJobClass::class, ['hello' => 'howdy']);
@@ -144,7 +137,7 @@ $job = $queue->pop();
 // $job here is an array of the Qless\Job instances
 
 // And we can do the work associated with it!
-$job[0]->perform();
+$job->perform();
 // Perform 316eb06a-30d2-4d66-ad0d-33361306a7a1 job
 ```
 
