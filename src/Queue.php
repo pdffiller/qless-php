@@ -127,23 +127,21 @@ class Queue
      * @param string|null $worker  Worker name popping the job.
      * @param int         $numJobs Number of jobs to pop off of the queue.
      *
-     * @return Job[]
+     * @return null|Job|Job[]
      *
      * @throws QlessException
      */
-    public function pop(?string $worker = null, int $numJobs = 1): array
+    public function pop(?string $worker = null, ?int $numJobs = null)
     {
-        $worker = $worker ?: $this->client->getWorkerName();
-        $results = $this->client->pop($this->name, $worker, $numJobs);
+        $workerName = $worker ?: $this->client->getWorkerName();
+        $jids = json_decode($this->client->pop($this->name, $workerName, $numJobs ?: 1), true);
 
-        $returnJobs = [];
-        if ($results && $jobs = json_decode($results, true)) {
-            foreach ($jobs as $data) {
-                $returnJobs[] = new Job($this->client, $data);
-            }
-        }
+        $jobs = [];
+        array_map(function (array $data) use (&$jobs) {
+            $jobs[] = new Job($this->client, $data);
+        }, $jids ?: []);
 
-        return $returnJobs;
+        return $numJobs === null ? array_shift($jobs) : $jobs;
     }
 
     /**

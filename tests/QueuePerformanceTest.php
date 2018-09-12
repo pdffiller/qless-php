@@ -50,7 +50,7 @@ class QueuePerformanceTest extends QlessTestCase
         $cb(self::TEST_TIME, __METHOD__ . ' (put)');
 
         $cb = $this->getProfilerForCallback(function ($e) use ($queue) {
-            $queue->pop('worker');
+            $queue->pop();
         });
         $cb(self::TEST_TIME, __METHOD__. ' (pop)');
     }

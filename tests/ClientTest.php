@@ -262,11 +262,9 @@ class ClientTest extends QlessTestCase
         $queue->put('Xxx\Yyy', ['some-data'], 'job-42');
         $this->assertEquals(1, $this->client->length('some-queue-2'));
 
-        $job = $queue->pop('worker-1');
-        $job[0]->complete();
+        $queue->pop()->complete();
 
         $this->assertEquals(0, $this->client->length('some-queue-2'));
-
         $this->assertEquals(0, $this->client->length('some-queue-3'));
     }
 
@@ -293,8 +291,7 @@ class ClientTest extends QlessTestCase
         $queue = new Queue('some-queue', $this->client);
         $queue->put('Xxx\Yyy', ['some-data'], 'job-43');
 
-        $job = $queue->pop('worker-1');
-        $job[0]->cancel();
+        $queue->pop()->cancel();
 
         $this->client->complete('job-43', 'worker-1', 'some-queue', '{}');
     }
