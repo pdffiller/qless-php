@@ -169,7 +169,7 @@ class JobTest extends QlessTestCase
         $this->assertEquals(4, $remaining);
 
         $job1 = $queue->pop();
-        $this->assertEquals('jid', $job1->getId());
+        $this->assertEquals('jid', $job1->jid);
     }
 
     public function testRetryDoesRespectRetryParameterWithOneRetry()
@@ -179,7 +179,7 @@ class JobTest extends QlessTestCase
         $queue->put('MyJobClass', [], 'jid', 0, 1);
 
         $this->assertZero($queue->pop()->retry('account', 'failed to connect'));
-        $this->assertEquals('jid', $queue->pop()->getId());
+        $this->assertEquals('jid', $queue->pop()->jid);
     }
 
     public function testRetryDoesReturnNegativeWhenNoMoreAvailable()
@@ -281,7 +281,8 @@ class JobTest extends QlessTestCase
         $this->assertEquals(['1'], $data->tags);
     }
 
-    public function testRequeueJob()
+    /** @test */
+    public function shouldRequeueJob()
     {
         $queue = new Queue('testQueue', $this->client);
 
@@ -290,8 +291,8 @@ class JobTest extends QlessTestCase
 
         $job = $queue->pop();
 
-        $this->assertEquals(1, $job->getPriority());
-        $this->assertEquals(['tag1','tag2'], $job->getTags());
+        $this->assertEquals(1, $job->priority);
+        $this->assertEquals(['tag1','tag2'], $job->tags);
     }
 
     public function testRequeueJobWithNewTags()
@@ -299,11 +300,11 @@ class JobTest extends QlessTestCase
         $queue = new Queue('testQueue', $this->client);
 
         $queue->put('MyJobClass', [], 'jid-1', 0, 0, true, 1, [], 5, ['tag1','tag2']);
-        $queue->pop()->requeue(['tags' => ['nnn']]);
+        $queue->pop()->requeue(null, ['tags' => ['nnn']]);
 
         $job = $queue->pop();
-        $this->assertEquals(1, $job->getPriority());
-        $this->assertEquals(['nnn'], $job->getTags());
+        $this->assertEquals(1, $job->priority);
+        $this->assertEquals(['nnn'], $job->tags);
     }
 
     /**

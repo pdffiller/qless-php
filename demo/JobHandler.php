@@ -33,10 +33,10 @@ class JobHandler implements JobHandlerInterface
      */
     public function perform(Job $job)
     {
-        $this->logger->debug('JobHandler: The job data is: ', $job->getData());
+        $this->logger->debug('JobHandler: The job data is: ', $job->data);
 
         $instance = $job->getInstance();
-        $data = $job->getData();
+        $data = $job->data;
         $performMethod = $data['performMethod'];
 
         $instance->$performMethod($job);
