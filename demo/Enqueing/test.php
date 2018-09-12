@@ -47,6 +47,6 @@ $job->ttl();
 
 // you can also change the job in various ways:
 $job->requeue('some_other_queue'); // move it to a new queue
-$job->cancel();                           // cancel the job
+$job->cancel();                    // cancel the job
 $job->tag('foo');                  // add a tag
-$job->untag('foo');                 // remove a tag
+$job->untag('foo');                // remove a tag
