@@ -10,7 +10,7 @@ use Qless\Workers\ForkingWorker;
 require_once __DIR__ . '/../../tests/bootstrap.php';
 
 // Create a client
-$client = new Client('172.19.0.2');
+$client = new Client(REDIS_HOST, REDIS_PORT, REDIS_TIMEOUT);
 
 // Get the queues you use
 $queues = array_map(function (string $name) use ($client) {
