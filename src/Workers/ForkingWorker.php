@@ -187,7 +187,7 @@ final class ForkingWorker extends AbstractWorker
     private function fork(&$socket)
     {
         $pair = [];
-        if (socket_create_pair(AF_UNIX, SOCK_STREAM, 0, $pair) === false) {
+        if (\socket_create_pair(AF_UNIX, SOCK_STREAM, 0, $pair) === false) {
             $this->logger->error(
                 '{type}: Unable to create socket pair; ' . socket_strerror(socket_last_error($pair[0])),
                 $this->logContext

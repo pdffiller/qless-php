@@ -76,16 +76,16 @@ abstract class AbstractWorker implements SignalAwareInterface
      *
      * @param ReserverInterface    $reserver
      * @param Client               $client
-     * @param string|null          $name
-     * @param SignalHandler|null   $shutdownHandler
      * @param LoggerInterface|null $logger
+     * @param SignalHandler|null   $shutdownHandler
+     * @param string|null          $name
      */
     public function __construct(
         ReserverInterface $reserver,
         Client $client,
-        ?string $name = null,
+        LoggerInterface $logger = null,
         SignalHandler $shutdownHandler = null,
-        LoggerInterface $logger = null
+        ?string $name = null
     ) {
         $this->reserver = $reserver;
         $this->logger = $logger ?: new NullLogger();
