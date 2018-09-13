@@ -1,23 +1,24 @@
 <?php
 
-namespace Qless\Tests;
+namespace Qless\Tests\Workers;
 
 use Qless\Client;
 use Qless\Jobs\Reservers\OrderedReserver;
-use Qless\Worker;
+use Qless\Tests\QlessTestCase;
 use Qless\Tests\Stubs\WorkerStub;
+use Qless\Workers\ForkingWorker;
 
 /**
- * Qless\Tests\WorkerTest
+ * Qless\Tests\Workers\ForkingWorkerTest
  *
  * @package Qless\Tests
  */
-class WorkerTest extends QlessTestCase
+class ForkingWorkerTest extends QlessTestCase
 {
     /** @test */
     public function shouldRegisterJobPerformHandler()
     {
-        $worker = new Worker(
+        $worker = new ForkingWorker(
             $this->createMock(OrderedReserver::class),
             $this->createMock(Client::class)
         );
@@ -41,7 +42,7 @@ class WorkerTest extends QlessTestCase
             'Provided Job class "stdClass" does not implement Qless\Jobs\JobHandlerInterface interface.'
         );
 
-        $worker = new Worker(
+        $worker = new ForkingWorker(
             $this->createMock(OrderedReserver::class),
             $this->createMock(Client::class)
         );
@@ -56,7 +57,7 @@ class WorkerTest extends QlessTestCase
      */
     public function shouldThrowExceptionInCaseOfNonExistentJobClass()
     {
-        $worker = new Worker(
+        $worker = new ForkingWorker(
             $this->createMock(OrderedReserver::class),
             $this->createMock(Client::class)
         );

@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Move `Qless\Listener` to the `Qless\Events\Subscriber`
 - Move `Qless\Job` to the `Qless\Jobs\Job`
 - Move `Qless\Jobs` to the `Qless\Jobs\Collection`
+- Move `Qless\Worker` to the `Qless\Workers\ForkingWorker`
 - More code quality improvements to follow the SRP. Thus the code base for almost all classes has been changed
 - Move all the exceptions to the common namespace and implement the same `Qless\Exceptions\ExceptionInterface`
 - Changed `Qless\Queue::put` signature from the `put($className, $jid, $data, ...)`
