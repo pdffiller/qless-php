@@ -186,7 +186,7 @@ for each job).
 As with resque...
 
 - The worker forks a child process for each job in order to provide resilience against memory leaks.
-  Pass the RUN_AS_SINGLE_PROCESS environment variable to force Qless to not fork the child process.
+  Pass the `RUN_AS_SINGLE_PROCESS` environment variable to force Qless to not fork the child process.
   Single process mode should only be used in some test/dev environments.
 - The worker updates its procline with its status so you can see what workers are doing using `ps`.
 - The worker registers signal handlers so that you can control it by sending it signals.
@@ -203,7 +203,7 @@ To start a worker, write a bit of PHP code that instantiates a worker and runs i
 You could write a simple script to do this, for example:
 
 ```php
-// The autoloader requiring kine is omitted
+// The autoloader line is omitted
 
 use Monolog\Handler\ErrorLogHandler;
 use Monolog\Logger;
