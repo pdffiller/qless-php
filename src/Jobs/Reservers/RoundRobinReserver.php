@@ -42,7 +42,7 @@ class RoundRobinReserver extends AbstractReserver implements ReserverInterface
      *
      * @return Job|null
      */
-    public function reserve(): ?Job
+    final public function reserve(): ?Job
     {
         for ($i = 0; $i < $this->numQueues; ++$i) {
             /** @var \Qless\Jobs\Job|null $job */

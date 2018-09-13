@@ -18,7 +18,7 @@ class OrderedReserver extends AbstractReserver implements ReserverInterface
      *
      * @return Job|null
      */
-    public function reserve(): ?Job
+    final public function reserve(): ?Job
     {
         foreach ($this->queues as $queue) {
             /** @var \Qless\Jobs\Job|null $job */
