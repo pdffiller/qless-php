@@ -179,6 +179,83 @@ $job->untag('foo');                // remove a tag
 
 ### Running A Worker
 
+The Qless PHP worker was heavily inspired by Resque's worker, but thanks to the power of the qless-core lua scripts,
+it is much simpler and you are welcome to write your own (e.g. if you'd rather save memory by not forking the worker
+for each job).
+
+As with resque...
+
+- The worker forks a child process for each job in order to provide resilience against memory leaks.
+  Pass the RUN_AS_SINGLE_PROCESS environment variable to force Qless to not fork the child process.
+  Single process mode should only be used in some test/dev environments.
+- The worker updates its procline with its status so you can see what workers are doing using `ps`.
+- The worker registers signal handlers so that you can control it by sending it signals.
+- The worker is given a list of queues to pop jobs off of.
+- The worker logs out put based on setting of the `Psr\Log\LoggerInterface` instance passed to worker.
+
+Resque uses queues for its notion of priority. In contrast, qless has priority support built-in.
+Thus, the worker supports two strategies for what order to pop jobs off the queues: ordered and round-robin.
+The ordered reserver will keep popping jobs off the first queue until it is empty, before trying to pop job off the
+second queue. The round-robin reserver will pop a job off the first queue, then the second queue, and so on.
+You could also easily implement your own.
+
+To start a worker, write a bit of PHP code that instantiates a worker and runs it.
+You could write a simple script to do this, for example:
+
+```php
+// The autoloader requiring kine is omitted
+
+use Monolog\Handler\ErrorLogHandler;
+use Monolog\Logger;
+use Qless\Client;
+use Qless\Jobs\Reservers\OrderedReserver;
+use Qless\Queue;
+use Qless\Workers\ForkingWorker;
+
+// Create a client
+$client = new Client('foo.bar.com', 1234);
+
+// Get the queues you use
+$queues = array_map(function (string $name) use ($client) {
+    return new Queue($name, $client);
+}, ['testing', 'testing-2', 'testing-3']);
+
+// Create a job reserver; different reservers use different
+// strategies for which order jobs are popped off of queues
+$reserver = new OrderedReserver($queues);
+
+// Create internal logger for debugging purposes
+$logger = new Logger('APP');
+$logger->pushHandler(new ErrorLogHandler());
+
+$worker = new ForkingWorker(
+    $reserver,
+    $client,
+    $logger
+);
+
+$worker->run();
+```
+
+The following signals are supported in the parent process:
+
+- `TERM`: Shutdown immediately, stop processing jobs.
+- `INT`:  Shutdown immediately, stop processing jobs.
+- `QUIT`: Shutdown after the current job has finished processing.
+- `USR1`: Kill the forked child immediately, continue processing jobs.
+- `USR2`: Don't process any new jobs, and dump the current backtrace.
+- `CONT`: Start processing jobs again after a USR2
+
+_For detailed info regarding signals refer to [`signal(7)`](http://man7.org/linux/man-pages/man7/signal.7.html)._
+
+You should send these to the master process, not the child.
+
+The child process supports the `USR2` signal, which causes it to dump its current backtrace.
+
+Workers also support middleware modules that can be used to inject logic before, after or around the processing of a
+single job in the child process. This can be useful, for example, when you need to re-establish a connection to your
+database in each job.
+
 **`@todo`**
 
 ### Web Interface
