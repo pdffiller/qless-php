@@ -1,137 +1,66 @@
 <?php
 
-namespace Qless;
+namespace Qless\Workers;
 
-use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
+use Qless\Exceptions\RuntimeException;
+use Qless\Jobs\Job;
 use Qless\Events\Event;
 use Qless\Events\Subscriber;
 use Qless\Exceptions\ErrorCodes;
-use Qless\Exceptions\InvalidArgumentException;
-use Qless\Exceptions\RuntimeException;
-use Qless\Jobs\Job;
 use Qless\Jobs\JobHandlerInterface;
-use Qless\Jobs\Reservers\ReserverInterface;
+use function Qless\procline;
+use function Qless\pcntl_sig_name;
 
 /**
- * Qless\Worker
+ * Qless\Workers\ForkingWorker
  *
- * @package Qless
+ * @todo This class is still needs to be refactored.
+ *
+ * @package Qless\Workers
  */
-class Worker
+final class ForkingWorker extends AbstractWorker
 {
     private const PROCESS_TYPE_MASTER = 0;
     private const PROCESS_TYPE_JOB = 1;
     private const PROCESS_TYPE_WATCHDOG = 2;
 
+    /** @var int */
     private $processType = self::PROCESS_TYPE_MASTER;
 
-    /** @var int */
-    private $interval = 60;
-
-    /** @var Client */
-    private $client;
-
-    private $shutdown = false;
-
-    /** @var string */
-    private $name;
-
+    /** @var ?int */
     private $childPID = null;
 
+    /** @var ?int */
     private $watchdogPID = null;
 
+    /** @var int */
     private $childProcesses = 0;
 
-    /** @var ?string */
-    private $jobPerformClass = null;
-
+    /** @var bool */
     private $paused = false;
 
+    /** @var string */
     private $who = 'master';
-    private $logContext;
+
+    /** @var array */
+    private $logContext = [];
 
     /** @var resource[] */
     private $sockets = [];
 
-    /** @var LoggerInterface */
-    private $logger;
-
     /** @var Job|null */
     private $job;
 
-    /** @var ReserverInterface */
-    private $reserver;
-
     /**
-     * Worker constructor.
+     * {@inheritdoc}
      *
-     * @param ReserverInterface    $reserver
-     * @param Client               $client
-     * @param string|null          $name
-     * @param LoggerInterface|null $logger
-     */
-    public function __construct(
-        ReserverInterface $reserver,
-        Client $client,
-        ?string $name = null,
-        LoggerInterface $logger = null
-    ) {
-        $this->reserver = $reserver;
-        $this->logger = $logger ?: new NullLogger();
-        $this->client = $client;
-        $this->name = $name ?: substr(md5($this->reserver->getDescription()), 0, 16);
-    }
-
-    public function setInterval(int $interval): void
-    {
-        $this->interval = $interval;
-    }
-
-    public function setLogger(LoggerInterface $logger): void
-    {
-        $this->logger = $logger;
-    }
-
-    /**
-     * Register Job perform handler.
-     *
-     * @param string $fqcl The fully qualified class name.
      * @return void
-     *
-     * @throws RuntimeException
-     * @throws InvalidArgumentException
      */
-    public function registerJobPerformHandler($fqcl)
-    {
-        if (!class_exists($fqcl)) {
-            throw new RuntimeException(
-                sprintf('Could not find job perform class %s.', $fqcl)
-            );
-        }
-
-        $interfaces = class_implements($fqcl);
-        if (in_array(JobHandlerInterface::class, $interfaces, true) == false) {
-            throw new InvalidArgumentException(
-                sprintf(
-                    'Provided Job class "%s" does not implement %s interface.',
-                    $fqcl,
-                    JobHandlerInterface::class
-                )
-            );
-        }
-
-        $this->jobPerformClass = $fqcl;
-    }
-
-    /**
-     * starts worker
-     */
-    public function run()
+    public function run(): void
     {
         declare(ticks=1);
 
-        $this->startup();
+        $this->onStartup();
 
         $this->who = 'master:' . $this->name;
         $this->logContext = ['type' => $this->who, 'job.identifier' => null];
@@ -155,7 +84,7 @@ class Worker
 
             if ($did_work) {
                 $this->logger->debug('{type}: Looking for work', $this->logContext);
-                $this->setProcessStatus(
+                procline(
                     'Waiting for ' . implode(',', $this->reserver->getQueues()) . ' with interval ' . $this->interval
                 );
                 $did_work = false;
@@ -179,7 +108,7 @@ class Worker
 
             // Parent process, sit and wait
             $proc_line = 'Forked ' . $this->childPID . ' at ' . strftime('%F %T');
-            $this->setProcessStatus($proc_line);
+            procline($proc_line);
             $this->logger->info($proc_line, $this->logContext);
 
             while ($this->childProcesses > 0) {
@@ -237,54 +166,14 @@ class Worker
         }
     }
 
-    /** @return null|Job */
-    public function reserve(): ?Job
-    {
-        return $this->reserver->reserve();
-    }
-
-    public function startup()
-    {
-        $this->masterRegisterSigHandlers();
-    }
-
     /**
-     * Register signal handlers that a worker should respond to.
-     *
-     * TERM: Shutdown immediately and stop processing jobs (quick shutdown).
-     * INT:  Shutdown immediately and stop processing jobs (quick shutdown).
-     * QUIT: Shutdown after the current job finishes processing (graceful shutdown).
-     * USR1: Kill the forked child immediately and continue processing jobs.
-     * USR2: Pausing job processing.
-     * CONT: Resumes worker allowing it to pick.
-     *
-     * @link http://man7.org/linux/man-pages/man7/signal.7.html
+     * This method should be called on worker run.
      *
      * @return void
      */
-    private function masterRegisterSigHandlers()
+    public function onStartup(): void
     {
-        pcntl_signal(SIGTERM, [$this, 'shutDownNow'], false);
-        pcntl_signal(SIGINT, [$this, 'shutDownNow'], false);
-        pcntl_signal(SIGQUIT, [$this, 'shutdown'], false);
-        pcntl_signal(SIGUSR1, [$this, 'killChildren'], false);
-        pcntl_signal(SIGUSR2, [$this, 'pauseProcessing'], false);
-        pcntl_signal(SIGCONT, [$this, 'unPauseProcessing'], false);
-
-        $this->logger->info('Registered signals');
-    }
-
-    /**
-     * Clear all previously registered signal handlers
-     */
-    private function clearSigHandlers()
-    {
-        pcntl_signal(SIGTERM, SIG_DFL);
-        pcntl_signal(SIGINT, SIG_DFL);
-        pcntl_signal(SIGQUIT, SIG_DFL);
-        pcntl_signal(SIGUSR1, SIG_DFL);
-        pcntl_signal(SIGUSR2, SIG_DFL);
-        pcntl_signal(SIGCONT, SIG_DFL);
+        $this->registerSignalHandler();
     }
 
     /**
@@ -435,14 +324,14 @@ class Worker
         }
 
         $this->processType = self::PROCESS_TYPE_JOB;
-        $this->clearSigHandlers();
+        $this->clearSignalHandler();
 
         $jid = $this->job->jid;
         $this->who = 'child:' . $this->name;
         $this->logContext = ['type' => $this->who];
         $status = 'Processing ' . $jid . ' since ' . strftime('%F %T');
 
-        $this->setProcessStatus($status);
+        procline($status);
         $this->logger->info($status, $this->logContext);
         $this->childPerform($this->job);
 
@@ -484,6 +373,10 @@ class Worker
      */
     private function childProcessStatus(int $status): bool
     {
+        if ($this->childPID == null) {
+            return false;
+        }
+
         switch (true) {
             case pcntl_wifexited($status):
                 $code = pcntl_wexitstatus($status);
@@ -520,13 +413,17 @@ class Worker
 
     private function childKill()
     {
-        if ($this->childPID) {
-            $this->logger->info('{type}: Killing child at {child}', ['child' => $this->childPID, 'type' => $this->who]);
-            if (pcntl_waitpid($this->childPID, $status, WNOHANG) != -1) {
-                posix_kill($this->childPID, SIGKILL);
-            }
-            $this->childPID = null;
+        if ($this->childPID === null) {
+            return;
         }
+
+        $this->logger->info('{type}: Killing child at {child}', ['child' => $this->childPID, 'type' => $this->who]);
+
+        if (pcntl_waitpid($this->childPID, $status, WNOHANG) != -1) {
+            posix_kill($this->childPID, SIGKILL);
+        }
+
+        $this->childPID = null;
     }
 
     private function watchdogStart(Subscriber $subscriber): void
@@ -543,14 +440,14 @@ class Worker
         }
 
         $this->processType = self::PROCESS_TYPE_WATCHDOG;
-        $this->clearSigHandlers();
+        $this->clearSignalHandler();
 
         $jid = $this->job->jid;
         $this->who = 'watchdog:' . $this->name;
         $this->logContext = ['type' => $this->who];
         $status = 'watching events for ' . $jid . ' since ' . strftime('%F %T');
 
-        $this->setProcessStatus($status);
+        procline($status);
         $this->logger->info($status, $this->logContext);
 
         // @todo Move to a separated class
@@ -561,6 +458,10 @@ class Worker
             }
 
             if ($event->valid() == false || $event->getJid() !== $jid) {
+                return;
+            }
+
+            if ($this->childPID === null) {
                 return;
             }
 
@@ -604,6 +505,10 @@ class Worker
      */
     private function watchdogProcessStatus(int $status): bool
     {
+        if ($this->watchdogPID === null) {
+            return false;
+        }
+
         switch (true) {
             case pcntl_wifexited($status):
                 $code = pcntl_wexitstatus($status);
@@ -649,59 +554,60 @@ class Worker
     }
 
     /**
-     * Signal handler callback for USR2, pauses processing of new jobs.
+     * {@inheritdoc}
+     *
+     * @return void
      */
-    public function pauseProcessing()
+    public function pauseProcessing(): void
     {
         $this->logger->notice('{type}: USR2 received; pausing job processing', $this->logContext);
         $this->paused = true;
     }
 
     /**
-     * Signal handler callback for CONT, resumes worker allowing it to pick
-     * up new jobs.
+     * {@inheritdoc}
+     *
+     * @return void
      */
-    public function unPauseProcessing()
+    public function unPauseProcessing(): void
     {
         $this->logger->notice('{type}: CONT received; resuming job processing', $this->logContext);
         $this->paused = false;
     }
 
     /**
-     * Schedule a worker for shutdown. Will finish processing the current job
-     * and when the timeout interval is reached, the worker will shut down.
+     * {@inheritdoc}
+     *
+     * @return void
      */
-    public function shutdown()
+    public function shutdown(): void
     {
         if ($this->childPID) {
             $this->logger->notice('{type}: QUIT received; shutting down after child completes work', $this->logContext);
         } else {
             $this->logger->notice('{type}: QUIT received; shutting down', $this->logContext);
         }
+
         $this->doShutdown();
     }
 
-    protected function doShutdown()
-    {
-        $this->shutdown = true;
-    }
-
     /**
-     * Force an immediate shutdown of the worker, killing any child jobs
-     * currently running.
+     * {@inheritdoc}
+     *
+     * @return void
      */
-    public function shutdownNow()
+    public function shutdownNow(): void
     {
-        $this->logger->notice('{type}: TERM or INT received; shutting down immediately', $this->logContext);
         $this->doShutdown();
         $this->killChildren();
     }
 
     /**
-     * Kill a forked child job immediately. The job it is processing will not
-     * be completed.
+     * {@inheritdoc}
+     *
+     * @return void
      */
-    public function killChildren()
+    public function killChildren(): void
     {
         if (!$this->childPID && !$this->watchdogPID) {
             return;
@@ -709,16 +615,5 @@ class Worker
 
         $this->childKill();
         $this->watchdogKill();
-    }
-
-    /**
-     * Sets the process status.
-     *
-     * @param  string $status
-     * @return void
-     */
-    protected function setProcessStatus(string $status): void
-    {
-        cli_set_process_title('qless-php: ' . $status);
     }
 }

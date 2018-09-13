@@ -1,7 +1,7 @@
 <?php
 
 use Qless\Client;
-use Qless\Worker;
+use Qless\Workers\ForkingWorker;
 use Qless\Queue;
 use Qless\Demo\JobHandler;
 use Qless\Jobs\Reservers\OrderedReserver;
@@ -16,7 +16,7 @@ $queues = array_map(function (string $name) use ($client) {
 
 $reserver = new OrderedReserver($queues);
 
-$worker = new Worker($reserver, $client);
+$worker = new ForkingWorker($reserver, $client);
 
 $worker->setInterval(5);
 $worker->registerJobPerformHandler(JobHandler::class);

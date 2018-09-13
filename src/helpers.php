@@ -8,7 +8,7 @@ namespace Qless;
  * @param  int $signal
  * @return string
  */
-function pcntl_sig_name(int $signal) : string
+function pcntl_sig_name(int $signal): string
 {
     $all = get_defined_constants(true)['pcntl'];
 
@@ -20,4 +20,17 @@ function pcntl_sig_name(int $signal) : string
     $constants = array_flip(array_intersect_key($all, array_flip($filtered)));
 
     return isset($constants[$signal]) ? $constants[$signal] : 'UNKNOWN';
+}
+
+/**
+ * Sets the process status.
+ *
+ * NOTE: Not supported on all systems.
+ *
+ * @param  string $value
+ * @return void
+ */
+function procline(string $value): void
+{
+    cli_set_process_title('Qless PHP: ' . $value);
 }
