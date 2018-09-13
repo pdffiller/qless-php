@@ -11,6 +11,7 @@ use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\Job;
 use Qless\Jobs\JobHandlerInterface;
+use Qless\Jobs\Reservers\ReserverInterface;
 
 /**
  * Qless\Worker
@@ -25,15 +26,17 @@ class Worker
 
     private $processType = self::PROCESS_TYPE_MASTER;
 
-    /** @var Queue[] */
-    private $queues = [];
-    private $interval = 0;
+    /** @var int */
+    private $interval = 60;
 
     /** @var Client */
     private $client;
 
     private $shutdown = false;
+
+    /** @var string */
     private $name;
+
     private $childPID = null;
 
     private $watchdogPID = null;
@@ -57,20 +60,35 @@ class Worker
     /** @var Job|null */
     private $job;
 
-    public function __construct(string $name, array $queues, Client $client, int $interval = 60)
-    {
-        $this->name = $name;
+    /** @var ReserverInterface */
+    private $reserver;
+
+    /**
+     * Worker constructor.
+     *
+     * @param ReserverInterface    $reserver
+     * @param Client               $client
+     * @param string|null          $name
+     * @param LoggerInterface|null $logger
+     */
+    public function __construct(
+        ReserverInterface $reserver,
+        Client $client,
+        ?string $name = null,
+        LoggerInterface $logger = null
+    ) {
+        $this->reserver = $reserver;
+        $this->logger = $logger ?: new NullLogger();
         $this->client = $client;
-        $this->interval = $interval;
-
-        foreach ($queues as $name) {
-            $this->queues[] = new Queue($name, $client);
-        }
-
-        $this->logger = new NullLogger();
+        $this->name = $name ?: substr(md5($this->reserver->getDescription()), 0, 16);
     }
 
-    public function setLogger(LoggerInterface $logger)
+    public function setInterval(int $interval): void
+    {
+        $this->interval = $interval;
+    }
+
+    public function setLogger(LoggerInterface $logger): void
     {
         $this->logger = $logger;
     }
@@ -116,11 +134,11 @@ class Worker
         $this->startup();
 
         $this->who = 'master:' . $this->name;
-        $this->logContext = [ 'type' => $this->who, 'job.identifier' => null ];
+        $this->logContext = ['type' => $this->who, 'job.identifier' => null];
         $this->logger->info('{type}: Worker started', $this->logContext);
         $this->logger->info(
             '{type}: monitoring the following queues (in order), {queues}',
-            ['type' => $this->who, 'queues' => implode(', ', $this->queues)]
+            ['type' => $this->who, 'queues' => implode(', ', $this->reserver->getQueues())]
         );
 
         $did_work = false;
@@ -138,7 +156,7 @@ class Worker
             if ($did_work) {
                 $this->logger->debug('{type}: Looking for work', $this->logContext);
                 $this->setProcessStatus(
-                    'Waiting for ' . implode(',', $this->queues) . ' with interval ' . $this->interval
+                    'Waiting for ' . implode(',', $this->reserver->getQueues()) . ' with interval ' . $this->interval
                 );
                 $did_work = false;
             }
@@ -222,15 +240,7 @@ class Worker
     /** @return null|Job */
     public function reserve(): ?Job
     {
-        foreach ($this->queues as $queue) {
-            /** @var \Qless\Jobs\Job|null $job */
-            $job = $queue->pop($this->name);
-            if ($job !== null) {
-                return $job;
-            }
-        }
-
-        return null;
+        return $this->reserver->reserve();
     }
 
     public function startup()

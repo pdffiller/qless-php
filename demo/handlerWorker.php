@@ -2,14 +2,22 @@
 
 use Qless\Client;
 use Qless\Worker;
+use Qless\Queue;
 use Qless\Demo\JobHandler;
+use Qless\Jobs\Reservers\OrderedReserver;
 
 require_once __DIR__ . '/../tests/bootstrap.php';
 
-$queues = ['testQueue1', 'testQueue2'];
 $client = new Client(REDIS_HOST, REDIS_PORT, REDIS_TIMEOUT);
 
-$worker = new Worker("WorkerTest_1", $queues, $client, 5);
-$worker->registerJobPerformHandler(JobHandler::class);
+$queues = array_map(function (string $name) use ($client) {
+    return new Queue($name, $client);
+}, ['test-queue-1', 'test-queue-2']);
 
+$reserver = new OrderedReserver($queues);
+
+$worker = new Worker($reserver, $client);
+
+$worker->setInterval(5);
+$worker->registerJobPerformHandler(JobHandler::class);
 $worker->run();

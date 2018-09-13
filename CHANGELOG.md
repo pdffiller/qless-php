@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added support of default Worker's `perform` method
 - Added `Qless\Events\Event` DTO and `Qless\Events\EventsFactory`
 - Added `Qless\Client::getWorkerName` to provide default worker name
+- Introduced job reservers (ordered, round robin, shuffled round robin)
 
 ### Changed
 - PHP 5.x is no longer supported. Minimal required version is 7.1
