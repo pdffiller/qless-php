@@ -25,10 +25,7 @@ $reserver = new OrderedReserver($queues);
 $logger = new Logger('APP');
 $logger->pushHandler(new ErrorLogHandler());
 
-$worker = new ForkingWorker(
-    $reserver,
-    $client,
-    $logger
-);
+$worker = new ForkingWorker($reserver, $client, 'worker-1.acme.com');
 
+$worker->setLogger($logger);
 $worker->run();
