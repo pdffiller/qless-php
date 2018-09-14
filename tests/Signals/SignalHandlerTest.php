@@ -1,15 +1,16 @@
 <?php
 
-namespace Qless\Tests;
+namespace Qless\Tests\Signals;
 
-use Qless\Signal\SignalHandler;
+use Qless\Tests\QlessTestCase;
+use Qless\Signals\SignalHandler;
 
 /**
- * Qless\Tests\HelpersTest
+ * Qless\Tests\Signals\SignalHandlerTest
  *
- * @package Qless\Tests
+ * @package Qless\Tests\Signals
  */
-class HelpersTest extends QlessTestCase
+class SignalHandlerTest extends QlessTestCase
 {
     /**
      * @test
@@ -20,8 +21,7 @@ class HelpersTest extends QlessTestCase
      */
     public function shouldGetSignalName(int $signal, string $expected)
     {
-        $handler = new SignalHandler();
-        $this->assertEquals($expected, $handler->name($signal));
+        $this->assertEquals($expected, SignalHandler::sigName($signal));
     }
 
     public function signalDataProvider(): array

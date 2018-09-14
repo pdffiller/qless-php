@@ -1,14 +1,13 @@
 <?php
 
-namespace Qless\Signal;
+namespace Qless\Signals;
 
-use Psr\Log\LoggerInterface;
 use Seld\Signal\SignalHandler as BaseHandler;
 
 /**
- * Qless\Signal\SignalHandler
+ * Qless\Signals\SignalHandler
  *
- * @package Qless\Signal
+ * @package Qless\Signals
  */
 class SignalHandler extends BaseHandler
 {
@@ -18,7 +17,7 @@ class SignalHandler extends BaseHandler
      * @param  string[]|int[]|null $signals
      * @return void
      */
-    public function unregister(?array $signals = null): void
+    public static function unregister(?array $signals = null): void
     {
         if (empty($signals)) {
             $signals = [SIGINT, SIGTERM];
@@ -39,27 +38,12 @@ class SignalHandler extends BaseHandler
     }
 
     /**
-     * Registers a signal handler.
-     *
-     * @param  array|null               $signals  And array of signal names (more portable) or constants.
-     * @param  LoggerInterface|callable $callback A PSR-3 Logger or a callback($signal, $signalName)
-     * @return SignalHandler
-     */
-    public static function register(?array $signals = null, $callback = null): SignalHandler
-    {
-        /** @var self $handler */
-        $handler = self::create($signals, $callback);
-
-        return $handler;
-    }
-
-    /**
      * Creates a human readable pcntl signal name by its code.
      *
      * @param  int $signal
      * @return string
      */
-    public function name(int $signal): string
+    public static function sigName(int $signal): string
     {
         $signals = [
             'SIGHUP', 'SIGINT', 'SIGQUIT', 'SIGILL', 'SIGTRAP', 'SIGABRT', 'SIGIOT', 'SIGBUS',

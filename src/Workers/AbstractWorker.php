@@ -10,7 +10,7 @@ use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\Job;
 use Qless\Jobs\JobHandlerInterface;
 use Qless\Jobs\Reservers\ReserverInterface;
-use Qless\Signal\SignalHandler;
+use Qless\Signals\SignalHandler;
 
 /**
  * Qless\Workers\AbstractWorker
@@ -76,13 +76,6 @@ abstract class AbstractWorker implements SignalAwareInterface
      * @var bool
      */
     protected $shutdown = false;
-
-    /**
-     * The internal signal handler.
-     *
-     * @var SignalHandler
-     */
-    protected $signalHandler;
 
     /**
      * Worker constructor.
@@ -212,7 +205,7 @@ abstract class AbstractWorker implements SignalAwareInterface
     {
         $this->logger->info('Register a signal handler that a worker should respond to.');
 
-        $this->signalHandler = SignalHandler::register(
+        SignalHandler::create(
             self::KNOWN_SIGNALS,
             function (int $signal, string $signalName) {
                 $this->logger->info("Was received known signal '{signal}'.", ['signal' => $signalName]);
@@ -248,7 +241,7 @@ abstract class AbstractWorker implements SignalAwareInterface
      */
     protected function clearSignalHandler(): void
     {
-        $this->signalHandler->unregister(self::KNOWN_SIGNALS);
+        SignalHandler::unregister(self::KNOWN_SIGNALS);
     }
 
     /**

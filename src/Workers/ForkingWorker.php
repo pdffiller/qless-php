@@ -2,12 +2,13 @@
 
 namespace Qless\Workers;
 
-use Qless\Exceptions\RuntimeException;
-use Qless\Jobs\Job;
 use Qless\Events\Event;
 use Qless\Events\Subscriber;
 use Qless\Exceptions\ErrorCodes;
+use Qless\Exceptions\RuntimeException;
+use Qless\Jobs\Job;
 use Qless\Jobs\JobHandlerInterface;
+use Qless\Signals\SignalHandler;
 use function Qless\procline;
 
 /**
@@ -393,7 +394,7 @@ final class ForkingWorker extends AbstractWorker
                     sprintf(
                         "child %d was stopped with signal %s\n",
                         $this->childPID,
-                        $this->signalHandler->name($sig)
+                        SignalHandler::sigName($sig)
                     )
                 );
                 return false;
@@ -406,7 +407,7 @@ final class ForkingWorker extends AbstractWorker
     private function childProcessUnhandledSignal($sig)
     {
         $context = $this->logContext;
-        $context['signal'] = $this->signalHandler->name($sig);
+        $context['signal'] = SignalHandler::sigName($sig);
         $this->logger->notice("{type}: child terminated with unhandled signal '{signal}'", $context);
     }
 
@@ -520,7 +521,7 @@ final class ForkingWorker extends AbstractWorker
                         sprintf(
                             "watchdog %d terminated with unhandled signal %s\n",
                             $this->watchdogPID,
-                            $this->signalHandler->name($sig)
+                            SignalHandler::sigName($sig)
                         )
                     );
                 }
@@ -531,7 +532,7 @@ final class ForkingWorker extends AbstractWorker
                     sprintf(
                         "watchdog %d was stopped with signal %s\n",
                         $this->watchdogPID,
-                        $this->signalHandler->name($sig)
+                        SignalHandler::sigName($sig)
                     )
                 );
                 return false;
