@@ -15,7 +15,7 @@ use Qless\Exceptions\UnknownPropertyException;
  * @property-read string $jid
  * @property-read string $klass
  * @property-read string $queue
- * @property-read array $data
+ * @property array $data
  * @property-read array $history
  * @property-read string[] $dependencies
  * @property-read string[] $dependents
@@ -242,22 +242,33 @@ final class Job
      * Complete a job and optionally put it in another queue,
      * either scheduled or to be considered waiting immediately.
      *
-     * It can also optionally accept other jids on which this job will be considered
-     * dependent before it's considered valid.
+     * Like Queue::put and Queue::move, it accepts a delay, and dependencies.
      *
+     * @see \Qless\Queue::put
+     *
+     * @param  string|null $nextq
+     * @param  int         $delay
+     * @param  array       $depends
      * @return string
      */
-    public function complete(): string
+    public function complete(?string $nextq = null, int $delay = 0, array $depends = []): string
     {
-        $jsonData = json_encode($this->data, JSON_UNESCAPED_SLASHES) ?: '{}';
+        $params = [
+            $this->jid,
+            $this->worker,
+            $this->queue,
+            json_encode($this->data, JSON_UNESCAPED_SLASHES) ?: '{}'
+        ];
 
-        return $this->client
-            ->complete(
-                $this->jid,
-                $this->worker,
-                $this->queue,
-                $jsonData
-            );
+        if ($nextq) {
+            $next = ['next', $nextq, 'delay', $delay, 'depends', json_encode($depends, JSON_UNESCAPED_SLASHES)];
+            $params = array_merge($params, $next);
+        }
+
+        return call_user_func_array(
+            [$this->client, 'complete'],
+            $params
+        );
     }
 
     /**
