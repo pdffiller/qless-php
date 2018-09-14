@@ -29,8 +29,6 @@
         "ext-posix": "*",
         "ext-redis": "*",
         "ext-sockets": "*",
-        "infection/infection": "0.10.*",
-        "phpstan/phpstan": "0.10.*",
         "psr/log": "^1.0",
         "ramsey/uuid": "3.8.*",
         "seld/signal-handler": "1.1.*"
@@ -39,7 +37,9 @@
         "contatta/qless-php": "*"
     },
     "require-dev": {
+        "infection/infection": "0.10.*",
         "monolog/monolog": "^1.23",
+        "phpstan/phpstan": "0.10.*",
         "phpunit/phpunit": ">=5.3 <8.0",
         "squizlabs/php_codesniffer": "3.*"
     },
@@ -63,12 +63,5 @@
         }
     },
     "minimum-stability": "dev",
-    "prefer-stable": true,
-    "scripts": {
-        "fix-lint": "phpcbf",
-        "lint": "phpcs",
-        "test": "phpunit --disallow-test-output",
-        "bench": "phpunit --group performance --dont-report-useless-tests --no-coverage --no-logging",
-        "analyse": "phpstan analyse -l max src"
-    }
+    "prefer-stable": true
 }

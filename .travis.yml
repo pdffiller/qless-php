@@ -58,10 +58,11 @@ before_script:
   - php --ri sockets
 
 script:
-  - composer lint
-  - composer analyse
-  - composer test
-  - composer bench
+  - composer diagnose || true
+  - ./vendor/bin/phpcs
+  - ./vendor/bin/phpstan analyse -l max src
+  - ./vendor/bin/phpunit --disallow-test-output
+  - ./vendor/bin/phpunit --group performance --dont-report-useless-tests --no-coverage --no-logging
 
 after_success:
   - if [[ ! -z "${CODECOV_TOKEN}" ]]; then (bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"); fi;
