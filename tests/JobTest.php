@@ -2,6 +2,7 @@
 
 namespace Qless\Tests;
 
+use Qless\Jobs\Job;
 use Qless\Queue;
 use Qless\Tests\Stubs\WorkerStub2;
 
@@ -151,15 +152,25 @@ class JobTest extends QlessTestCase
         $queue1 = new Queue('test-queue-1', $this->client);
         $queue2 = new Queue('test-queue-2', $this->client);
 
-        $queue1->put('SampleJobPerformClass', []);
+        $queue1->put('SampleJobPerformClass', ['size' => 2]);
 
         $this->assertEquals(1, $queue1->length());
         $this->assertEquals(0, $queue2->length());
 
-        $this->assertEquals('waiting', $queue1->pop()->complete('test-queue-2'));
+        $job1 = $queue1->pop();
+        $this->assertEquals(2, $job1->data['size']);
+
+        $job1->data['size'] -= 1;
+
+        $this->assertEquals('waiting', $job1->complete('test-queue-2'));
 
         $this->assertEquals(0, $queue1->length());
         $this->assertEquals(1, $queue2->length());
+
+        $job2 = $queue2->pop();
+
+        $this->assertInstanceOf(Job::class, $job2);
+        $this->assertEquals(1, $job2->data['size']);
     }
 
     /** @test */

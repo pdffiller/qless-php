@@ -15,7 +15,7 @@ use Qless\Exceptions\UnknownPropertyException;
  * @property-read string $jid
  * @property-read string $klass
  * @property-read string $queue
- * @property-read array $data
+ * @property JobData $data
  * @property-read array $history
  * @property-read string[] $dependencies
  * @property-read string[] $dependents
@@ -52,7 +52,7 @@ final class Job
     /**
      * The data for the job.
      *
-     * @var array
+     * @var JobData
      */
     private $data;
 
@@ -142,7 +142,7 @@ final class Job
         $this->jid = $data['jid'];
         $this->klass = $data['klass'];
         $this->queue = $data['queue'];
-        $this->data = json_decode($data['data'], true) ?: [];
+        $this->data = new JobData(json_decode($data['data'], true) ?: []);
         $this->history = $data['history'] ?? [];
         $this->dependencies = $data['dependencies'] ?? [];
         $this->dependents = $data['dependents'] ?? [];
@@ -472,10 +472,6 @@ final class Job
      */
     protected function getPerformMethod(): string
     {
-        if (is_array($this->data) && array_key_exists('performMethod', $this->data)) {
-            return $this->data['performMethod'];
-        }
-
-        return 'perform';
+        return $this->data['performMethod'] ?? 'perform';
     }
 }
