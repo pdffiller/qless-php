@@ -9,7 +9,6 @@ use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\Job;
 use Qless\Jobs\JobHandlerInterface;
 use Qless\Signals\SignalHandler;
-use function Qless\procline;
 
 /**
  * Qless\Workers\ForkingWorker
@@ -89,9 +88,12 @@ final class ForkingWorker extends AbstractWorker
             }
 
             if ($did_work) {
-                $this->logger->debug('{type}: Looking for work', $this->logContext);
-                procline(
-                    'Waiting for ' . implode(',', $this->reserver->getQueues()) . ' with interval ' . $this->interval
+                $this->title(
+                    sprintf(
+                        'Waiting for %s with interval %d sec',
+                        implode(',', $this->reserver->getQueues()),
+                        $this->interval
+                    )
                 );
                 $did_work = false;
             }
@@ -112,11 +114,9 @@ final class ForkingWorker extends AbstractWorker
             $this->childStart();
             $this->watchdogStart($this->client->createSubscriber(['ql:log']));
 
-            // Parent process, sit and wait
-            $proc_line = 'Forked ' . $this->childPID . ' at ' . strftime('%F %T');
-            procline($proc_line);
-            $this->logger->info($proc_line, $this->logContext);
+            $this->title(sprintf('Forked %d at %s', $this->childPID, strftime('%F %T')));
 
+            // Parent process, sit and wait
             while ($this->childProcesses > 0) {
                 $status = null;
                 $pid   = pcntl_wait($status, WUNTRACED);
@@ -327,8 +327,7 @@ final class ForkingWorker extends AbstractWorker
         $this->logContext = ['type' => $this->who];
         $status = 'Processing ' . $jid . ' since ' . strftime('%F %T');
 
-        procline($status);
-        $this->logger->info($status, $this->logContext);
+        $this->title($status);
         $this->childPerform($this->job);
 
         socket_close($socket);
@@ -445,10 +444,8 @@ final class ForkingWorker extends AbstractWorker
         $jid = $this->job->jid;
         $this->who = 'watchdog:' . $this->name;
         $this->logContext = ['type' => $this->who];
-        $status = 'watching events for ' . $jid . ' since ' . strftime('%F %T');
 
-        procline($status);
-        $this->logger->info($status, $this->logContext);
+        $this->title(sprintf('watching events for %s since %s', $jid, strftime('%F %T')));
 
         // @todo Move to a separated class
         ini_set('default_socket_timeout', -1);
