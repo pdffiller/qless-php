@@ -267,7 +267,7 @@ abstract class AbstractWorker implements SignalAwareInterface
 
         if (false === @cli_set_process_title(sprintf('qless-php-worker %s', $value))) {
             if ('Darwin' === PHP_OS) {
-                \trigger_error(
+                trigger_error(
                     'Running "cli_get_process_title" as an unprivileged user is not supported on macOS.',
                     E_USER_WARNING
                 );
