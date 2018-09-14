@@ -237,16 +237,16 @@ $worker = new ForkingWorker(
 $worker->run();
 ```
 
-The following signals are supported in the parent process:
+The following POSIX-compliant signals are supported in the parent process:
 
-- `TERM`: Shutdown immediately, stop processing jobs.
-- `INT`:  Shutdown immediately, stop processing jobs.
-- `QUIT`: Shutdown after the current job has finished processing.
-- `USR1`: Kill the forked child immediately, continue processing jobs.
-- `USR2`: Don't process any new jobs, and dump the current backtrace.
-- `CONT`: Start processing jobs again after a USR2
+- `TERM`: Shutdown immediately, stop processing jobs
+- `INT`:  Shutdown immediately, stop processing jobs
+- `QUIT`: Shutdown after the current job has finished processing
+- `USR1`: Kill the forked child immediately, continue processing jobs
+- `USR2`: Don't process any new jobs, and dump the current backtrace
+- `CONT`: Start processing jobs again after a `USR2`
 
-_For detailed info regarding signals refer to [`signal(7)`](http://man7.org/linux/man-pages/man7/signal.7.html)._
+_For detailed info regarding the signals refer to [`signal(7)`](http://man7.org/linux/man-pages/man7/signal.7.html)._
 
 You should send these to the master process, not the child.
 

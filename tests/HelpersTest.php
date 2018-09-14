@@ -2,7 +2,7 @@
 
 namespace Qless\Tests;
 
-use function Qless\pcntl_sig_name;
+use Qless\Signal\SignalHandler;
 
 /**
  * Qless\Tests\HelpersTest
@@ -20,7 +20,8 @@ class HelpersTest extends QlessTestCase
      */
     public function shouldGetSignalName(int $signal, string $expected)
     {
-        $this->assertEquals($expected, pcntl_sig_name($signal));
+        $handler = new SignalHandler();
+        $this->assertEquals($expected, $handler->name($signal));
     }
 
     public function signalDataProvider(): array
