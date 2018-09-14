@@ -10,7 +10,7 @@ use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\Job;
 use Qless\Jobs\JobHandlerInterface;
 use Qless\Jobs\Reservers\ReserverInterface;
-use Qless\SignalHandler;
+use Qless\Signals\SignalHandler;
 
 /**
  * Qless\Workers\AbstractWorker
@@ -19,12 +19,21 @@ use Qless\SignalHandler;
  */
 abstract class AbstractWorker implements SignalAwareInterface
 {
+    protected const KNOWN_SIGNALS = [
+        SIGTERM,
+        SIGINT,
+        SIGQUIT,
+        SIGUSR1,
+        SIGUSR2,
+        SIGCONT,
+    ];
+
     /**
      * The interval for checking for new jobs.
      *
      * @var int
      */
-    protected $interval = 60;
+    protected $interval = 5;
 
     /**
      * The internal client to communicate with qless-core.
@@ -68,29 +77,21 @@ abstract class AbstractWorker implements SignalAwareInterface
      */
     protected $shutdown = false;
 
-    /** @var SignalHandler */
-    protected $shutdownHandler;
-
     /**
      * Worker constructor.
      *
-     * @param ReserverInterface    $reserver
-     * @param Client               $client
-     * @param LoggerInterface|null $logger
-     * @param SignalHandler|null   $shutdownHandler
-     * @param string|null          $name
+     * @param ReserverInterface $reserver
+     * @param Client            $client
+     * @param string|null       $name
      */
     public function __construct(
         ReserverInterface $reserver,
         Client $client,
-        LoggerInterface $logger = null,
-        SignalHandler $shutdownHandler = null,
         ?string $name = null
     ) {
         $this->reserver = $reserver;
-        $this->logger = $logger ?: new NullLogger();
+        $this->logger = new NullLogger();
         $this->client = $client;
-        $this->shutdownHandler = $shutdownHandler ?: new SignalHandler($this);
 
         $this->setName($name);
     }
@@ -177,13 +178,60 @@ abstract class AbstractWorker implements SignalAwareInterface
     abstract public function run(): void;
 
     /**
-     * Register signal handler.
+     * This method should be called before worker run.
+     *
+     * @return void
+     */
+    protected function onStartup(): void
+    {
+        $this->registerSignalHandler();
+    }
+
+    /**
+     * Register a signal handler.
+     *
+     * TERM: Shutdown immediately and stop processing jobs (quick shutdown).
+     * INT:  Shutdown immediately and stop processing jobs (quick shutdown).
+     * QUIT: Shutdown after the current job finishes processing (graceful shutdown).
+     * USR1: Kill the forked child immediately and continue processing jobs.
+     * USR2: Pausing job processing.
+     * CONT: Resumes worker allowing it to pick.
+     *
+     * @link   http://man7.org/linux/man-pages/man7/signal.7.html
      *
      * @return void
      */
     protected function registerSignalHandler(): void
     {
-        $this->shutdownHandler->register();
+        $this->logger->info('Register a signal handler that a worker should respond to.');
+
+        SignalHandler::create(
+            self::KNOWN_SIGNALS,
+            function (int $signal, string $signalName) {
+                $this->logger->info("Was received known signal '{signal}'.", ['signal' => $signalName]);
+
+                switch ($signal) {
+                    case SIGTERM:
+                        $this->shutDownNow();
+                        break;
+                    case SIGINT:
+                        $this->shutDownNow();
+                        break;
+                    case SIGQUIT:
+                        $this->shutdown();
+                        break;
+                    case SIGUSR1:
+                        $this->killChildren();
+                        break;
+                    case SIGUSR2:
+                        $this->pauseProcessing();
+                        break;
+                    case SIGCONT:
+                        $this->unPauseProcessing();
+                        break;
+                }
+            }
+        );
     }
 
     /**
@@ -193,7 +241,7 @@ abstract class AbstractWorker implements SignalAwareInterface
      */
     protected function clearSignalHandler(): void
     {
-        $this->shutdownHandler->unregister();
+        SignalHandler::unregister(self::KNOWN_SIGNALS);
     }
 
     /**

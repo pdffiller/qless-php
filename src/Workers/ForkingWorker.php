@@ -2,14 +2,14 @@
 
 namespace Qless\Workers;
 
-use Qless\Exceptions\RuntimeException;
-use Qless\Jobs\Job;
 use Qless\Events\Event;
 use Qless\Events\Subscriber;
 use Qless\Exceptions\ErrorCodes;
+use Qless\Exceptions\RuntimeException;
+use Qless\Jobs\Job;
 use Qless\Jobs\JobHandlerInterface;
+use Qless\Signals\SignalHandler;
 use function Qless\procline;
-use function Qless\pcntl_sig_name;
 
 /**
  * Qless\Workers\ForkingWorker
@@ -58,7 +58,13 @@ final class ForkingWorker extends AbstractWorker
      */
     public function run(): void
     {
-        declare(ticks=1);
+        /**
+         * Do not use declare(ticks=1) instead use pcntl_async_signals(true)
+         * There's no performance hit or overhead with `pcntl_async_signals()`.
+         *
+         * @link https://blog.pascal-martin.fr/post/php71-en-other-new-things.html
+         */
+        pcntl_async_signals(true);
 
         $this->onStartup();
 
@@ -164,16 +170,6 @@ final class ForkingWorker extends AbstractWorker
                 error_reporting($old);
             }
         }
-    }
-
-    /**
-     * This method should be called on worker run.
-     *
-     * @return void
-     */
-    public function onStartup(): void
-    {
-        $this->registerSignalHandler();
     }
 
     /**
@@ -395,7 +391,11 @@ final class ForkingWorker extends AbstractWorker
             case pcntl_wifstopped($status):
                 $sig = pcntl_wstopsig($status);
                 $this->logger->info(
-                    sprintf("child %d was stopped with signal %s\n", $this->childPID, pcntl_sig_name($sig))
+                    sprintf(
+                        "child %d was stopped with signal %s\n",
+                        $this->childPID,
+                        SignalHandler::sigName($sig)
+                    )
                 );
                 return false;
             default:
@@ -407,7 +407,7 @@ final class ForkingWorker extends AbstractWorker
     private function childProcessUnhandledSignal($sig)
     {
         $context = $this->logContext;
-        $context['signal'] = pcntl_sig_name($sig);
+        $context['signal'] = SignalHandler::sigName($sig);
         $this->logger->notice("{type}: child terminated with unhandled signal '{signal}'", $context);
     }
 
@@ -521,7 +521,7 @@ final class ForkingWorker extends AbstractWorker
                         sprintf(
                             "watchdog %d terminated with unhandled signal %s\n",
                             $this->watchdogPID,
-                            pcntl_sig_name($sig)
+                            SignalHandler::sigName($sig)
                         )
                     );
                 }
@@ -529,7 +529,11 @@ final class ForkingWorker extends AbstractWorker
             case pcntl_wifstopped($status):
                 $sig = pcntl_wstopsig($status);
                 $this->logger->warning(
-                    sprintf("watchdog %d was stopped with signal %s\n", $this->watchdogPID, pcntl_sig_name($sig))
+                    sprintf(
+                        "watchdog %d was stopped with signal %s\n",
+                        $this->watchdogPID,
+                        SignalHandler::sigName($sig)
+                    )
                 );
                 return false;
             default:
