@@ -15,7 +15,7 @@ use Qless\Exceptions\UnknownPropertyException;
  * @property-read string $jid
  * @property-read string $klass
  * @property-read string $queue
- * @property array $data
+ * @property-read array $data
  * @property-read array $history
  * @property-read string[] $dependencies
  * @property-read string[] $dependents
