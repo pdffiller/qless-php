@@ -81,8 +81,8 @@ a job if the error is likely not a transient one; otherwise, that worker should 
   jobs cannot be popped by workers
 1. **Recurring Jobs** -- Scheduling's all well and good, but we also support
   jobs that need to recur periodically.
-1. **Notifications** -- Tracked jobs emit events on pubsub channels as they get
-  completed, failed, put, popped, etc. Use these events to get notified of
+1. **Notifications** -- Tracked jobs emit events on [pubsub](https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern)
+  channels as they get completed, failed, put, popped, etc. Use these events to get notified of
   progress on jobs you're interested in.
 
 ## Usage
@@ -205,8 +205,6 @@ You could write a simple script to do this, for example:
 ```php
 // The autoloader line is omitted
 
-use Monolog\Handler\ErrorLogHandler;
-use Monolog\Logger;
 use Qless\Client;
 use Qless\Jobs\Reservers\OrderedReserver;
 use Qless\Queue;
@@ -224,13 +222,7 @@ $queues = array_map(function (string $name) use ($client) {
 // strategies for which order jobs are popped off of queues
 $reserver = new OrderedReserver($queues);
 
-// Create internal logger for debugging purposes
-$logger = new Logger('APP');
-$logger->pushHandler(new ErrorLogHandler());
-
-$worker = new ForkingWorker($reserver, $client, 'worker-1.acme.com');
-
-$worker->setLogger($logger);
+$worker = new ForkingWorker($reserver, $client);
 $worker->run();
 ```
 
