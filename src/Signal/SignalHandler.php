@@ -2,6 +2,7 @@
 
 namespace Qless\Signal;
 
+use Psr\Log\LoggerInterface;
 use Seld\Signal\SignalHandler as BaseHandler;
 
 /**
@@ -35,6 +36,21 @@ class SignalHandler extends BaseHandler
 
             pcntl_signal($signal, SIG_DFL);
         }
+    }
+
+    /**
+     * Registers a signal handler.
+     *
+     * @param  array|null               $signals  And array of signal names (more portable) or constants.
+     * @param  LoggerInterface|callable $callback A PSR-3 Logger or a callback($signal, $signalName)
+     * @return SignalHandler
+     */
+    public static function register(?array $signals = null, $callback = null): SignalHandler
+    {
+        /** @var self $handler */
+        $handler = self::create($signals, $callback);
+
+        return $handler;
     }
 
     /**

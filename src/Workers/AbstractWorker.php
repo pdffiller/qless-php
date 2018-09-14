@@ -33,7 +33,7 @@ abstract class AbstractWorker implements SignalAwareInterface
      *
      * @var int
      */
-    protected $interval = 5.0;
+    protected $interval = 5;
 
     /**
      * The internal client to communicate with qless-core.
@@ -212,7 +212,7 @@ abstract class AbstractWorker implements SignalAwareInterface
     {
         $this->logger->info('Register a signal handler that a worker should respond to.');
 
-        $this->signalHandler = SignalHandler::create(
+        $this->signalHandler = SignalHandler::register(
             self::KNOWN_SIGNALS,
             function (int $signal, string $signalName) {
                 $this->logger->info("Was received known signal '{signal}'.", ['signal' => $signalName]);
