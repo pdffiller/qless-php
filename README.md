@@ -21,6 +21,7 @@ Documentation is borrowed from [seomoz/qless](https://github.com/seomoz/qless).
 
 - [Philosophy and Nomenclature](#philosophy-and-nomenclature)
 - [Features](#features)
+- [Installation](#installation)
 - [Usage](#usage)
   - [Enqueing Jobs](#enqueing-jobs)
   - [Running A Worker](#running-a-worker)
@@ -84,6 +85,26 @@ a job if the error is likely not a transient one; otherwise, that worker should 
 1. **Notifications** -- Tracked jobs emit events on [pubsub](https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern)
   channels as they get completed, failed, put, popped, etc. Use these events to get notified of
   progress on jobs you're interested in.
+
+## Installation
+
+Qless PHP can be installed via Composer:
+
+```bash
+composer require pdffiller/qless-php
+```
+
+Alternatively, install qless-php from source by checking it out from GitHub:
+
+```bash
+git clone git://github.com/pdffiller/qless-php.git
+cd qless-php
+composer update
+```
+
+NOTE: The `master` branch will always contain the latest _unstable_ version.
+If you wish to check older versions or formal, tagged release, please switch to the tag
+[release](https://github.com/pdffiller/qless-php/releases).
 
 ## Usage
 
@@ -179,25 +200,25 @@ $job->untag('foo');                // remove a tag
 
 ### Running A Worker
 
-The Qless PHP worker was heavily inspired by Resque's worker, but thanks to the power of the qless-core lua scripts,
-it is much simpler and you are welcome to write your own (e.g. if you'd rather save memory by not forking the worker
-for each job).
+The Qless PHP worker was heavily inspired by [Resque](https://github.com/chrisboulton/php-resque)'s worker, but thanks
+to the power of the qless-core lua scripts, it is much simpler and you are welcome to write your own (e.g. if you'd
+rather save memory by not forking the worker for each job).
 
 As with resque...
 
-- The worker forks a child process for each job in order to provide resilience against memory leaks.
-  Pass the `RUN_AS_SINGLE_PROCESS` environment variable to force Qless to not fork the child process.
-  Single process mode should only be used in some test/dev environments.
-- The worker updates its procline with its status so you can see what workers are doing using `ps`.
-- The worker registers signal handlers so that you can control it by sending it signals.
-- The worker is given a list of queues to pop jobs off of.
-- The worker logs out put based on setting of the `Psr\Log\LoggerInterface` instance passed to worker.
+- The worker forks a child process for each job in order to provide resilience against memory leaks
+  (Pass the `RUN_AS_SINGLE_PROCESS` environment variable to force Qless to not fork the child process.
+  Single process mode should only be used in some test/dev environments.)
+- The worker updates its procline with its status so you can see what workers are doing using `ps`
+- The worker registers signal handlers so that you can control it by sending it signals
+- The worker is given a list of queues to pop jobs off of
+- The worker logs out put based on setting of the `Psr\Log\LoggerInterface` instance passed to worker
 
 Resque uses queues for its notion of priority. In contrast, qless has priority support built-in.
 Thus, the worker supports two strategies for what order to pop jobs off the queues: ordered and round-robin.
 The ordered reserver will keep popping jobs off the first queue until it is empty, before trying to pop job off the
-second queue. The round-robin reserver will pop a job off the first queue, then the second queue, and so on.
-You could also easily implement your own.
+second queue. The [round-robin](https://en.wikipedia.org/wiki/Round-robin_scheduling) reserver will pop a job off
+the first queue, then the second queue, and so on. You could also easily implement your own.
 
 To start a worker, write a bit of PHP code that instantiates a worker and runs it.
 You could write a simple script to do this, for example:
