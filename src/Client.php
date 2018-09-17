@@ -107,7 +107,12 @@ class Client
      */
     public function createSubscriber(array $channels): QlessCoreSubscriber
     {
-        return new QlessCoreSubscriber($this->redis, $channels);
+        return new QlessCoreSubscriber(
+            function (Redis $redis) {
+                $redis->connect($this->redisHost, $this->redisPort, $this->redisTimeout);
+            },
+            $channels
+        );
     }
 
     /**
