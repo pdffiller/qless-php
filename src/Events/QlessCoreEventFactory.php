@@ -3,11 +3,11 @@
 namespace Qless\Events;
 
 /**
- * Qless\Events\EventsFactory
+ * Qless\Events\QlessCoreEventFactory
  *
  * @package Qless\Events
  */
-class EventsFactory
+class QlessCoreEventFactory
 {
     /**
      * Tries to create an Event DTO.
@@ -15,7 +15,7 @@ class EventsFactory
      * @param  null|string $data
      * @return null|QlessCoreEvent
      */
-    public function fromData(?string $data = null): ?QlessCoreEvent
+    public static function fromData(?string $data = null): ?QlessCoreEvent
     {
         if (empty($data)) {
             return null;

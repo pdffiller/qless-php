@@ -17,23 +17,18 @@ class Subscriber
     private $redis;
 
     /** @var array */
-    private $channels;
-
-    /** @var EventsFactory */
-    private $eventsFactory;
+    private $channels = [];
 
     /**
      * Subscriber constructor.
      *
-     * @param Redis         $redis
-     * @param array         $channels
-     * @param EventsFactory $eventsFactory
+     * @param Redis $redis
+     * @param array $channels
      */
-    public function __construct(Redis $redis, array $channels, EventsFactory $eventsFactory = null)
+    public function __construct(Redis $redis, array $channels)
     {
         $this->redis = $redis;
         $this->channels  = $channels;
-        $this->eventsFactory = $eventsFactory ?: new EventsFactory();
     }
 
     /**
@@ -42,11 +37,10 @@ class Subscriber
      * @param  callable $callback
      * @return void
      */
-    public function messages(callable $callback)
+    public function messages(callable $callback): void
     {
-        $factory = $this->eventsFactory;
-        $callback = function (Redis $redis, string $channel, ?string $data = null) use ($callback, $factory) {
-            call_user_func($callback, $channel, $factory->fromData($data));
+        $callback = function (Redis $redis, string $channel, ?string $data = null) use ($callback) {
+            call_user_func($callback, $channel, QlessCoreEventFactory::fromData($data));
         };
 
         $this->redis->subscribe($this->channels, $callback);
@@ -57,7 +51,7 @@ class Subscriber
      *
      * @return void
      */
-    public function stop()
+    public function stop(): void
     {
         $this->redis->close();
     }
