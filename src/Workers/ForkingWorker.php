@@ -9,6 +9,8 @@ use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\Job;
 use Qless\Jobs\JobHandlerInterface;
 use Qless\Signals\SignalHandler;
+use Qless\Workers\Traits\ShutdownAwareTrait;
+use Qless\Workers\Traits\SignalAwareTrait;
 
 /**
  * Qless\Workers\ForkingWorker
@@ -17,8 +19,10 @@ use Qless\Signals\SignalHandler;
  *
  * @package Qless\Workers
  */
-final class ForkingWorker extends AbstractWorker
+final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
 {
+    use ShutdownAwareTrait, SignalAwareTrait;
+
     private const PROCESS_TYPE_MASTER = 0;
     private const PROCESS_TYPE_JOB = 1;
     private const PROCESS_TYPE_WATCHDOG = 2;
@@ -65,7 +69,7 @@ final class ForkingWorker extends AbstractWorker
          */
         pcntl_async_signals(true);
 
-        $this->onStartup();
+        $this->registerSignalHandler();
 
         $this->who = 'master:' . $this->name;
         $this->logContext = ['type' => $this->who, 'job.identifier' => null];

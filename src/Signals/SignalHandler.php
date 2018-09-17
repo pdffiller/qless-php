@@ -11,6 +11,15 @@ use Seld\Signal\SignalHandler as BaseHandler;
  */
 class SignalHandler extends BaseHandler
 {
+    const KNOWN_SIGNALS = [
+        SIGTERM,
+        SIGINT,
+        SIGQUIT,
+        SIGUSR1,
+        SIGUSR2,
+        SIGCONT,
+    ];
+
     /**
      * Clear all previously registered signal handlers.
      *
@@ -20,7 +29,7 @@ class SignalHandler extends BaseHandler
     public static function unregister(?array $signals = null): void
     {
         if (empty($signals)) {
-            $signals = [SIGINT, SIGTERM];
+            $signals = self::KNOWN_SIGNALS;
         }
 
         foreach ($signals as $signal) {
