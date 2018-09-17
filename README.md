@@ -139,6 +139,8 @@ class MyJobClass
     {
         // ...
         echo 'Perform ', $job->getId(), ' job', PHP_EOL;
+        
+        $job->complete();
     }
 }
 ```
