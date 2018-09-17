@@ -81,7 +81,7 @@ abstract class AbstractWorker implements WorkerInterface
         $this->logger = new NullLogger();
         $this->client = $client;
         $this->eventsManager = $eventsManager ?: new EventsManager();
-        $this->name = $client->getWorkerName() . ': ' . $this->reserver->getDescription();
+        $this->name = $client->getWorkerName();
 
         $this->onConstruct();
     }
@@ -103,7 +103,7 @@ abstract class AbstractWorker implements WorkerInterface
      */
     final public function setInterval(int $interval): void
     {
-        $this->interval = $interval;
+        $this->interval = abs($interval);
     }
 
     /**
