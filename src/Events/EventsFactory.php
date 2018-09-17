@@ -13,9 +13,9 @@ class EventsFactory
      * Tries to create an Event DTO.
      *
      * @param  null|string $data
-     * @return null|Event
+     * @return null|QlessCoreEvent
      */
-    public function fromData(?string $data = null): ?Event
+    public function fromData(?string $data = null): ?QlessCoreEvent
     {
         if (empty($data)) {
             return null;
@@ -26,7 +26,7 @@ class EventsFactory
             return null;
         }
 
-        return new Event(
+        return new QlessCoreEvent(
             $data['event'],
             $data['jid'] ?? null,
             $data['worker'] ?? null,

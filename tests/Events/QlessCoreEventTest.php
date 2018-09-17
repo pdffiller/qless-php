@@ -1,17 +1,18 @@
 <?php
 
-namespace Qless\Tests;
+namespace Qless\Tests\Events;
 
-use Qless\Events\Event;
+use Qless\Events\QlessCoreEvent;
 use Qless\Events\Subscriber;
+use Qless\Tests\QlessTestCase;
 use Qless\Tests\Support\RedisAwareTrait;
 
 /**
- * Qless\Tests\ListenerTest
+ * Qless\Tests\Events\QlessCoreEventTest
  *
  * @package Qless\Tests
  */
-class ListenerTest extends QlessTestCase
+class QlessCoreEventTest extends QlessTestCase
 {
     use RedisAwareTrait;
 
@@ -34,15 +35,16 @@ class ListenerTest extends QlessTestCase
             return true;
         };
 
-        exec(escapeshellcmd('php ' . __DIR__ . '/publish.php') . ' > /dev/null 2>&1 &');
+        $publisher = realpath(__DIR__ . '/../publish.php');
+        exec(escapeshellcmd("php '{$publisher}'") . ' > /dev/null 2>&1 &');
 
         $listener->messages($callback);
 
         $this->assertEquals([
-            ['chan-1' => new Event(Event::CANCELED)],
-            ['chan-1' => new Event(Event::COMPLETED)],
-            ['chan-2' => new Event(Event::FAILED)],
-            ['chan-2' => new Event(Event::LOCK_LOST)],
+            ['chan-1' => new QlessCoreEvent(QlessCoreEvent::CANCELED)],
+            ['chan-1' => new QlessCoreEvent(QlessCoreEvent::COMPLETED)],
+            ['chan-2' => new QlessCoreEvent(QlessCoreEvent::FAILED)],
+            ['chan-2' => new QlessCoreEvent(QlessCoreEvent::LOCK_LOST)],
         ], $events);
     }
 }
