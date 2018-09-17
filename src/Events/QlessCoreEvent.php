@@ -3,13 +3,13 @@
 namespace Qless\Events;
 
 /**
- * Qless\Events\Event
+ * Qless\Events\QlessCoreEvent
  *
- * Just a DTO for qless events.
+ * Just a DTO for qless-core events.
  *
  * @package Qless\Events
  */
-final class Event
+final class QlessCoreEvent
 {
     const LOCK_LOST = 'lock_lost';
     const CANCELED = 'canceled';
@@ -48,13 +48,13 @@ final class Event
 
     /** @var array<string, bool> */
     private $validTypes = [
-        Event::LOCK_LOST    => true,
-        Event::CANCELED     => true,
-        Event::COMPLETED    => true,
-        Event::FAILED       => true,
-        Event::PUT          => true,
-        Event::CONFIG_SET   => true,
-        Event::CONFIG_UNSET => true,
+        QlessCoreEvent::LOCK_LOST    => true,
+        QlessCoreEvent::CANCELED     => true,
+        QlessCoreEvent::COMPLETED    => true,
+        QlessCoreEvent::FAILED       => true,
+        QlessCoreEvent::PUT          => true,
+        QlessCoreEvent::CONFIG_SET   => true,
+        QlessCoreEvent::CONFIG_UNSET => true,
     ];
 
     /**

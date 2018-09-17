@@ -2,13 +2,15 @@
 
 namespace Qless\Workers;
 
-use Qless\Events\Event;
+use Qless\Events\QlessCoreEvent;
 use Qless\Events\Subscriber;
 use Qless\Exceptions\ErrorCodes;
 use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\Job;
 use Qless\Jobs\JobHandlerInterface;
 use Qless\Signals\SignalHandler;
+use Qless\Workers\Traits\ShutdownAwareTrait;
+use Qless\Workers\Traits\SignalAwareTrait;
 
 /**
  * Qless\Workers\ForkingWorker
@@ -17,8 +19,10 @@ use Qless\Signals\SignalHandler;
  *
  * @package Qless\Workers
  */
-final class ForkingWorker extends AbstractWorker
+final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
 {
+    use ShutdownAwareTrait, SignalAwareTrait;
+
     private const PROCESS_TYPE_MASTER = 0;
     private const PROCESS_TYPE_JOB = 1;
     private const PROCESS_TYPE_WATCHDOG = 2;
@@ -65,7 +69,7 @@ final class ForkingWorker extends AbstractWorker
          */
         pcntl_async_signals(true);
 
-        $this->onStartup();
+        $this->registerSignalHandler();
 
         $this->who = 'master:' . $this->name;
         $this->logContext = ['type' => $this->who, 'job.identifier' => null];
@@ -449,8 +453,8 @@ final class ForkingWorker extends AbstractWorker
 
         // @todo Move to a separated class
         ini_set('default_socket_timeout', -1);
-        $subscriber->messages(function (string $channel, Event $event = null) use ($subscriber, $jid) {
-            if ($event instanceof Event == false) {
+        $subscriber->messages(function (string $channel, QlessCoreEvent $event = null) use ($subscriber, $jid) {
+            if ($event === null) {
                 return;
             }
 
@@ -463,7 +467,7 @@ final class ForkingWorker extends AbstractWorker
             }
 
             switch ($event->getType()) {
-                case Event::LOCK_LOST:
+                case QlessCoreEvent::LOCK_LOST:
                     if ($event->getWorker() === $this->name) {
                         $this->logger->info(
                             "{type}: sending SIGKILL to child {$this->childPID}; job handed out to another worker",
@@ -473,7 +477,7 @@ final class ForkingWorker extends AbstractWorker
                         $subscriber->stop();
                     }
                     break;
-                case Event::CANCELED:
+                case QlessCoreEvent::CANCELED:
                     if ($event->getWorker() === $this->name) {
                         $this->logger->info(
                             "{type}: sending SIGKILL to child {$this->childPID}; job canceled",
@@ -483,8 +487,8 @@ final class ForkingWorker extends AbstractWorker
                         $subscriber->stop();
                     }
                     break;
-                case Event::COMPLETED:
-                case Event::FAILED:
+                case QlessCoreEvent::COMPLETED:
+                case QlessCoreEvent::FAILED:
                     $subscriber->stop();
                     break;
             }
