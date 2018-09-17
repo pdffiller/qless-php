@@ -1,17 +1,18 @@
 <?php
 
-namespace Qless\Events;
+namespace Qless\Subscribers;
 
+use Qless\Events\QlessCoreEventFactory;
 use Redis;
 
 /**
- * Qless\Events\Subscriber
+ * Qless\Subscribers\QlessCoreSubscriber
  *
  * A class used for subscribing to messages in a thread.
  *
  * @package Qless\Events
  */
-class Subscriber
+class QlessCoreSubscriber
 {
     /** @var Redis */
     private $redis;

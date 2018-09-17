@@ -3,10 +3,10 @@
 namespace Qless\Tests;
 
 use Qless\Config;
-use Qless\Events\Subscriber;
 use Qless\Jobs\Collection;
 use Qless\LuaScript;
 use Qless\Queue;
+use Qless\Subscribers\QlessCoreSubscriber;
 use Qless\Tests\Support\RedisAwareTrait;
 use Redis;
 
@@ -22,7 +22,7 @@ class ClientTest extends QlessTestCase
     /** @test */
     public function shouldCreateASubscriber()
     {
-        $this->assertInstanceOf(Subscriber::class, $this->client->createSubscriber([]));
+        $this->assertInstanceOf(QlessCoreSubscriber::class, $this->client->createSubscriber([]));
     }
 
     /**

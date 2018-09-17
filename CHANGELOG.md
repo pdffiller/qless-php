@@ -13,15 +13,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added all the required PHP extensions to the Composer's `require` section so that
   now Composer will check dependencies on library installation time
 - Added support of default Worker's `perform` method
-- Added `Qless\Events\Event` DTO and `Qless\Events\EventsFactory`
+- Added `Qless\Events\QlessCoreEvent` DTO and `Qless\Events\QlessCoreEventFactory` to interact with qless-core events
 - Added `Qless\Client::getWorkerName` to provide default worker name
 - Introduced job reservers (ordered, round robin, shuffled round robin)
+- Introduced `Qless\EventsManger` to provide a basic event system
 
 ### Changed
 - PHP 5.x is no longer supported. Minimal required version is 7.1
 - Updated qless-core
 - Move `Qless\Lua` to the `Qless\LuaScript`
-- Move `Qless\Listener` to the `Qless\Events\Subscriber`
+- Move `Qless\Listener` to the `Qless\Subscribers\QlessCoreSubscriber`
 - Move `Qless\Job` to the `Qless\Jobs\Job`
 - Move `Qless\Jobs` to the `Qless\Jobs\Collection`
 - Move `Qless\Worker` to the `Qless\Workers\ForkingWorker`

@@ -2,15 +2,16 @@
 
 namespace Qless\Workers;
 
+use Psr\Log\LoggerInterface;
 use Qless\Events\QlessCoreEvent;
-use Qless\Events\Subscriber;
 use Qless\Exceptions\ErrorCodes;
 use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\Job;
 use Qless\Jobs\JobHandlerInterface;
 use Qless\Signals\SignalHandler;
+use Qless\Subscribers\QlessCoreSubscriber;
+use Qless\Subscribers\SignalsAwareSubscriber;
 use Qless\Workers\Traits\ShutdownAwareTrait;
-use Qless\Workers\Traits\SignalAwareTrait;
 
 /**
  * Qless\Workers\ForkingWorker
@@ -21,7 +22,7 @@ use Qless\Workers\Traits\SignalAwareTrait;
  */
 final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
 {
-    use ShutdownAwareTrait, SignalAwareTrait;
+    use ShutdownAwareTrait;
 
     private const PROCESS_TYPE_MASTER = 0;
     private const PROCESS_TYPE_JOB = 1;
@@ -54,23 +55,40 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
     /** @var Job|null */
     private $job;
 
+    /** @var SignalsAwareSubscriber */
+    private $signalsSubscriber;
+
     /**
      * {@inheritdoc}
      *
      * @return void
      */
-    public function run(): void
+    public function onConstruct(): void
     {
-        /**
-         * Do not use declare(ticks=1) instead use pcntl_async_signals(true)
-         * There's no performance hit or overhead with `pcntl_async_signals()`.
-         *
-         * @link https://blog.pascal-martin.fr/post/php71-en-other-new-things.html
-         */
-        pcntl_async_signals(true);
+        $this->signalsSubscriber = new SignalsAwareSubscriber($this->logger);
+        $this->eventsManager->attach('worker', $this->signalsSubscriber);
+    }
 
-        $this->registerSignalHandler();
+    /**
+     * {@inheritdoc}
+     *
+     * @param  LoggerInterface $logger
+     * @return void
+     */
+    public function setLogger(LoggerInterface $logger): void
+    {
+        parent::setLogger($logger);
 
+        $this->signalsSubscriber->setLogger($logger);
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @return void
+     */
+    public function perform(): void
+    {
         $this->who = 'master:' . $this->name;
         $this->logContext = ['type' => $this->who, 'job.identifier' => null];
         $this->logger->info('{type}: Worker started', $this->logContext);
@@ -82,7 +100,7 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
         $did_work = false;
 
         while (true) {
-            if ($this->shutdown) {
+            if ($this->isShutdown()) {
                 $this->logger->info('{type}: Shutting down', $this->logContext);
                 break;
             }
@@ -157,6 +175,7 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
             foreach ($this->sockets as $socket) {
                 socket_close($socket);
             }
+
             $this->sockets  = [];
             $this->job = null;
             $this->logContext['job.identifier'] = null;
@@ -187,12 +206,12 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
     private function fork(&$socket)
     {
         $pair = [];
-        if (\socket_create_pair(AF_UNIX, SOCK_STREAM, 0, $pair) === false) {
-            $this->logger->error(
-                '{type}: Unable to create socket pair; ' . socket_strerror(socket_last_error($pair[0])),
-                $this->logContext
-            );
 
+        $domain = (strtoupper(substr(PHP_OS, 0, 3)) == 'WIN' ? AF_INET : AF_UNIX);
+        if (\socket_create_pair($domain, SOCK_STREAM, 0, $pair) === false) {
+            $error = socket_strerror(socket_last_error($pair[0] ?? null));
+
+            $this->logger->error('{type}: Unable to create socket pair; ' . $error, $this->logContext);
             exit(0);
         }
 
@@ -312,6 +331,8 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
 
     private function childStart(): void
     {
+        $this->eventsManager->fire('worker:beforeFork', $this);
+
         $socket = null;
         $this->childPID = $this->fork($socket);
         if ($this->childPID !== 0) {
@@ -323,8 +344,9 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
             return;
         }
 
+        $this->eventsManager->fire('worker:afterFork', $this);
+
         $this->processType = self::PROCESS_TYPE_JOB;
-        $this->clearSignalHandler();
 
         $jid = $this->job->jid;
         $this->who = 'child:' . $this->name;
@@ -429,8 +451,10 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
         $this->childPID = null;
     }
 
-    private function watchdogStart(Subscriber $subscriber): void
+    private function watchdogStart(QlessCoreSubscriber $subscriber): void
     {
+        $this->eventsManager->fire('worker:beforeFork', $this);
+
         $socket = null;
         $this->watchdogPID = $this->fork($socket);
         if ($this->watchdogPID !== 0) {
@@ -442,8 +466,9 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
             return;
         }
 
+        $this->eventsManager->fire('worker:afterFork', $this);
+
         $this->processType = self::PROCESS_TYPE_WATCHDOG;
-        $this->clearSignalHandler();
 
         $jid = $this->job->jid;
         $this->who = 'watchdog:' . $this->name;
