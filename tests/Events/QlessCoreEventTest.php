@@ -3,7 +3,7 @@
 namespace Qless\Tests\Events;
 
 use Qless\Events\QlessCoreEvent;
-use Qless\Events\Subscriber;
+use Qless\Subscribers\QlessCoreSubscriber;
 use Qless\Tests\QlessTestCase;
 use Qless\Tests\Support\RedisAwareTrait;
 
@@ -22,7 +22,7 @@ class QlessCoreEventTest extends QlessTestCase
         $events = [];
         $time   = time();
 
-        $listener = new Subscriber($this->redis(), ['chan-1', 'chan-2']);
+        $listener = new QlessCoreSubscriber($this->redis(), ['chan-1', 'chan-2']);
 
         $callback = function ($channel, $event) use ($listener, $time, &$events) {
             if (time() - $time > 3 || count($events) > 3) {

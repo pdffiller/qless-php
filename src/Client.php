@@ -2,10 +2,10 @@
 
 namespace Qless;
 
-use Qless\Events\Subscriber;
 use Qless\Exceptions\ExceptionInterface;
 use Qless\Exceptions\UnknownPropertyException;
 use Qless\Jobs\Collection as JobsCollection;
+use Qless\Subscribers\QlessCoreSubscriber;
 use Redis;
 
 /**
@@ -103,11 +103,11 @@ class Client
      * Factory method to create a new Subscriber instance.
      *
      * @param  array $channels An array of channels to subscribe to.
-     * @return Subscriber
+     * @return QlessCoreSubscriber
      */
-    public function createSubscriber(array $channels): Subscriber
+    public function createSubscriber(array $channels): QlessCoreSubscriber
     {
-        return new Subscriber($this->redis, $channels);
+        return new QlessCoreSubscriber($this->redis, $channels);
     }
 
     /**

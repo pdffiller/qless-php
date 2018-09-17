@@ -5,6 +5,7 @@ namespace Qless\Workers;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qless\Client;
+use Qless\EventsManager;
 use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\Job;
@@ -61,17 +62,37 @@ abstract class AbstractWorker implements WorkerInterface
     protected $jobPerformClass;
 
     /**
+     * The internal events manager.
+     *
+     * @var EventsManager
+     */
+    protected $eventsManager;
+
+    /**
      * Worker constructor.
      *
-     * @param ReserverInterface $reserver
-     * @param Client            $client
+     * @param ReserverInterface  $reserver
+     * @param Client             $client
+     * @param EventsManager|null $eventsManager
      */
-    public function __construct(ReserverInterface $reserver, Client $client)
+    final public function __construct(ReserverInterface $reserver, Client $client, EventsManager $eventsManager = null)
     {
         $this->reserver = $reserver;
         $this->logger = new NullLogger();
         $this->client = $client;
-        $this->name = $client->getWorkerName() . ':' . $this->reserver->getDescription();
+        $this->eventsManager = $eventsManager ?: new EventsManager();
+        $this->name = $client->getWorkerName() . ': ' . $this->reserver->getDescription();
+
+        $this->onConstruct();
+    }
+
+    /**
+     * On construct internal event.
+     *
+     * @return void
+     */
+    public function onConstruct(): void
+    {
     }
 
     /**
@@ -91,7 +112,7 @@ abstract class AbstractWorker implements WorkerInterface
      * @param  LoggerInterface $logger
      * @return void
      */
-    final public function setLogger(LoggerInterface $logger): void
+    public function setLogger(LoggerInterface $logger): void
     {
         $this->logger = $logger;
     }
@@ -177,5 +198,12 @@ abstract class AbstractWorker implements WorkerInterface
      *
      * @return void
      */
-    abstract public function run(): void;
+    final public function run(): void
+    {
+        $this->eventsManager->fire('worker:beforeFirstFork', $this);
+
+        $this->perform();
+    }
+
+    abstract public function perform(): void;
 }

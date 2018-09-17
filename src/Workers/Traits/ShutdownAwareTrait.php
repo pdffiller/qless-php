@@ -14,7 +14,7 @@ trait ShutdownAwareTrait
      *
      * @var bool
      */
-    protected $shutdown = false;
+    private $shutdown = false;
 
     /**
      * Make a worker as a halted.
@@ -24,5 +24,15 @@ trait ShutdownAwareTrait
     protected function doShutdown(): void
     {
         $this->shutdown = true;
+    }
+
+    /**
+     * If the worker has been halted.
+     *
+     * @return bool
+     */
+    protected function isShutdown(): bool
+    {
+        return $this->shutdown;
     }
 }
