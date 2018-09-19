@@ -31,7 +31,7 @@ trait ShutdownAwareTrait
      *
      * @return bool
      */
-    protected function isShutdown(): bool
+    protected function isShuttingDown(): bool
     {
         return $this->shutdown;
     }

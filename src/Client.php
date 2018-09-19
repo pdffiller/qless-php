@@ -41,8 +41,10 @@ use Redis;
  * @property-read Config $config
  * @property-read LuaScript $lua
  */
-class Client
+class Client implements EventsManagerAwareInterface
 {
+    use EventsManagerAwareTrait;
+
     /** @var LuaScript */
     private $lua;
 
@@ -84,9 +86,13 @@ class Client
         $this->redis = new Redis();
         $this->connect();
 
-        $this->lua    = new LuaScript($this->redis);
+        $this->setEventsManager(new EventsManager());
+
+        $this->lua = new LuaScript($this->redis);
         $this->config = new Config($this);
-        $this->jobs   = new JobsCollection($this);
+
+        $this->jobs = new JobsCollection($this);
+        $this->jobs->setEventsManager($this->getEventsManager());
     }
 
     /**
@@ -107,7 +113,12 @@ class Client
      */
     public function createSubscriber(array $channels): QlessCoreSubscriber
     {
-        return new QlessCoreSubscriber($this->redis, $channels);
+        return new QlessCoreSubscriber(
+            function (Redis $redis) {
+                $redis->connect($this->redisHost, $this->redisPort, $this->redisTimeout);
+            },
+            $channels
+        );
     }
 
     /**
@@ -156,7 +167,10 @@ class Client
     {
         switch ($name) {
             case 'jobs':
-                return $this->jobs;
+                $collection = $this->jobs;
+                $collection->setEventsManager($this->getEventsManager());
+
+                return $collection;
             case 'config':
                 return $this->config;
             case 'lua':

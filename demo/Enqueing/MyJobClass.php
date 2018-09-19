@@ -15,5 +15,7 @@ class MyJobClass
     {
         // ...
         echo 'Perform ', $job->jid, ' job', PHP_EOL;
+
+        $job->complete();
     }
 }

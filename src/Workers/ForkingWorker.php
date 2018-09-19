@@ -66,7 +66,7 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
     public function onConstruct(): void
     {
         $this->signalsSubscriber = new SignalsAwareSubscriber($this->logger);
-        $this->eventsManager->attach('worker', $this->signalsSubscriber);
+        $this->getEventsManager()->attach('worker', $this->signalsSubscriber);
     }
 
     /**
@@ -91,17 +91,17 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
     {
         $this->who = 'master:' . $this->name;
         $this->logContext = ['type' => $this->who, 'job.identifier' => null];
-        $this->logger->info('{type}: Worker started', $this->logContext);
+        $this->logger->info('{type}: worker started', $this->logContext);
         $this->logger->info(
-            '{type}: monitoring the following queues (in order), {queues}',
+            '{type}: Monitoring the following queues (in order), {queues}',
             ['type' => $this->who, 'queues' => implode(', ', $this->reserver->getQueues())]
         );
 
         $did_work = false;
 
         while (true) {
-            if ($this->isShutdown()) {
-                $this->logger->info('{type}: Shutting down', $this->logContext);
+            if ($this->isShuttingDown()) {
+                $this->logger->info('{type}: shutting down', $this->logContext);
                 break;
             }
 
@@ -211,7 +211,7 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
         if (\socket_create_pair($domain, SOCK_STREAM, 0, $pair) === false) {
             $error = socket_strerror(socket_last_error($pair[0] ?? null));
 
-            $this->logger->error('{type}: Unable to create socket pair; ' . $error, $this->logContext);
+            $this->logger->error('{type}: unable to create socket pair; ' . $error, $this->logContext);
             exit(0);
         }
 
@@ -310,10 +310,10 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
     {
         switch ($childType) {
             case self::PROCESS_TYPE_JOB:
-                $childType = 'child';
+                $childType = 'Child';
                 break;
             default:
-                $childType = 'watchdog';
+                $childType = 'Watchdog';
         }
 
         if ($exitStatus === 0) {
@@ -331,7 +331,7 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
 
     private function childStart(): void
     {
-        $this->eventsManager->fire('worker:beforeFork', $this);
+        $this->getEventsManager()->fire('worker:beforeFork', $this);
 
         $socket = null;
         $this->childPID = $this->fork($socket);
@@ -344,7 +344,7 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
             return;
         }
 
-        $this->eventsManager->fire('worker:afterFork', $this);
+        $this->getEventsManager()->fire('worker:afterFork', $this);
 
         $this->processType = self::PROCESS_TYPE_JOB;
 
@@ -379,11 +379,11 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
             } else {
                 $job->perform();
             }
-            $this->logger->notice('{type}: Job {job} has finished', $context);
+            $this->logger->notice('{type}: job {job} has finished', $context);
         } catch (\Throwable $e) {
             $context['stack'] = $e->getMessage();
 
-            $this->logger->critical('{type}: {job} has failed {stack}', $context);
+            $this->logger->critical('{type}: job {job} has failed {stack}', $context);
             $job->fail('system:fatal', $e->getMessage());
         }
     }
@@ -442,7 +442,7 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
             return;
         }
 
-        $this->logger->info('{type}: Killing child at {child}', ['child' => $this->childPID, 'type' => $this->who]);
+        $this->logger->info('{type}: killing child at {child}', ['child' => $this->childPID, 'type' => $this->who]);
 
         if (pcntl_waitpid($this->childPID, $status, WNOHANG) != -1) {
             posix_kill($this->childPID, SIGKILL);
@@ -453,7 +453,7 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
 
     private function watchdogStart(QlessCoreSubscriber $subscriber): void
     {
-        $this->eventsManager->fire('worker:beforeFork', $this);
+        $this->getEventsManager()->fire('worker:beforeFork', $this);
 
         $socket = null;
         $this->watchdogPID = $this->fork($socket);
@@ -466,7 +466,7 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
             return;
         }
 
-        $this->eventsManager->fire('worker:afterFork', $this);
+        $this->getEventsManager()->fire('worker:afterFork', $this);
 
         $this->processType = self::PROCESS_TYPE_WATCHDOG;
 
@@ -474,7 +474,7 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
         $this->who = 'watchdog:' . $this->name;
         $this->logContext = ['type' => $this->who];
 
-        $this->title(sprintf('watching events for %s since %s', $jid, strftime('%F %T')));
+        $this->title(sprintf('Watching events for %s since %s', $jid, strftime('%F %T')));
 
         // @todo Move to a separated class
         ini_set('default_socket_timeout', -1);
