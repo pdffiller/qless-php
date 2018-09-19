@@ -5,10 +5,11 @@
 
 PHP Bindings for qless.
 
-
 Qless is a powerful Redis-based job queueing system inspired by [resque](https://github.com/chrisboulton/php-resque),
 but built on a collection of Lua scripts, maintained in the [qless-core repo](https://github.com/seomoz/qless-core).
 Be sure to check the [change log](https://github.com/pdffiller/qless-php/blob/master/CHANGELOG.md).
+
+A big thank you to our [contributors](https://github.com/pdffiller/qless-php/graphs/contributors); you rock!
 
 **NOTE:** This library is fully reworked and separately developed version of
 [Contatta's qless-php](https://github.com/Contatta/qless-php). The copyright to the
@@ -22,9 +23,13 @@ Documentation is borrowed from [seomoz/qless](https://github.com/seomoz/qless).
 - [Philosophy and Nomenclature](#philosophy-and-nomenclature)
 - [Features](#features)
 - [Installation](#installation)
+  - [Requirements](#requirements)
 - [Usage](#usage)
   - [Enqueing Jobs](#enqueing-jobs)
   - [Running A Worker](#running-a-worker)
+    - [Event System](#event-system)
+  - [Per-Job Events](https://github.com/seomoz/qless#per-job-events)
+  - [List of Events](#list-of-events)
   - [Web Interface](#web-interface)
   - [Job Dependencies](#job-dependencies)
   - [Priority](#priority)
@@ -60,33 +65,40 @@ a job if the error is likely not a transient one; otherwise, that worker should 
 
 ## Features
 
-1. **Jobs don't get dropped on the floor** -- Sometimes workers drop jobs. Qless
-  automatically picks them back up and gives them to another worker
-1. **Tagging / Tracking** -- Some jobs are more interesting than others. Track those
-  jobs to get updates on their progress. Tag jobs with meaningful identifiers to
-  find them quickly in the UI.
-1. **Job Dependencies** -- One job might need to wait for another job to complete
-1. **Stats** -- `qless` automatically keeps statistics about how long jobs wait
-  to be processed and how long they take to be processed. Currently, we keep
-  track of the count, mean, standard deviation, and a histogram of these times.
-1. **Job data is stored temporarily** -- Job info sticks around for a configurable
-  amount of time so you can still look back on a job's history, data, etc.
-1. **Priority** -- Jobs with the same priority get popped in the order they were
-  inserted; a higher priority means that it gets popped faster
-1. **Retry logic** -- Every job has a number of retries associated with it, which are
-  renewed when it is put into a new queue or completed. If a job is repeatedly
-  dropped, then it is presumed to be problematic, and is automatically failed.
-1. **Web App** -- With the advent of a Ruby client, there is a Sinatra-based web
-  app that gives you control over certain operational issues
-1. **Scheduled Work** -- Until a job waits for a specified delay (defaults to 0),
-  jobs cannot be popped by workers
-1. **Recurring Jobs** -- Scheduling's all well and good, but we also support
-  jobs that need to recur periodically.
-1. **Notifications** -- Tracked jobs emit events on [pubsub](https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern)
+- **Jobs don't get dropped on the floor** — Sometimes workers drop jobs. Qless automatically picks them back up and
+  gives them to another worker.
+- **Tagging / Tracking** — Some jobs are more interesting than others. Track those jobs to get updates on their
+  progress. Tag jobs with meaningful identifiers to find them quickly in [the UI](#web-interface).
+- **Job Dependencies** — One job might need to wait for another job to complete,
+- **Stats** — `qless` automatically keeps statistics about how long jobs wait to be processed and how long they take to
+  be processed. Currently, we keep track of the count, mean, standard deviation, and a histogram of these times.
+- **Job data is stored temporarily** — Job info sticks around for a configurable amount of time so you can still look
+  back on a job's history, data, etc.
+- **Priority** — Jobs with the same priority get popped in the order they were inserted; a higher priority means that
+  it gets popped faster.
+- **Retry logic** — Every job has a number of retries associated with it, which are renewed when it is put into a new
+  queue or completed. If a job is repeatedly dropped, then it is presumed to be problematic, and is automatically failed.
+- **Web App** — With the advent of a Ruby client, there is a Sinatra-based web app that gives you control over certain
+  operational issues.
+- **Scheduled Work** — Until a job waits for a specified delay (defaults to 0), jobs cannot be popped by workers.
+- **Recurring Jobs** — Scheduling's all well and good, but we also support jobs that need to recur periodically.
+- **Notifications** — Tracked jobs emit events on [pubsub](https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern)
   channels as they get completed, failed, put, popped, etc. Use these events to get notified of
   progress on jobs you're interested in.
 
 ## Installation
+
+### Requirements
+
+Prerequisite PHP extensions are:
+
+- [`json`](http://php.net/manual/en/book.json.php)
+- [`pcntl`](http://php.net/manual/en/book.pcntl.php)
+- [`posix`](http://php.net/manual/en/book.pcntl.php)
+- [`sockets`](http://php.net/manual/en/book.sockets.php)
+- [`redis`](https://github.com/phpredis/phpredis)
+
+Supported PHP versions are: **7.1**, **7.2** and **7.3**.
 
 Qless PHP can be installed via Composer:
 
@@ -267,11 +279,54 @@ The child process supports the `USR2` signal, which causes it to dump its curren
 #### Event System
 
 Qless also has a basic event system that can be used by your application to customize how some of the qless internals
-behave. Events can be used to inject logic before, after or around the processing of a
-single job in the child process. This can be useful, for example, when you need to re-establish a connection to your
-database in each job.
+behave. Events can be used to inject logic before, after or around the processing of a single job in the child process.
+This can be useful, for example, when you need to re-establish a connection to your database for each job.
 
-Define a subscriber with an `beforePerform` method that will called where you want the job to be processed:
+Define a subscriber with an `beforeFork` method that will called where you want the job to be processed:
+
+```php
+use Acme\Database\Connection;
+use Qless\Events\UserEvent;
+use Qless\Workers\ForkingWorker;
+
+class ReEstablishDBConnection
+{
+    private $connection;
+
+    public function __construct(Connection $connection)
+    {
+        $this->connection = $connection;
+    }
+
+    public function beforeFork(UserEvent $event, ForkingWorker $source): void
+    {
+        $this->connection->connect();
+    }
+}
+```
+
+Then, attach subscriber to the `worker` events group:
+
+```php
+/** @var \Qless\Workers\ForkingWorker $worker */
+$worker->getEventsManager()->attach('worker', new ReEstablishDBConnection());
+```
+
+You can attach subscribers as many as you want. Qless events system supports priories so you can change default priority:
+
+```php
+/** @var \Qless\Workers\ForkingWorker $worker */
+$worker->getEventsManager()->attach('worker', new MySubscriber1(), 150); // More priority
+$worker->getEventsManager()->attach('worker', new MySubscriber2(), 100); // Normal priority
+$worker->getEventsManager()->attach('worker', new MySubscriber10(), 50); // Less priority
+```
+
+### Per-Job Events
+
+Qless also supports events on a per-job basis, when you have some orthogonal logic to run in the context of some
+(but not all) jobs.
+
+Per-job subscribes can defined the same as worker subscribers:
 
 ```php
 use Qless\Events\UserEvent;
@@ -299,27 +354,14 @@ class ReEstablishDBConnection
 }
 ```
 
-Then, attach subscriber to the `job` events group:
+To attach this subscriber you'll need to get the Events Manager instance from the Qless Client:
 
 ```php
-use Qless\Client;
-
-/** @var \Qless\Client $client */
+/** @var \Qless\Client $$client */
 $client->getEventsManager()->attach('job', new ReEstablishDBConnection());
 ```
 
-You can attach subscribers as many as you want. Qless events system supports priories so you can change default priority:
-
-```php
-use Qless\Client;
-
-/** @var \Qless\Client $client */
-$client->getEventsManager()->attach('job', new MySubscriber1(), 150); // More priority
-$client->getEventsManager()->attach('job', new MySubscriber2(), 100); // Normal priority
-$client->getEventsManager()->attach('job', new MySubscriber10(), 50); // Less priority
-```
-
-#### List of Events
+### List of Events
                              
 The events available in Qless are:
 
