@@ -22,7 +22,13 @@ class QlessCoreEventTest extends QlessTestCase
         $events = [];
         $time   = time();
 
-        $listener = new QlessCoreSubscriber($this->redis(), ['chan-1', 'chan-2']);
+        $config = $this->getRedisConfig();
+        $listener = new QlessCoreSubscriber(
+            function (\Redis $redis) use ($config) {
+                $redis->connect($config['host'], $config['port'], $config['timeout']);
+            },
+            ['chan-1', 'chan-2']
+        );
 
         $callback = function ($channel, $event) use ($listener, $time, &$events) {
             if (time() - $time > 3 || count($events) > 3) {
