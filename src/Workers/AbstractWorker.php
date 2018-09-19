@@ -196,7 +196,7 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
      */
     final public function run(): void
     {
-        $this->eventsManager->fire('worker:beforeFirstFork', $this);
+        $this->getEventsManager()->fire('worker:beforeFirstFork', $this);
 
         $this->perform();
     }
