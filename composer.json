@@ -29,7 +29,7 @@
         "ext-posix": "*",
         "ext-redis": "*",
         "ext-sockets": "*",
-        "psr/log": "^1.0",
+        "psr/log": "^1",
         "ramsey/uuid": "3.8.*",
         "seld/signal-handler": "1.1.*"
     },
