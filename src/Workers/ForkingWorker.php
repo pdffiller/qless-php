@@ -7,7 +7,6 @@ use Qless\Events\QlessCoreEvent;
 use Qless\Exceptions\ErrorCodes;
 use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\Job;
-use Qless\Jobs\JobHandlerInterface;
 use Qless\Signals\SignalHandler;
 use Qless\Subscribers\QlessCoreSubscriber;
 use Qless\Subscribers\SignalsAwareSubscriber;
@@ -58,6 +57,9 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
     /** @var SignalsAwareSubscriber */
     private $signalsSubscriber;
 
+    /** @var PerformHandlerFactory */
+    private $performHandlerFactory;
+
     /**
      * {@inheritdoc}
      *
@@ -66,6 +68,10 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
     public function onConstruct(): void
     {
         $this->signalsSubscriber = new SignalsAwareSubscriber($this->logger);
+
+        $this->performHandlerFactory = new PerformHandlerFactory();
+        $this->performHandlerFactory->setEventsManager($this->getEventsManager());
+
         $this->getEventsManager()->attach('worker', $this->signalsSubscriber);
     }
 
@@ -351,9 +357,8 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
         $jid = $this->job->jid;
         $this->who = 'child:' . $this->name;
         $this->logContext = ['type' => $this->who];
-        $status = 'Processing ' . $jid . ' since ' . strftime('%F %T');
 
-        $this->title($status);
+        $this->title('Processing ' . $jid . ' since ' . strftime('%F %T'));
         $this->childPerform($this->job);
 
         socket_close($socket);
@@ -373,15 +378,14 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
 
         try {
             if ($this->jobPerformClass) {
-                /** @var JobHandlerInterface $performClass */
-                $performClass = new $this->jobPerformClass;
-
-                $this->getEventsManager()->fire('job:beforePerform', $this, $context);
-                $performClass->perform($job);
-                $this->getEventsManager()->fire('job:afterPerform', $this, $context);
+                $handler = $this->performHandlerFactory->create($this->jobPerformClass);
+                $this->getEventsManager()->fire('job:beforePerform', $handler, $context);
+                $handler->perform($job);
+                $this->getEventsManager()->fire('job:afterPerform', $handler, $context);
             } else {
                 $job->perform();
             }
+
             $this->logger->notice('{type}: job {job} has finished', $context);
         } catch (\Throwable $e) {
             $context['stack'] = $e->getMessage();
