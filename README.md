@@ -264,11 +264,74 @@ You should send these to the master process, not the child.
 
 The child process supports the `USR2` signal, which causes it to dump its current backtrace.
 
-Workers also support middleware modules that can be used to inject logic before, after or around the processing of a
+#### Event System
+
+Qless also has a basic event system that can be used by your application to customize how some of the qless internals
+behave. Events can be used to inject logic before, after or around the processing of a
 single job in the child process. This can be useful, for example, when you need to re-establish a connection to your
 database in each job.
 
-**`@todo`**
+Define a subscriber with an `beforePerform` method that will called where you want the job to be processed:
+
+```php
+use Qless\Events\UserEvent;
+use Qless\Jobs\Job;
+use Qless\Jobs\JobHandlerInterface;
+use My\Database\Connection;
+
+class ReEstablishDBConnection
+{
+    private $connection;
+
+    public function __construct(Connection $connection)
+    {
+        $this->connection = $connection;
+    }
+
+    /**
+     * @param UserEvent $event
+     * @param Job|JobHandlerInterface $source
+     */
+    public function beforePerform(UserEvent $event, $source): void
+    {
+        $this->connection->connect();
+    }
+}
+```
+
+Then, attach subscriber to the `job` events group:
+
+```php
+use Qless\Client;
+
+/** @var \Qless\Client $client */
+$client->getEventsManager()->attach('job', new ReEstablishDBConnection());
+```
+
+You can attach subscribers as many as you want. Qless events system supports priories so you can change default priority:
+
+```php
+use Qless\Client;
+
+/** @var \Qless\Client $client */
+$client->getEventsManager()->attach('job', new MySubscriber1(), 150); // More priority
+$client->getEventsManager()->attach('job', new MySubscriber2(), 100); // Normal priority
+$client->getEventsManager()->attach('job', new MySubscriber10(), 50); // Less priority
+```
+
+#### List of Events
+                             
+The events available in Qless are:
+
+| Component   | Event                    |
+| ----------- | ------------------------ |
+| **Job**     | `job:beforePerform`      |
+| **Job**     | `job:afterPerform`       |
+| **Job**     | `job:onFailure`          |
+| **Worker**  | `worker:beforeFirstWork` |
+| **Worker**  | `worker:beforeFork`      |
+| **Worker**  | `worker:afterFork`       |
+| **Queue**   | `queue:afterEnqueue`     |
 
 ### Web Interface
 

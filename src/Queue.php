@@ -91,8 +91,8 @@ class Queue implements EventsManagerAwareInterface
             throw new RuntimeException($e->getMessage(), null, $e->getCode(), $e);
         }
 
-        $data = json_encode($data, JSON_UNESCAPED_SLASHES);
-        if (empty($data)) {
+        $putData = json_encode($data, JSON_UNESCAPED_SLASHES);
+        if (empty($putData)) {
             throw new RuntimeException(
                 sprintf(
                     'Unable to encode payload to put the described job "%s" to the "%s" queue.',
@@ -102,12 +102,12 @@ class Queue implements EventsManagerAwareInterface
             );
         }
 
-        return $this->client->put(
+        $jid = $this->client->put(
             '',
             $this->name,
             $jid,
             $className,
-            $data,
+            $putData,
             $delay,
             'priority',
             $priority,
@@ -124,6 +124,14 @@ class Queue implements EventsManagerAwareInterface
             'interval',
             $interval
         );
+
+        $this->getEventsManager()->fire(
+            'queue:afterEnqueue',
+            $this,
+            compact('jid', 'data', 'className')
+        );
+
+        return $jid;
     }
 
     /**

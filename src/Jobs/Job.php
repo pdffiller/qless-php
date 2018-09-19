@@ -395,11 +395,15 @@ final class Job implements EventsManagerAwareInterface
     public function perform(): bool
     {
         try {
+            $this->getEventsManager()->fire('job:beforePerform', $this);
+
             $instance = $this->getInstance();
 
             $performMethod = $this->getPerformMethod();
 
             $instance->$performMethod($this);
+
+            $this->getEventsManager()->fire('job:afterPerform', $this);
         } catch (\Throwable $e) {
             $this->fail('system:fatal', $e->getMessage());
 
@@ -420,6 +424,8 @@ final class Job implements EventsManagerAwareInterface
     public function fail(string $group, string $message)
     {
         $jsonData = json_encode($this->data, JSON_UNESCAPED_SLASHES) ?: '{}';
+
+        $this->getEventsManager()->fire('job:onFailure', $this, compact('group', 'message'));
 
         return $this->client->fail($this->jid, $this->worker, $group, $message, $jsonData);
     }
