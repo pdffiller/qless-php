@@ -103,7 +103,7 @@ composer update
 ```
 
 NOTE: The `master` branch will always contain the latest _unstable_ version.
-If you wish to check older versions or formal, tagged release, please switch to the tag
+If you wish to check older versions or formal, tagged release, please switch to the relevant
 [release](https://github.com/pdffiller/qless-php/releases).
 
 ## Usage
