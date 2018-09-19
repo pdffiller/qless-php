@@ -5,7 +5,8 @@ namespace Qless\Workers;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qless\Client;
-use Qless\EventsManager;
+use Qless\EventsManagerAwareInterface;
+use Qless\EventsManagerAwareTrait;
 use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\Job;
@@ -17,8 +18,10 @@ use Qless\Jobs\Reservers\ReserverInterface;
  *
  * @package Qless\Workers
  */
-abstract class AbstractWorker implements WorkerInterface
+abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInterface
 {
+    use EventsManagerAwareTrait;
+
     /**
      * The interval for checking for new jobs.
      *
@@ -62,26 +65,19 @@ abstract class AbstractWorker implements WorkerInterface
     protected $jobPerformClass;
 
     /**
-     * The internal events manager.
-     *
-     * @var EventsManager
-     */
-    protected $eventsManager;
-
-    /**
      * Worker constructor.
      *
-     * @param ReserverInterface  $reserver
-     * @param Client             $client
-     * @param EventsManager|null $eventsManager
+     * @param ReserverInterface $reserver
+     * @param Client            $client
      */
-    final public function __construct(ReserverInterface $reserver, Client $client, EventsManager $eventsManager = null)
+    final public function __construct(ReserverInterface $reserver, Client $client)
     {
         $this->reserver = $reserver;
         $this->logger = new NullLogger();
         $this->client = $client;
-        $this->eventsManager = $eventsManager ?: new EventsManager();
         $this->name = $client->getWorkerName();
+
+        $this->setEventsManager($client->getEventsManager());
 
         $this->onConstruct();
     }

@@ -16,8 +16,10 @@ use Ramsey\Uuid\Uuid;
  *
  * @property int $heartbeat get / set the heartbeat timeout for the queue
  */
-class Queue
+class Queue implements EventsManagerAwareInterface
 {
+    use EventsManagerAwareTrait;
+
     /** @var Client */
     private $client;
 
@@ -34,6 +36,8 @@ class Queue
     {
         $this->client = $client;
         $this->name   = $name;
+
+        $this->setEventsManager($this->client->getEventsManager());
     }
 
     /**
@@ -139,7 +143,10 @@ class Queue
 
         $jobs = [];
         array_map(function (array $data) use (&$jobs) {
-            $jobs[] = new Job($this->client, $data);
+            $job = new Job($this->client, $data);
+            $job->setEventsManager($this->getEventsManager());
+
+            $jobs[] = $job;
         }, $jids ?: []);
 
         return $numJobs === null ? array_shift($jobs) : $jobs;

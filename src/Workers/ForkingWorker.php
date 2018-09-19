@@ -66,7 +66,7 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
     public function onConstruct(): void
     {
         $this->signalsSubscriber = new SignalsAwareSubscriber($this->logger);
-        $this->eventsManager->attach('worker', $this->signalsSubscriber);
+        $this->getEventsManager()->attach('worker', $this->signalsSubscriber);
     }
 
     /**
@@ -331,7 +331,7 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
 
     private function childStart(): void
     {
-        $this->eventsManager->fire('worker:beforeFork', $this);
+        $this->getEventsManager()->fire('worker:beforeFork', $this);
 
         $socket = null;
         $this->childPID = $this->fork($socket);
@@ -344,7 +344,7 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
             return;
         }
 
-        $this->eventsManager->fire('worker:afterFork', $this);
+        $this->getEventsManager()->fire('worker:afterFork', $this);
 
         $this->processType = self::PROCESS_TYPE_JOB;
 
