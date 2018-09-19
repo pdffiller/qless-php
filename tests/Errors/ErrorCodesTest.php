@@ -1,14 +1,14 @@
 <?php
 
-namespace Qless\Tests\Error;
+namespace Qless\Tests\Errors;
 
 use Qless\Exceptions\ErrorCodes;
 use Qless\Tests\QlessTestCase;
 
 /**
- * Qless\Tests\ErrorCodesTest
+ * Qless\Tests\Errors\ErrorCodesTest
  *
- * @package Qless\Tests
+ * @package Qless\Tests\Errors
  */
 class ErrorCodesTest extends QlessTestCase
 {

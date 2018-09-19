@@ -20,5 +20,6 @@ class WorkerStub implements JobHandlerInterface
      */
     public function perform(Job $job): void
     {
+        $job->data['stack'][] = __METHOD__;
     }
 }

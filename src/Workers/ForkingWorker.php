@@ -375,7 +375,10 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
             if ($this->jobPerformClass) {
                 /** @var JobHandlerInterface $performClass */
                 $performClass = new $this->jobPerformClass;
+
+                $this->getEventsManager()->fire('job:beforePerform', $this, $context);
                 $performClass->perform($job);
+                $this->getEventsManager()->fire('job:afterPerform', $this, $context);
             } else {
                 $job->perform();
             }
