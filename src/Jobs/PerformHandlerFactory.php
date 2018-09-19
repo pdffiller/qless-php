@@ -1,11 +1,15 @@
 <?php
 
-namespace Qless\Workers;
+namespace Qless\Jobs;
 
 use Qless\EventsManagerAwareInterface;
-use Qless\Jobs\JobHandlerInterface;
 use Qless\EventsManagerAwareTrait;
 
+/**
+ * Qless\Jobs\PerformHandlerFactory
+ *
+ * @package Qless\Jobs
+ */
 final class PerformHandlerFactory implements EventsManagerAwareInterface
 {
     use EventsManagerAwareTrait;
@@ -14,17 +18,17 @@ final class PerformHandlerFactory implements EventsManagerAwareInterface
      * Creates a job perform handler.
      *
      * @param  string $className
-     * @return JobHandlerInterface|EventsManagerAwareInterface|object
+     * @return JobHandlerInterface
      */
-    public function create(string $className)
+    public function create(string $className): JobHandlerInterface
     {
-        /** @var JobHandlerInterface|EventsManagerAwareInterface|object $handler */
         $handler = new $className();
 
         if ($handler instanceof EventsManagerAwareInterface) {
             $handler->setEventsManager($this->getEventsManager());
         }
 
+        /** @var JobHandlerInterface|EventsManagerAwareInterface $handler */
         return $handler;
     }
 }

@@ -7,6 +7,7 @@ use Qless\Events\QlessCoreEvent;
 use Qless\Exceptions\ErrorCodes;
 use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\Job;
+use Qless\Jobs\PerformHandlerFactory;
 use Qless\Signals\SignalHandler;
 use Qless\Subscribers\QlessCoreSubscriber;
 use Qless\Subscribers\SignalsAwareSubscriber;
