@@ -6,13 +6,14 @@ use Qless\Jobs\Job;
 use Qless\EventsManagerAwareInterface;
 use Qless\EventsManagerAwareTrait;
 use Qless\Events\UserEvent;
+use Qless\Jobs\PerformAwareInterface;
 
 /**
  * Qless\Tests\Stubs\EventsDrivenJobHandler
  *
  * @package Qless\Tests\Stubs
  */
-class EventsDrivenJobHandler implements EventsManagerAwareInterface
+class EventsDrivenJobHandler implements EventsManagerAwareInterface, PerformAwareInterface
 {
     use EventsManagerAwareTrait;
 
