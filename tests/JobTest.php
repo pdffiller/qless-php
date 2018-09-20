@@ -15,7 +15,7 @@ class JobTest extends QlessTestCase
 {
     /**
      * @test
-     * @expectedException \Qless\Exceptions\RuntimeException
+     * @expectedException \Qless\Exceptions\InvalidArgumentException
      * @expectedExceptionMessage Could not find job class SampleJobPerformClass.
      */
     public function shouldThrowsExpectedExceptionWhenGetInstanceWithNonExistentClass()
@@ -35,7 +35,7 @@ class JobTest extends QlessTestCase
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\RuntimeException
+     * @expectedException \Qless\Exceptions\InvalidArgumentException
      * @expectedExceptionMessage Job class "stdClass" does not contain perform method "myPerformMethod".
      */
     public function shouldThrowsExpectedExceptionWhenGetInstanceWithNonExistentPerformMethod()
@@ -55,7 +55,7 @@ class JobTest extends QlessTestCase
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\RuntimeException
+     * @expectedException \Qless\Exceptions\InvalidArgumentException
      */
     public function shouldThrowsExpectedExceptionWhenGetInstanceWithInvalidPerformMethod()
     {

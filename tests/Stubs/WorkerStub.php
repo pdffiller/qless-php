@@ -3,14 +3,14 @@
 namespace Qless\Tests\Stubs;
 
 use Qless\Jobs\Job;
-use Qless\Jobs\JobHandlerInterface;
+use Qless\Jobs\PerformAwareInterface;
 
 /**
  * Qless\Tests\Stubs\WorkerStub
  *
  * @package Qless\Tests\Stubs
  */
-class WorkerStub implements JobHandlerInterface
+class WorkerStub implements PerformAwareInterface
 {
     /**
      * {@inheritdoc}

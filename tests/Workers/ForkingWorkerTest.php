@@ -39,7 +39,7 @@ class ForkingWorkerTest extends QlessTestCase
     public function shouldThrowExceptionInCaseOfInvalidJobClass()
     {
         $this->expectExceptionMessage(
-            'Provided Job class "stdClass" does not implement Qless\Jobs\JobHandlerInterface interface.'
+            'Provided Job class "stdClass" does not implement Qless\Jobs\PerformAwareInterface interface.'
         );
 
         $worker = new ForkingWorker(
