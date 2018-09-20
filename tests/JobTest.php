@@ -4,7 +4,7 @@ namespace Qless\Tests;
 
 use Qless\Jobs\Job;
 use Qless\Queue;
-use Qless\Tests\Stubs\WorkerStub2;
+use Qless\Tests\Stubs\JobHandler;
 
 /**
  * Qless\Tests\JobTest
@@ -60,7 +60,7 @@ class JobTest extends QlessTestCase
     public function shouldThrowsExpectedExceptionWhenGetInstanceWithInvalidPerformMethod()
     {
         $this->expectExceptionMessage(
-            'Job class "Qless\Tests\Stubs\WorkerStub2" does not contain perform method "myPerformMethod2".'
+            'Job class "Qless\Tests\Stubs\JobHandler" does not contain perform method "myPerformMethod2".'
         );
 
         $queue = new Queue('testQueue', $this->client);
@@ -68,7 +68,7 @@ class JobTest extends QlessTestCase
         $this->client->config->set('heartbeat', -10);
         $this->client->config->set('grace-period', 0);
 
-        $queue->put(WorkerStub2::class, ['performMethod' => 'myPerformMethod2', 'payload' => 'otherData']);
+        $queue->put(JobHandler::class, ['performMethod' => 'myPerformMethod2', 'payload' => 'otherData']);
 
         $job = $queue->pop();
         $queue->pop();
@@ -84,12 +84,12 @@ class JobTest extends QlessTestCase
         $this->client->config->set('heartbeat', -10);
         $this->client->config->set('grace-period', 0);
 
-        $queue->put(WorkerStub2::class, ['performMethod' => 'myPerformMethod', 'payload' => 'otherData']);
+        $queue->put(JobHandler::class, ['performMethod' => 'myPerformMethod', 'payload' => 'otherData']);
 
         $job = $queue->pop();
         $queue->pop();
 
-        $this->assertInstanceOf(WorkerStub2::class, $job->getInstance());
+        $this->assertInstanceOf(JobHandler::class, $job->getInstance());
     }
 
     /** @test */
@@ -100,12 +100,12 @@ class JobTest extends QlessTestCase
         $this->client->config->set('heartbeat', -10);
         $this->client->config->set('grace-period', 0);
 
-        $queue->put(WorkerStub2::class, ['payload' => 'otherData']);
+        $queue->put(JobHandler::class, ['payload' => 'otherData']);
 
         $job = $queue->pop();
         $queue->pop();
 
-        $this->assertInstanceOf(WorkerStub2::class, $job->getInstance());
+        $this->assertInstanceOf(JobHandler::class, $job->getInstance());
     }
 
     /**

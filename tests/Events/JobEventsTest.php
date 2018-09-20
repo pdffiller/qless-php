@@ -5,7 +5,7 @@ namespace Qless\Tests\Events;
 use Qless\Jobs\Job;
 use Qless\Queue;
 use Qless\Tests\QlessTestCase;
-use Qless\Tests\Stubs\WorkerStub;
+use Qless\Tests\Stubs\JobHandler;
 use Qless\Tests\Stubs\JobSubscriber;
 
 /**
@@ -60,7 +60,7 @@ class JobEventsTest extends QlessTestCase
         $expected = [
             'stack' => [
                 JobSubscriber::class . '::beforePerform',
-                WorkerStub::class . '::perform',
+                JobHandler::class . '::perform',
                 JobSubscriber::class . '::afterPerform',
             ],
         ];
@@ -82,6 +82,6 @@ class JobEventsTest extends QlessTestCase
     private function putJob(): void
     {
         $queue = new Queue('testing', $this->client);
-        $queue->put(WorkerStub::class, []);
+        $queue->put(JobHandler::class, []);
     }
 }

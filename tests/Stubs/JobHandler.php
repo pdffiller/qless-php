@@ -6,11 +6,11 @@ use Qless\Jobs\Job;
 use Qless\Jobs\PerformAwareInterface;
 
 /**
- * Qless\Tests\Stubs\WorkerStub
+ * Qless\Tests\Stubs\JobHandler
  *
  * @package Qless\Tests\Stubs
  */
-class WorkerStub implements PerformAwareInterface
+class JobHandler implements PerformAwareInterface
 {
     /**
      * {@inheritdoc}
@@ -21,5 +21,12 @@ class WorkerStub implements PerformAwareInterface
     public function perform(Job $job): void
     {
         $job->data['stack'][] = __METHOD__;
+
+        $job->complete();
+    }
+
+    public function myPerformMethod(Job $job): void
+    {
+        $job->complete();
     }
 }

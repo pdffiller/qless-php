@@ -11,6 +11,7 @@ use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\Job;
 use Qless\Jobs\PerformAwareInterface;
+use Qless\Jobs\PerformHandlerFactory;
 use Qless\Jobs\Reservers\ReserverInterface;
 
 /**
@@ -64,6 +65,9 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
      */
     protected $jobPerformClass;
 
+    /** @var PerformHandlerFactory */
+    private $performHandlerFactory;
+
     /**
      * Worker constructor.
      *
@@ -79,6 +83,9 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
 
         $this->setEventsManager($client->getEventsManager());
 
+        $this->performHandlerFactory = new PerformHandlerFactory();
+        $this->performHandlerFactory->setEventsManager($client->getEventsManager());
+
         $this->onConstruct();
     }
 
@@ -89,6 +96,16 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
      */
     public function onConstruct(): void
     {
+    }
+
+    /**
+     * Get perform handler factory.
+     *
+     * @return PerformHandlerFactory
+     */
+    public function getPerformHandlerFactory(): PerformHandlerFactory
+    {
+        return $this->performHandlerFactory;
     }
 
     /**

@@ -7,7 +7,6 @@ use Qless\Events\QlessCoreEvent;
 use Qless\Exceptions\ErrorCodes;
 use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\Job;
-use Qless\Jobs\PerformHandlerFactory;
 use Qless\Signals\SignalHandler;
 use Qless\Subscribers\QlessCoreSubscriber;
 use Qless\Subscribers\SignalsAwareSubscriber;
@@ -58,9 +57,6 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
     /** @var SignalsAwareSubscriber */
     private $signalsSubscriber;
 
-    /** @var PerformHandlerFactory */
-    private $performHandlerFactory;
-
     /**
      * {@inheritdoc}
      *
@@ -69,10 +65,6 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
     public function onConstruct(): void
     {
         $this->signalsSubscriber = new SignalsAwareSubscriber($this->logger);
-
-        $this->performHandlerFactory = new PerformHandlerFactory();
-        $this->performHandlerFactory->setEventsManager($this->getEventsManager());
-
         $this->getEventsManager()->attach('worker', $this->signalsSubscriber);
     }
 
@@ -379,7 +371,7 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
 
         try {
             if ($this->jobPerformClass) {
-                $handler = $this->performHandlerFactory->create($this->jobPerformClass);
+                $handler = $this->getPerformHandlerFactory()->create($this->jobPerformClass);
                 $this->getEventsManager()->fire('job:beforePerform', $handler, $context);
                 $handler->perform($job);
                 $this->getEventsManager()->fire('job:afterPerform', $handler, $context);
