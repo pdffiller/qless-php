@@ -3,11 +3,11 @@
 namespace Qless\Jobs;
 
 /**
- * Qless\Jobs\JobHandlerInterface
+ * Qless\Jobs\PerformAwareInterface
  *
  * @package Qless\Job
  */
-interface JobHandlerInterface
+interface PerformAwareInterface
 {
     /**
      * The Job perform handler.
