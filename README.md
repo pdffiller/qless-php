@@ -331,7 +331,7 @@ Per-job subscribes can defined the same as worker subscribers:
 ```php
 use Qless\Events\UserEvent;
 use Qless\Jobs\Job;
-use Qless\Jobs\JobHandlerInterface;
+use Qless\Jobs\PerformAwareInterface;
 use My\Database\Connection;
 
 class ReEstablishDBConnection
@@ -345,7 +345,7 @@ class ReEstablishDBConnection
 
     /**
      * @param UserEvent $event
-     * @param Job|JobHandlerInterface $source
+     * @param Job|PerformAwareInterface $source
      */
     public function beforePerform(UserEvent $event, $source): void
     {
@@ -354,12 +354,35 @@ class ReEstablishDBConnection
 }
 ```
 
-To attach this subscriber you'll need to get the Events Manager instance from the Qless Client:
+To add them to a job class, you first have to make your job class events-aware by subscribing on the required events
+group. To achieve this just implement `setUp` method and subscribe to the desired events:
 
 ```php
-/** @var \Qless\Client $$client */
-$client->getEventsManager()->attach('job', new ReEstablishDBConnection());
+<?php
+
+use Qless\Jobs\Job;
+use Qless\EventsManagerAwareInterface;
+use Qless\EventsManagerAwareTrait;
+
+class EventsDrivenJobHandler implements EventsManagerAwareInterface
+{
+    use EventsManagerAwareTrait;
+
+    public function setUp()
+    {
+        $this->getEventsManager()->attach('job', new ReEstablishDBConnection());
+    }
+
+    public function perform(Job $job): void
+    {
+        // ...
+
+        $job->complete();
+    }
+}
 ```
+
+**Note**: In this scenario your job class must implement `Qless\EventsManagerAwareInterface`.
 
 ### List of Events
                              

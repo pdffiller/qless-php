@@ -400,15 +400,20 @@ final class Job implements EventsManagerAwareInterface
     public function perform(): bool
     {
         try {
-            $this->getEventsManager()->fire('job:beforePerform', $this);
-
             $instance = $this->getInstance();
 
+            if (method_exists($instance, 'setUp')) {
+                $instance->setUp();
+            }
+
+            $this->getEventsManager()->fire('job:beforePerform', $this);
             $performMethod = $this->getPerformMethod();
-
             $instance->$performMethod($this);
-
             $this->getEventsManager()->fire('job:afterPerform', $this);
+
+            if (method_exists($instance, 'tearDown')) {
+                $instance->tearDown();
+            }
         } catch (\Throwable $e) {
             $this->fail('system:fatal', $e->getMessage());
 
