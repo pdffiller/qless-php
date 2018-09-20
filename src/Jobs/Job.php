@@ -3,11 +3,11 @@
 namespace Qless\Jobs;
 
 use Qless\Client;
-use Qless\Exceptions\QlessException;
-use Qless\Exceptions\RuntimeException;
-use Qless\Exceptions\UnknownPropertyException;
 use Qless\EventsManagerAwareInterface;
 use Qless\EventsManagerAwareTrait;
+use Qless\Exceptions\InvalidArgumentException;
+use Qless\Exceptions\QlessException;
+use Qless\Exceptions\UnknownPropertyException;
 
 /**
  * Qless\Jobs\Job
@@ -132,6 +132,8 @@ final class Job implements EventsManagerAwareInterface
     /** @var array */
     private $rawData;
 
+    private $jobFactory;
+
     /**
      * Job constructor.
      *
@@ -142,6 +144,9 @@ final class Job implements EventsManagerAwareInterface
     {
         $this->client = $client;
         $this->rawData = $data;
+
+        $this->jobFactory = new JobFactory();
+        $this->jobFactory->setEventsManager($client->getEventsManager());
 
         $this->jid = $data['jid'];
         $this->klass = $data['klass'];
@@ -441,36 +446,24 @@ final class Job implements EventsManagerAwareInterface
     }
 
     /**
-     * Get the instance of the class specified on this job.  This instance will
-     * be used to call the payload['performMethod'] (or "perform" if not specified)
+     * Get the instance of the class specified on this job.
+     *
+     * This instance will be used to call a perform method:
+     * - $payload['performMethod']
+     * - "perform" if not specified
      *
      * @return object
      *
-     * @throws RuntimeException
+     * @throws InvalidArgumentException
      */
     public function getInstance()
     {
-        if ($this->instance !== null) {
-            return $this->instance;
-        }
-
-        if (!class_exists($this->klass)) {
-            throw new RuntimeException("Could not find job class {$this->klass}.");
-        }
-
-        $performMethod = $this->getPerformMethod();
-
-        if (!method_exists($this->klass, $performMethod)) {
-            throw new RuntimeException(
-                sprintf(
-                    'Job class "%s" does not contain perform method "%s".',
-                    $this->klass,
-                    $performMethod
-                )
+        if ($this->instance === null) {
+            $this->instance = $this->jobFactory->create(
+                $this->klass,
+                $this->getPerformMethod()
             );
         }
-
-        $this->instance = new $this->klass;
 
         return $this->instance;
     }
