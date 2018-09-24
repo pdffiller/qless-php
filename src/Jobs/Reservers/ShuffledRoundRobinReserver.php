@@ -16,7 +16,7 @@ class ShuffledRoundRobinReserver extends RoundRobinReserver
      *
      * @return void
      */
-    public function beforeFork(): void
+    public function beforeWork(): void
     {
         shuffle($this->queues);
         $this->resetDescription();

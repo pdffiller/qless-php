@@ -73,7 +73,7 @@ abstract class AbstractReserver implements ReserverInterface
      * @return void
      * @codeCoverageIgnoreStart
      */
-    public function beforeFork(): void
+    public function beforeWork(): void
     {
         // nothing to do
     }
