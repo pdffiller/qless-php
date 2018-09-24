@@ -44,7 +44,6 @@ Documentation is borrowed from [seomoz/qless](https://github.com/seomoz/qless).
   - [Ensuring Job Uniqueness](#ensuring-job-uniqueness)
   - [Setting Default Job Options](#setting-default-job-options)
   - [Testing Jobs](#testing-jobs)
-- [Demo](#demo)
 - [Contributing and Developing](#contributing-and-developing)
 - [License](#license)
 
@@ -453,10 +452,6 @@ The events available in Qless are:
 ### Testing Jobs
 
 **`@todo`**
-
-## Demo
-
-See the [`./demo/`](https://github.com/pdffiller/qless-php/tree/master/demo) directory contents for a simple example.
 
 ## Contributing and Developing
 
