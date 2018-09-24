@@ -9,5 +9,4 @@ namespace Qless\Exceptions;
  */
 class RuntimeException extends \RuntimeException implements ExceptionInterface
 {
-    use AreaAwareTrait;
 }

@@ -88,7 +88,7 @@ class Queue implements EventsManagerAwareInterface
         try {
             $jid = $jid ?: Uuid::uuid4()->toString();
         } catch (\Exception $e) {
-            throw new RuntimeException($e->getMessage(), null, $e->getCode(), $e);
+            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
         }
 
         $putData = json_encode($data, JSON_UNESCAPED_SLASHES);
@@ -196,7 +196,7 @@ class Queue implements EventsManagerAwareInterface
         try {
             $jid = $jid ?: Uuid::uuid4()->toString();
         } catch (\Exception $e) {
-            throw new RuntimeException($e->getMessage(), null, $e->getCode(), $e);
+            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
         }
 
         $data = json_encode($data, JSON_UNESCAPED_SLASHES);

@@ -4,7 +4,7 @@ namespace Qless\Workers;
 
 use Psr\Log\LoggerInterface;
 use Qless\Events\QlessCoreEvent;
-use Qless\Exceptions\ErrorCodes;
+use Qless\Exceptions\ErrorFormatter;
 use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\Job;
 use Qless\Signals\SignalHandler;
@@ -246,7 +246,8 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
             }
             unset($reserved);
 
-            if (call_user_func(new ErrorCodes, $error['type']) == null) {
+            $handler = new ErrorFormatter();
+            if ($handler->constant($error['type']) === null) {
                 return;
             }
 
@@ -267,25 +268,29 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
     }
 
     /**
-     * @param resource $socket
+     * Tries to create an error message from the socket.
      *
+     * @param  resource $socket
      * @return null|string
      */
-    private function readErrorFromSocket($socket)
+    private function readErrorFromSocket($socket): ?string
     {
-        $error_info = "";
+        $error = '';
         while (!empty($res = socket_read($socket, 8192))) {
-            $error_info .= $res;
+            $error .= $res;
         }
-        $error_info = unserialize($error_info);
 
-        if (is_array($error_info)) {
+        $error = unserialize($error);
+
+        if (is_array($error)) {
+            $handler = new ErrorFormatter();
+
             return sprintf(
                 '[%s] %s:%d %s',
-                call_user_func(new ErrorCodes, $error_info['type']) ?: 'Unknown',
-                $error_info['file'],
-                $error_info['line'],
-                $error_info['message']
+                $handler->constant($error['type']) ?: 'Unknown',
+                $error['file'],
+                $error['line'],
+                $error['message']
             );
         }
 
