@@ -1,0 +1,167 @@
+#!/usr/bin/env php
+<?php
+
+use Qless\Queue;
+use Qless\Client;
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+define('TEST_TIME', 2);
+
+function puttingJobs(Queue $queue)
+{
+    $cb = profiler(function ($e) use ($queue) {
+        $queue->put("Sample\\TestWorkerImpl", [], $e);
+    });
+
+    $cb(TEST_TIME, 'Putting jobs');
+}
+
+function directPutToRedis(Redis $redis)
+{
+    $cb = profiler(function ($e) use ($redis) {
+        $redis->hSet($e, 'data', '');
+    });
+
+    $cb(TEST_TIME, 'Direct put to redis');
+}
+
+function puttingThenPopping(Queue $queue)
+{
+    $cb = profiler(function ($e) use ($queue) {
+        $queue->put("Sample\\TestWorkerImpl", [], $e);
+    });
+
+    $cb(TEST_TIME, 'Putting then popping (put)');
+
+    $cb = profiler(function ($e) use ($queue) {
+        $queue->pop();
+    });
+    $cb(TEST_TIME, 'Putting then popping (pop)');
+}
+
+function gettingQueueLength(Queue $queue)
+{
+    $cb = profiler(function ($e) use ($queue) {
+        $queue->length();
+    });
+
+    $cb(TEST_TIME, 'Getting queue length');
+}
+
+function profiler(Closure $cb): Closure
+{
+    return function ($time, $message = '') use ($cb) {
+        $s = microtime(true);
+        $e = microtime(true) - $s;
+        $i = 0;
+
+        while ($e < $time) {
+            $cb($e);
+            ++$i;
+            $e = microtime(true) - $s;
+        }
+
+        $_SERVER['qless-report'][] = sprintf(
+            ' %-30s %d iterations in %.3f seconds, %0.3f / sec',
+            ($message ? $message . ':' : ''),
+            $i,
+            $e,
+            $i / $e
+        );
+    };
+}
+
+function reporter()
+{
+    fprintf(STDOUT, PHP_EOL . PHP_EOL);
+    foreach ($_SERVER['qless-report'] as $line) {
+        fprintf(STDOUT, $line . PHP_EOL);
+    }
+}
+
+function histogram($l) {
+    $count = array_sum($l);
+    $l = array_values(array_filter($l));
+
+    foreach (range(0, count($l) - 1) as $i) {
+        fprintf(STDOUT, "\t\t%2d, %10.9f, %d" . PHP_EOL, $i, floatval($l[$i]) / $count, $l[$i]);
+    }
+}
+
+// First off, read the arguments
+$options = [
+    'host:'    => 'The host to connect to as the Redis server',
+    'port:'    => 'The port to connect on as the Redis server',
+    'no-flush' => "Don't flush Redis after running",
+];
+
+$defaults = [
+    'host'     => '127.0.0.1',
+    'port'     => 6379,
+    'no-flush' => null,
+];
+
+$config = array_merge($defaults, getopt('', array_keys($options)));
+
+// Our qless client
+$client = new Client($config['host'], (int) $config['port']);
+
+// The redis client for internal usage
+$redis = new Redis();
+$redis->connect($config['host'], (int) $config['port']);
+
+// Alright, let's make a bunch of jobs
+$testing = new Queue('testing', $client);
+
+// Make sure that the redis instance is empty first
+if (count($redis->keys('*'))) {
+    fprintf(STDERR, 'Must begin on an empty Redis instance' . PHP_EOL);
+    // exit(1);
+}
+
+$client->config->set('heartbeat', 1);
+
+// This is how much CPU Redis had used /before/
+$cpuBefore = $redis->info()['used_cpu_user'] + $redis->info()['used_cpu_sys'];
+
+puttingJobs($testing);
+directPutToRedis($redis);
+puttingThenPopping($testing);
+gettingQueueLength($testing);
+
+reporter();
+
+// Now we'll print out some interesting stats
+$stats = $testing->stats();
+
+printf("\n");
+printf("Wait:\n");
+printf("\tCount: %d\n", $stats['wait']['count']);
+printf("\tMean : %fs\n", $stats['wait']['mean']);
+printf("\tSDev : %f\n", $stats['wait']['std']);
+printf("\tWait Time Histogram:\n");
+histogram($stats['wait']['histogram']);
+printf("\n");
+
+printf("Run:\n");
+printf("\tCount: %d\n", $stats['run']['count']);
+printf("\tMean : %fs\n", $stats['run']['mean']);
+printf("\tSDev : %f\n", $stats['run']['std']);
+// printf("\tRun Time Histogram:\n");
+// histogram($stats['run']['histogram']);
+printf("\n\n");
+
+printf(str_repeat('=', 50));
+printf("\n\n");
+$info = $redis->info();
+printf(" Redis Mem: %s\n", $info['used_memory_human']);
+printf(" Redis Lua: %sM\n", $info['used_memory_lua'] / 1024 / 1024);
+printf(" Redis CPU: %fs\n", ($info['used_cpu_user'] + $info['used_cpu_sys'] - $cpuBefore));
+printf("\n");
+
+if ($config['no-flush'] === null) {
+    printf("Flushing... ");
+    $client->flush();
+    printf("done\n");
+}

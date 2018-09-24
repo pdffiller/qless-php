@@ -13,12 +13,6 @@
         </whitelist>
     </filter>
 
-    <groups>
-        <exclude>
-            <group>performance</group>
-        </exclude>
-    </groups>
-
     <testsuites>
         <testsuite name="Qless Test Suite">
             <directory>tests</directory>

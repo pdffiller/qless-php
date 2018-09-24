@@ -10,7 +10,8 @@ use Qless\EventsManagerAwareTrait;
 use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\Job;
-use Qless\Jobs\JobHandlerInterface;
+use Qless\Jobs\PerformAwareInterface;
+use Qless\Jobs\PerformHandlerFactory;
 use Qless\Jobs\Reservers\ReserverInterface;
 
 /**
@@ -64,6 +65,9 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
      */
     protected $jobPerformClass;
 
+    /** @var PerformHandlerFactory */
+    private $performHandlerFactory;
+
     /**
      * Worker constructor.
      *
@@ -79,6 +83,9 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
 
         $this->setEventsManager($client->getEventsManager());
 
+        $this->performHandlerFactory = new PerformHandlerFactory();
+        $this->performHandlerFactory->setEventsManager($client->getEventsManager());
+
         $this->onConstruct();
     }
 
@@ -89,6 +96,16 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
      */
     public function onConstruct(): void
     {
+    }
+
+    /**
+     * Get perform handler factory.
+     *
+     * @return PerformHandlerFactory
+     */
+    public function getPerformHandlerFactory(): PerformHandlerFactory
+    {
+        return $this->performHandlerFactory;
     }
 
     /**
@@ -142,12 +159,12 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
         }
 
         $interfaces = class_implements($jobPerformClass);
-        if (in_array(JobHandlerInterface::class, $interfaces, true) == false) {
+        if (in_array(PerformAwareInterface::class, $interfaces, true) == false) {
             throw new InvalidArgumentException(
                 sprintf(
                     'Provided Job class "%s" does not implement %s interface.',
                     $jobPerformClass,
-                    JobHandlerInterface::class
+                    PerformAwareInterface::class
                 )
             );
         }
@@ -168,6 +185,8 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     /**
      * {@inheritdoc}
      *
+     * @link   http://php.net/manual/en/function.setproctitle.php
+     *
      * @param  string $value
      * @param  array $context
      * @return void
@@ -176,7 +195,14 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     {
         $this->logger->info($value, $context);
 
-        if (false === @cli_set_process_title(sprintf('qless-php-worker %s', $value))) {
+        $line = sprintf('qless-php-worker %s', $value);
+
+        if (function_exists('setproctitle')) {
+            \setproctitle($line);
+            return;
+        }
+
+        if (@cli_set_process_title($line) === false) {
             if ('Darwin' === PHP_OS) {
                 trigger_error(
                     'Running "cli_get_process_title" as an unprivileged user is not supported on macOS.',

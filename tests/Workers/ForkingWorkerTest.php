@@ -5,7 +5,7 @@ namespace Qless\Tests\Workers;
 use Qless\Client;
 use Qless\Jobs\Reservers\OrderedReserver;
 use Qless\Tests\QlessTestCase;
-use Qless\Tests\Stubs\WorkerStub;
+use Qless\Tests\Stubs\JobHandler;
 use Qless\Workers\ForkingWorker;
 
 /**
@@ -28,8 +28,8 @@ class ForkingWorkerTest extends QlessTestCase
         $jobPerformClass = $reflection->getProperty('jobPerformClass');
         $jobPerformClass->setAccessible(true);
 
-        $worker->registerJobPerformHandler(WorkerStub::class);
-        $this->assertEquals(WorkerStub::class, $jobPerformClass->getValue($worker));
+        $worker->registerJobPerformHandler(JobHandler::class);
+        $this->assertEquals(JobHandler::class, $jobPerformClass->getValue($worker));
     }
 
     /**
@@ -39,7 +39,7 @@ class ForkingWorkerTest extends QlessTestCase
     public function shouldThrowExceptionInCaseOfInvalidJobClass()
     {
         $this->expectExceptionMessage(
-            'Provided Job class "stdClass" does not implement Qless\Jobs\JobHandlerInterface interface.'
+            'Provided Job class "stdClass" does not implement Qless\Jobs\PerformAwareInterface interface.'
         );
 
         $worker = new ForkingWorker(

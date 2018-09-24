@@ -18,9 +18,9 @@ final class PerformHandlerFactory implements EventsManagerAwareInterface
      * Creates a job perform handler.
      *
      * @param  string $className
-     * @return JobHandlerInterface
+     * @return PerformAwareInterface
      */
-    public function create(string $className): JobHandlerInterface
+    public function create(string $className): PerformAwareInterface
     {
         $handler = new $className();
 
@@ -28,7 +28,7 @@ final class PerformHandlerFactory implements EventsManagerAwareInterface
             $handler->setEventsManager($this->getEventsManager());
         }
 
-        /** @var JobHandlerInterface|EventsManagerAwareInterface $handler */
+        /** @var PerformAwareInterface|EventsManagerAwareInterface $handler */
         return $handler;
     }
 }

@@ -28,7 +28,6 @@
     -->
     <file>src</file>
     <file>tests</file>
-    <file>demo</file>
 
     <!--
         You can hard-code ignore patterns directly into your

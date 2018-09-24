@@ -145,7 +145,7 @@ final class EventsManager
         }
 
         if (isset($this->events[$eventName])) {
-            $queue = $this->events[$type];
+            $queue = $this->events[$eventName];
 
             if ($event === null) {
                 $event = new UserEvent($name, $source, $data);
