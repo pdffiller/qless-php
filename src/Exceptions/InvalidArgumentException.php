@@ -9,5 +9,4 @@ namespace Qless\Exceptions;
  */
 class InvalidArgumentException extends \InvalidArgumentException implements ExceptionInterface
 {
-    use AreaAwareTrait;
 }

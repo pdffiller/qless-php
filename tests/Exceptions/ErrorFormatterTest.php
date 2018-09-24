@@ -1,16 +1,16 @@
 <?php
 
-namespace Qless\Tests\Errors;
+namespace Qless\Tests\Exceptions;
 
-use Qless\Exceptions\ErrorCodes;
+use Qless\Exceptions\ErrorFormatter;
 use Qless\Tests\QlessTestCase;
 
 /**
- * Qless\Tests\Errors\ErrorCodesTest
+ * Qless\Tests\Exceptions\ErrorFormatterTest
  *
- * @package Qless\Tests\Errors
+ * @package Qless\Tests\Exceptions
  */
-class ErrorCodesTest extends QlessTestCase
+class ErrorFormatterTest extends QlessTestCase
 {
     /**
      * @test
@@ -20,14 +20,18 @@ class ErrorCodesTest extends QlessTestCase
      */
     public function shouldReturnConstantName($value, $expected)
     {
-        $this->assertEquals($expected, call_user_func(new ErrorCodes(), $value));
+        $handler = new ErrorFormatter();
+
+        $this->assertEquals($expected, $handler->constant($value));
     }
 
     /** @test */
     public function shouldReturnNullOnNonExistentConstant()
     {
-        $this->assertNull(call_user_func(new ErrorCodes(), 7));
-        $this->assertNull(call_user_func(new ErrorCodes(), 'error'));
+        $handler = new ErrorFormatter();
+
+        $this->assertNull($handler->constant(7));
+        $this->assertNull($handler->constant('error'));
     }
 
     public function errorConstantsProvider()

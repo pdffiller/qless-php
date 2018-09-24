@@ -9,5 +9,4 @@ namespace Qless\Exceptions;
  */
 class BadMethodCallException extends \BadMethodCallException implements ExceptionInterface
 {
-    use AreaAwareTrait;
 }

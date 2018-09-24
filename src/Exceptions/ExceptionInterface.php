@@ -11,10 +11,4 @@ use Throwable;
  */
 interface ExceptionInterface extends Throwable
 {
-    /**
-     * Gets current error area.
-     *
-     * @return string|null
-     */
-    public function getArea();
 }

@@ -11,4 +11,5 @@ namespace Qless\Exceptions;
  */
 class QlessException extends RuntimeException
 {
+    use AreaAwareTrait;
 }

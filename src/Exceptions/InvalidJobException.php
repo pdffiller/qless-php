@@ -9,4 +9,5 @@ namespace Qless\Exceptions;
  */
 class InvalidJobException extends RuntimeException
 {
+    use AreaAwareTrait;
 }
