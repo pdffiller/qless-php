@@ -46,6 +46,7 @@ install:
         --no-ansi \
         --no-progress \
         --no-suggest
+  - chmod +x ./tests/simple-bench
 
 before_script:
   - phpenv which php
@@ -62,7 +63,7 @@ script:
   - ./vendor/bin/phpcs
   - ./vendor/bin/phpstan analyse -l max src
   - ./vendor/bin/phpunit --disallow-test-output
-  - ./vendor/bin/phpunit --group performance --dont-report-useless-tests --no-coverage --no-logging
+  - ./tests/simple-bench --port $REDIS_PORT --host $REDIS_HOST
 
 after_success:
   - if [[ ! -z "${CODECOV_TOKEN}" ]]; then (bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"); fi;
