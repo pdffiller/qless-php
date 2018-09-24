@@ -34,9 +34,9 @@ interface ReserverInterface
     public function reserve(): ?Job;
 
     /**
-     * Doing preparing before fork.
+     * Preparing before work.
      *
      * @return void
      */
-    public function beforeFork(): void;
+    public function beforeWork(): void;
 }

@@ -46,7 +46,7 @@ class ShuffledRoundRobinReserverTest extends RoundRobinReserverTest
     }
 
     /** @test */
-    public function shouldShuffleQueuesBeforeFork()
+    public function shouldShuffleQueuesBeforeWork()
     {
         $reserver = new ShuffledRoundRobinReserver(
             [
@@ -58,7 +58,7 @@ class ShuffledRoundRobinReserverTest extends RoundRobinReserverTest
             ]
         );
 
-        $reserver->beforeFork();
+        $reserver->beforework();
 
         $this->assertRegExp(
             '#queue-\d, queue-\d, queue-\d, queue-\d, queue-\d \(shuffled round robin\)#',

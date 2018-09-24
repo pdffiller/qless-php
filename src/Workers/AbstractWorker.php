@@ -79,7 +79,7 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
         $this->reserver = $reserver;
         $this->logger = new NullLogger();
         $this->client = $client;
-        $this->name = $client->getWorkerName();
+        $this->name = array_values(array_slice(explode('\\', get_class($this)), -1))[0];
 
         $this->setEventsManager($client->getEventsManager());
 

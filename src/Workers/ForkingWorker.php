@@ -97,13 +97,9 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
         );
 
         $did_work = false;
+        $this->reserver->beforeWork();
 
-        while (true) {
-            if ($this->isShuttingDown()) {
-                $this->logger->info('{type}: shutting down', $this->logContext);
-                break;
-            }
-
+        while ($this->isShuttingDown() == false) {
             while ($this->paused) {
                 usleep(250000);
             }
