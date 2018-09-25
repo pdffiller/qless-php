@@ -36,6 +36,7 @@ use Redis;
  * @method void pause(string $queueName, ...$args)
  * @method string queues(?string $queueName = null)
  * @method void unpause(string $queueName, ...$args)
+ * @method string workers(?string $workerName = null)
  *
  * @property-read JobsCollection $jobs
  * @property-read Config $config

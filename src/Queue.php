@@ -6,6 +6,7 @@ use Qless\Exceptions\ExceptionInterface;
 use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\QlessException;
 use Qless\Exceptions\RuntimeException;
+use Qless\Exceptions\UnknownPropertyException;
 use Qless\Jobs\Job;
 use Ramsey\Uuid\Uuid;
 
@@ -268,10 +269,10 @@ class Queue implements EventsManagerAwareInterface
      * @param  string $name
      * @return int
      *
-     * @throws InvalidArgumentException
+     * @throws UnknownPropertyException
      * @throws ExceptionInterface
      */
-    public function __get($name)
+    public function __get(string $name)
     {
         switch ($name) {
             case 'heartbeat':
@@ -279,7 +280,7 @@ class Queue implements EventsManagerAwareInterface
 
                 return (int) $this->client->config->get("{$this->name}-heartbeat", $fallback);
             default:
-                throw new InvalidArgumentException("Undefined property '$name'");
+                throw new UnknownPropertyException('Getting unknown property: ' . self::class . '::' . $name);
         }
     }
 
@@ -289,6 +290,7 @@ class Queue implements EventsManagerAwareInterface
      * @param  mixed  $value
      * @return void
      *
+     * @throws UnknownPropertyException
      * @throws InvalidArgumentException
      * @throws ExceptionInterface
      */
@@ -305,7 +307,7 @@ class Queue implements EventsManagerAwareInterface
                     ->set("{$this->name}-heartbeat", $value);
                 break;
             default:
-                throw new InvalidArgumentException("Undefined property '{$name}'");
+                throw new UnknownPropertyException('Setting unknown property: ' . self::class . '::' . $name);
         }
     }
 

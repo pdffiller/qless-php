@@ -20,6 +20,46 @@ class ClientTest extends QlessTestCase
     use RedisAwareTrait;
 
     /** @test */
+    public function shouldGetEmptyWorkersList()
+    {
+        $this->assertEquals('{}', $this->client->call('workers'));
+    }
+
+    /** @test */
+    public function shouldGetAWorkersList()
+    {
+        $this->client->pop('test-queue', 'w1', 1);
+
+        $this->assertEquals(
+            '[{"stalled":0,"name":"w1","jobs":0}]',
+            $this->client->call('workers')
+        );
+
+        $this->assertEquals(
+            '{"stalled":{},"jobs":{}}',
+            $this->client->call('workers', 'w1')
+        );
+
+        $this->assertEquals(
+            '{"stalled":{},"jobs":{}}',
+            $this->client->call('workers', 'w2')
+        );
+
+
+        $this->client->pop('test-queue', 'w3', 1);
+        $this->client->pop('test-queue', 'w4', 1);
+
+        $expected =<<<WRK
+[{"stalled":0,"name":"w4","jobs":0},{"stalled":0,"name":"w3","jobs":0},{"stalled":0,"name":"w1","jobs":0}]
+WRK;
+
+        $this->assertEquals(
+            $expected,
+            $this->client->call('workers')
+        );
+    }
+
+    /** @test */
     public function shouldCreateASubscriber()
     {
         $this->assertInstanceOf(QlessCoreSubscriber::class, $this->client->createSubscriber([]));

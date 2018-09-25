@@ -167,7 +167,7 @@ class Collection implements ArrayAccess, EventsManagerAwareInterface
      */
     public function offsetSet($offset, $value)
     {
-        throw new UnsupportedFeatureException('Setting a job is not supported using Jobs class');
+        throw new UnsupportedFeatureException('Setting a job is not supported using Jobs collection.');
     }
 
     /**
@@ -177,6 +177,6 @@ class Collection implements ArrayAccess, EventsManagerAwareInterface
      */
     public function offsetUnset($offset)
     {
-        throw new UnsupportedFeatureException('Deleting a job is not supported using Jobs class');
+        throw new UnsupportedFeatureException('Deleting a job is not supported using Jobs collection.');
     }
 }
