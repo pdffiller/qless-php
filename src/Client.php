@@ -6,6 +6,7 @@ use Qless\Exceptions\ExceptionInterface;
 use Qless\Exceptions\UnknownPropertyException;
 use Qless\Jobs\Collection as JobsCollection;
 use Qless\Subscribers\QlessCoreSubscriber;
+use Qless\Workers\Collection as WorkersCollection;
 use Redis;
 
 /**
@@ -39,6 +40,7 @@ use Redis;
  * @method string workers(?string $workerName = null)
  *
  * @property-read JobsCollection $jobs
+ * @property-read WorkersCollection $workers
  * @property-read Config $config
  * @property-read LuaScript $lua
  */
@@ -54,6 +56,9 @@ class Client implements EventsManagerAwareInterface
 
     /** @var JobsCollection */
     private $jobs;
+
+    /** @var WorkersCollection */
+    private $workers;
 
     /** @var Redis */
     private $redis;
@@ -91,9 +96,8 @@ class Client implements EventsManagerAwareInterface
 
         $this->lua = new LuaScript($this->redis);
         $this->config = new Config($this);
-
         $this->jobs = new JobsCollection($this);
-        $this->jobs->setEventsManager($this->getEventsManager());
+        $this->workers = new WorkersCollection($this);
     }
 
     /**
@@ -125,8 +129,8 @@ class Client implements EventsManagerAwareInterface
     /**
      * Call a specific q-less command.
      *
-     * @param string $command
-     * @param mixed ...$arguments
+     * @param  string $command
+     * @param  mixed  ...$arguments
      * @return mixed|null
      *
      * @throws ExceptionInterface
@@ -142,8 +146,8 @@ class Client implements EventsManagerAwareInterface
     /**
      * Call a specific q-less command.
      *
-     * @param string $command
-     * @param array $arguments
+     * @param  string $command
+     * @param  array $arguments
      * @return mixed
      *
      * @throws ExceptionInterface
@@ -168,10 +172,9 @@ class Client implements EventsManagerAwareInterface
     {
         switch ($name) {
             case 'jobs':
-                $collection = $this->jobs;
-                $collection->setEventsManager($this->getEventsManager());
-
-                return $collection;
+                return $this->jobs;
+            case 'workers':
+                return $this->workers;
             case 'config':
                 return $this->config;
             case 'lua':
@@ -188,7 +191,7 @@ class Client implements EventsManagerAwareInterface
      *
      * @return void
      */
-    public function flush()
+    public function flush(): void
     {
         $this->redis->flushDB();
     }
@@ -198,7 +201,7 @@ class Client implements EventsManagerAwareInterface
      *
      * @return void
      */
-    public function reconnect()
+    public function reconnect(): void
     {
         $this->redis->close();
         $this->connect();
@@ -209,7 +212,7 @@ class Client implements EventsManagerAwareInterface
      *
      * @return void
      */
-    private function connect()
+    private function connect(): void
     {
         $this->redis->connect($this->redisHost, $this->redisPort, $this->redisTimeout);
     }
