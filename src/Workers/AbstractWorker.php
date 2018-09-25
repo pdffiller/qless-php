@@ -13,6 +13,7 @@ use Qless\Jobs\Job;
 use Qless\Jobs\PerformAwareInterface;
 use Qless\Jobs\PerformHandlerFactory;
 use Qless\Jobs\Reservers\ReserverInterface;
+use Qless\Workers\Traits\ShutdownAwareTrait;
 
 /**
  * Qless\Workers\AbstractWorker
@@ -21,7 +22,7 @@ use Qless\Jobs\Reservers\ReserverInterface;
  */
 abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInterface
 {
-    use EventsManagerAwareTrait;
+    use EventsManagerAwareTrait, ShutdownAwareTrait;
 
     /**
      * The interval for checking for new jobs.
@@ -65,6 +66,9 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
      */
     protected $jobPerformClass;
 
+    /** @var Job|null */
+    protected $job;
+
     /** @var PerformHandlerFactory */
     private $performHandlerFactory;
 
@@ -87,6 +91,17 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
         $this->performHandlerFactory->setEventsManager($client->getEventsManager());
 
         $this->onConstruct();
+    }
+
+    /**
+     * Sets current job.
+     *
+     * @param  Job|null $job
+     * @return void
+     */
+    final public function setCurrentJob(Job $job = null): void
+    {
+        $this->job = $job;
     }
 
     /**

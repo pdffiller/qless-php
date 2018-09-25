@@ -10,7 +10,6 @@ use Qless\Jobs\Job;
 use Qless\Signals\SignalHandler;
 use Qless\Subscribers\QlessCoreSubscriber;
 use Qless\Subscribers\SignalsAwareSubscriber;
-use Qless\Workers\Traits\ShutdownAwareTrait;
 
 /**
  * Qless\Workers\ForkingWorker
@@ -21,8 +20,6 @@ use Qless\Workers\Traits\ShutdownAwareTrait;
  */
 final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
 {
-    use ShutdownAwareTrait;
-
     private const PROCESS_TYPE_MASTER = 0;
     private const PROCESS_TYPE_JOB = 1;
     private const PROCESS_TYPE_WATCHDOG = 2;
@@ -50,9 +47,6 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
 
     /** @var resource[] */
     private $sockets = [];
-
-    /** @var Job|null */
-    private $job;
 
     /** @var SignalsAwareSubscriber */
     private $signalsSubscriber;
@@ -124,7 +118,7 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
                 continue;
             }
 
-            $this->job = $job;
+            $this->setCurrentJob($job);
             $this->logContext['job.identifier'] = $job->jid;
 
             // fork processes
@@ -172,7 +166,7 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
             }
 
             $this->sockets  = [];
-            $this->job = null;
+            $this->setCurrentJob(null);
             $this->logContext['job.identifier'] = null;
             $did_work = true;
 
