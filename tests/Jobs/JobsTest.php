@@ -1,15 +1,16 @@
 <?php
 
-namespace Qless\Tests;
+namespace Qless\Tests\Jobs;
 
 use Qless\Queue;
+use Qless\Tests\QlessTestCase;
 
 /**
- * Qless\Tests\JobsTest
+ * Qless\Tests\Jobs\CollectionTest
  *
- * @package Qless\Tests
+ * @package Qless\Tests\Jobs
  */
-class JobsTest extends QlessTestCase
+class CollectionTest extends QlessTestCase
 {
     public function testItReturnsNullForInvalidJobID()
     {

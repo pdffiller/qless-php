@@ -1,6 +1,6 @@
 <?php
 
-namespace Qless\Tests\Reservers;
+namespace Qless\Tests\Jobs\Reservers;
 
 use Qless\Jobs\Job;
 use Qless\Queue;
@@ -8,9 +8,9 @@ use Qless\Tests\QlessTestCase;
 use Qless\Jobs\Reservers\OrderedReserver;
 
 /**
- * Qless\Tests\Reservers\OrderedReserverTest
+ * Qless\Tests\Jobs\Reservers\OrderedReserverTest
  *
- * @package Qless\Tests\Reservers
+ * @package Qless\Tests\Jobs\Reservers
  */
 class OrderedReserverTest extends QlessTestCase
 {
