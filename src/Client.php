@@ -22,7 +22,7 @@ use Redis;
  * @method string requeue(string $worker, string $queue, string $jid, string $klass, string $data, int $delay, ...$args)
  * @method string pop(string $queue, string $worker, int $count)
  * @method int length(string $queue)
- * @method int heartbeat(...$args)
+ * @method float heartbeat(...$args)
  * @method int retry(string $jid, string $queue, string $worker, int $delay, string $group, string $message)
  * @method int cancel(string $jid)
  * @method int unrecur(string $jid)
