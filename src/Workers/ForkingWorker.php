@@ -301,10 +301,10 @@ final class ForkingWorker extends AbstractWorker
     {
         switch ($childType) {
             case self::PROCESS_TYPE_JOB:
-                $childType = 'child';
+                $childType = 'Child';
                 break;
             default:
-                $childType = 'watchdog';
+                $childType = 'Watchdog';
         }
 
         if ($exitStatus === 0) {

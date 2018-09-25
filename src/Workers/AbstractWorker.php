@@ -213,7 +213,7 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     {
         $this->logger->info($value, $context);
 
-        $line = sprintf('qless-php-worker %s', $value);
+        $line = sprintf('Qless PHP: %s', $value);
 
         if (function_exists('setproctitle')) {
             \setproctitle($line);
