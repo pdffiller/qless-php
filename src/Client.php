@@ -3,6 +3,7 @@
 namespace Qless;
 
 use Qless\Exceptions\ExceptionInterface;
+use Qless\Exceptions\RuntimeException;
 use Qless\Exceptions\UnknownPropertyException;
 use Qless\Jobs\Collection as JobsCollection;
 use Qless\Subscribers\QlessCoreSubscriber;
@@ -25,7 +26,7 @@ use Redis;
  * @method int retry(string $jid, string $queue, string $worker, int $delay, string $group, string $message)
  * @method int cancel(string $jid)
  * @method int unrecur(string $jid)
- * @method bool|string fail(string $jid, string $worker, string $group, string $message, string $data = null)
+ * @method bool|string fail(string $jid, string $worker, string $group, string $message, ?string $data = null)
  * @method string[] jobs(string $state, int $offset = 0, int $count = 25)
  * @method bool|string get(string $jid)
  * @method string multiget(string[] $jid)
@@ -42,6 +43,7 @@ use Redis;
  * @property-read JobsCollection $jobs
  * @property-read WorkersCollection $workers
  * @property-read Config $config
+ * @property-read Redis $redis
  * @property-read LuaScript $lua
  */
 class Client implements EventsManagerAwareInterface
@@ -72,6 +74,9 @@ class Client implements EventsManagerAwareInterface
     /** @var float */
     private $redisTimeout = 0.0;
 
+    /** @var int */
+    private $redisDatabase = 0;
+
     /** @var string */
     private $workerName;
 
@@ -81,12 +86,15 @@ class Client implements EventsManagerAwareInterface
      * @param string $host    Can be a host, or the path to a unix domain socket.
      * @param int    $port    The redis port [optional].
      * @param float  $timeout Value in seconds (optional, default is 0.0 meaning unlimited).
+     * @param int   $database Redis database (optional, default is 0).
      */
-    public function __construct(string $host = '127.0.0.1', int $port = 6379, float $timeout = 0.0)
+    public function __construct(string $host = '127.0.0.1', int $port = 6379, float $timeout = 0.0, int $database = 0)
     {
         $this->redisHost = $host;
         $this->redisPort = $port;
         $this->redisTimeout = $timeout;
+        $this->redisDatabase = $database;
+
         $this->workerName = gethostname() . '-' . getmypid();
 
         $this->redis = new Redis();
@@ -120,7 +128,11 @@ class Client implements EventsManagerAwareInterface
     {
         return new QlessCoreSubscriber(
             function (Redis $redis) {
-                $redis->connect($this->redisHost, $this->redisPort, $this->redisTimeout);
+                if ($redis->connect($this->redisHost, $this->redisPort, $this->redisTimeout)) {
+                    if ($this->redisDatabase !== 0) {
+                        $this->redis->select($this->redisDatabase);
+                    }
+                }
             },
             $channels
         );
@@ -211,9 +223,17 @@ class Client implements EventsManagerAwareInterface
      * Perform connection to the Redis server.
      *
      * @return void
+     *
+     * @throws RuntimeException
      */
     private function connect(): void
     {
-        $this->redis->connect($this->redisHost, $this->redisPort, $this->redisTimeout);
+        if ($this->redis->connect($this->redisHost, $this->redisPort, $this->redisTimeout) == false) {
+            throw new RuntimeException('Can not connect to the Redis server.');
+        }
+
+        if ($this->redisDatabase !== 0 && $this->redis->select($this->redisDatabase) == false) {
+            throw new RuntimeException('Can not select the Redis database.');
+        }
     }
 }
