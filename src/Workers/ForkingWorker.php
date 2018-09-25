@@ -366,7 +366,10 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
 
         try {
             if ($this->jobPerformClass) {
-                $handler = $this->getPerformHandlerFactory()->create($this->jobPerformClass);
+                $handler = $this->performHandlerFactory->create(
+                    $this->jobPerformClass,
+                    $this->client->getEventsManager()
+                );
 
                 if (method_exists($handler, 'setUp')) {
                     $handler->setUp();

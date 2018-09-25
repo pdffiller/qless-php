@@ -70,7 +70,7 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     protected $job;
 
     /** @var PerformHandlerFactory */
-    private $performHandlerFactory;
+    protected $performHandlerFactory;
 
     /**
      * Worker constructor.
@@ -86,9 +86,7 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
         $this->name = array_values(array_slice(explode('\\', get_class($this)), -1))[0];
 
         $this->setEventsManager($client->getEventsManager());
-
         $this->performHandlerFactory = new PerformHandlerFactory();
-        $this->performHandlerFactory->setEventsManager($client->getEventsManager());
 
         $this->onConstruct();
     }
@@ -111,16 +109,6 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
      */
     public function onConstruct(): void
     {
-    }
-
-    /**
-     * Get perform handler factory.
-     *
-     * @return PerformHandlerFactory
-     */
-    public function getPerformHandlerFactory(): PerformHandlerFactory
-    {
-        return $this->performHandlerFactory;
     }
 
     /**

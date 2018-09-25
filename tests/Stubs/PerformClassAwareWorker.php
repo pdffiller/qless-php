@@ -15,7 +15,10 @@ class PerformClassAwareWorker extends AbstractWorker
     {
         $job = $this->reserve();
 
-        $handler = $this->getPerformHandlerFactory()->create($this->jobPerformClass);
+        $handler = $this->performHandlerFactory->create(
+            $this->jobPerformClass,
+            $this->client->getEventsManager()
+        );
 
         if (method_exists($handler, 'setUp')) {
             $handler->setUp();
