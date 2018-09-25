@@ -4,7 +4,6 @@ namespace  Qless\Workers;
 
 use ArrayAccess;
 use Qless\Client;
-use Qless\Exceptions\ExceptionInterface;
 use Qless\Exceptions\UnknownPropertyException;
 use Qless\Exceptions\UnsupportedFeatureException;
 

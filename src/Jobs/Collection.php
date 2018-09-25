@@ -14,10 +14,8 @@ use Qless\Exceptions\UnsupportedFeatureException;
  *
  * @package Qless\Jobs
  */
-class Collection implements ArrayAccess, EventsManagerAwareInterface
+class Collection implements ArrayAccess
 {
-    use EventsManagerAwareTrait;
-
     /** @var Client */
     private $client;
 
@@ -29,8 +27,6 @@ class Collection implements ArrayAccess, EventsManagerAwareInterface
     public function __construct(Client $client)
     {
         $this->client = $client;
-
-        $this->setEventsManager($client->getEventsManager());
     }
 
     /**
@@ -84,7 +80,7 @@ class Collection implements ArrayAccess, EventsManagerAwareInterface
         $ret = [];
         foreach ($jobs as $data) {
             $job = new Job($this->client, $data);
-            $job->setEventsManager($this->getEventsManager());
+            $job->setEventsManager($this->client->getEventsManager());
 
             $ret[$job->jid] = $job;
         }
@@ -155,7 +151,7 @@ class Collection implements ArrayAccess, EventsManagerAwareInterface
         }
 
         $job = new Job($this->client, json_decode($data, true));
-        $job->setEventsManager($this->getEventsManager());
+        $job->setEventsManager($this->client->getEventsManager());
 
         return $job;
     }

@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added support of default Worker's `perform` method
 - Added `Qless\Events\QlessCoreEvent` DTO and `Qless\Events\QlessCoreEventFactory` to interact with qless-core events
 - Added `Qless\Client::getWorkerName` to provide default worker name
+- Added ability to select the redis database
 - Introduced job reservers (ordered, round robin, shuffled round robin)
 - Introduced `Qless\EventsManger` to provide a basic event system
 

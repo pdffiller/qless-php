@@ -2,6 +2,8 @@
 
 namespace Qless\Exceptions;
 
+use Throwable;
+
 /**
  * Qless\Exceptions\QlessException
  *
@@ -9,7 +11,53 @@ namespace Qless\Exceptions;
  *
  * @package Qless\Exceptions
  */
-class QlessException extends RuntimeException
+class QlessException extends RuntimeException implements ExceptionInterface
 {
-    use AreaAwareTrait;
+    /** @var string|null */
+    protected $area;
+
+    /** @var string|null */
+    protected $jid;
+
+    /**
+     * QlessException constructor.
+     *
+     * @param string         $message
+     * @param string|null    $area
+     * @param string|null    $jid
+     * @param int            $code
+     * @param Throwable|null $previous
+     */
+    public function __construct(
+        string $message,
+        ?string $area = null,
+        ?string $jid = null,
+        int $code = 0,
+        Throwable $previous = null
+    ) {
+        $this->area = $area;
+        $this->jid = $jid;
+
+        parent::__construct($message, $code, $previous);
+    }
+
+    /**
+     * Gets current error area.
+     *
+     * @return string|null
+     */
+    public function getArea(): ?string
+    {
+        return $this->area;
+    }
+
+    /**
+     * Gets current job id.
+     *
+     * @return string|null
+     */
+    public function getJid(): ?string
+    {
+        return $this->jid;
+    }
 }

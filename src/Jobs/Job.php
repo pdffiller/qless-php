@@ -6,6 +6,7 @@ use Qless\Client;
 use Qless\EventsManagerAwareInterface;
 use Qless\EventsManagerAwareTrait;
 use Qless\Exceptions\InvalidArgumentException;
+use Qless\Exceptions\LostLockException;
 use Qless\Exceptions\QlessException;
 use Qless\Exceptions\UnknownPropertyException;
 
@@ -358,16 +359,22 @@ final class Job implements EventsManagerAwareInterface
     /**
      * Set the timestamp of the new heartbeat.
      *
-     * @param  array|null $data
-     * @return int
+     * @param  array $data
+     * @return float
      *
-     * @throws QlessException If the heartbeat fails
+     * @throws LostLockException
      */
-    public function heartbeat(array $data = null)
+    public function heartbeat(array $data = []): float
     {
-        $data = json_encode($data ?: [], JSON_UNESCAPED_SLASHES);
-
-        $this->expires = $this->client->heartbeat($this->jid, $this->worker, $data);
+        try {
+            $this->expires = $this->client->heartbeat(
+                $this->jid,
+                $this->worker,
+                json_encode($data, JSON_UNESCAPED_SLASHES)
+            );
+        } catch (QlessException $e) {
+            throw new LostLockException($e->getMessage(), 'Heartbeat', $this->jid, $e->getCode(), $e);
+        }
 
         return $this->expires;
     }
@@ -387,6 +394,7 @@ final class Job implements EventsManagerAwareInterface
                 array_merge([$this->jid], $this->rawData['dependents'])
             );
         }
+
         return $this->client->cancel($this->jid);
     }
 

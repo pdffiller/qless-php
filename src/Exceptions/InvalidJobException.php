@@ -7,7 +7,6 @@ namespace Qless\Exceptions;
  *
  * @package Qless\Exceptions
  */
-class InvalidJobException extends RuntimeException
+class InvalidJobException extends QlessException
 {
-    use AreaAwareTrait;
 }
