@@ -66,10 +66,25 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
      */
     protected $jobPerformClass;
 
-    /** @var Job|null */
+    /**
+     * Current job instance (if is set).
+     *
+     * @var Job|null
+     */
     protected $job;
 
-    /** @var PerformHandlerFactory */
+    /**
+     * Is current iteration paused?
+     *
+     * @var bool
+     */
+    protected $paused = false;
+
+    /**
+     * Internal perform handler factory.
+     *
+     * @var PerformHandlerFactory
+     */
     protected $performHandlerFactory;
 
     /**
@@ -231,4 +246,62 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     }
 
     abstract public function perform(): void;
+
+    /**
+     * {@inheritdoc}
+     *
+     * @return void
+     */
+    public function shutdown(): void
+    {
+        $this->logger->notice('{type}: QUIT received; shutting down', ['type' => $this->name]);
+
+        $this->doShutdown();
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @return void
+     */
+    public function pauseProcessing(): void
+    {
+        $this->logger->notice('{type}: USR2 received; pausing job processing', ['type' => $this->name]);
+        $this->paused = true;
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @return void
+     */
+    public function unPauseProcessing(): void
+    {
+        $this->logger->notice('{type}: CONT received; resuming job processing', ['type' => $this->name]);
+        $this->paused = false;
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @return void
+     */
+    public function shutdownNow(): void
+    {
+        $this->doShutdown();
+        $this->killChildren();
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @codeCoverageIgnoreStart
+     * @return void
+     */
+    public function killChildren(): void
+    {
+        // nothing to do
+        return;
+    }
+    // @codeCoverageIgnoreEnd
 }

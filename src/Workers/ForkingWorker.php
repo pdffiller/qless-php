@@ -18,7 +18,7 @@ use Qless\Subscribers\SignalsAwareSubscriber;
  *
  * @package Qless\Workers
  */
-final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
+final class ForkingWorker extends AbstractWorker
 {
     private const PROCESS_TYPE_MASTER = 0;
     private const PROCESS_TYPE_JOB = 1;
@@ -35,9 +35,6 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
 
     /** @var int */
     private $childProcesses = 0;
-
-    /** @var bool */
-    private $paused = false;
 
     /** @var string */
     private $who = 'master';
@@ -304,10 +301,10 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
     {
         switch ($childType) {
             case self::PROCESS_TYPE_JOB:
-                $childType = 'Child';
+                $childType = 'child';
                 break;
             default:
-                $childType = 'Watchdog';
+                $childType = 'watchdog';
         }
 
         if ($exitStatus === 0) {
@@ -595,48 +592,16 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
      *
      * @return void
      */
-    public function pauseProcessing(): void
-    {
-        $this->logger->notice('{type}: USR2 received; pausing job processing', $this->logContext);
-        $this->paused = true;
-    }
-
-    /**
-     * {@inheritdoc}
-     *
-     * @return void
-     */
-    public function unPauseProcessing(): void
-    {
-        $this->logger->notice('{type}: CONT received; resuming job processing', $this->logContext);
-        $this->paused = false;
-    }
-
-    /**
-     * {@inheritdoc}
-     *
-     * @return void
-     */
     public function shutdown(): void
     {
         if ($this->childPID) {
-            $this->logger->notice('{type}: QUIT received; shutting down after child completes work', $this->logContext);
+            $message = '{type}: QUIT received; shutting down after child completes work';
         } else {
-            $this->logger->notice('{type}: QUIT received; shutting down', $this->logContext);
+            $message = '{type}: QUIT received; shutting down';
         }
 
+        $this->logger->notice($message, ['type' => $this->name]);
         $this->doShutdown();
-    }
-
-    /**
-     * {@inheritdoc}
-     *
-     * @return void
-     */
-    public function shutdownNow(): void
-    {
-        $this->doShutdown();
-        $this->killChildren();
     }
 
     /**
