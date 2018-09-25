@@ -111,7 +111,7 @@ class JobTest extends QlessTestCase
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\QlessException
+     * @expectedException \Qless\Exceptions\LostLockException
      * @expectedExceptionMessageRegExp "Job .* given out to another worker: worker-2 "
      */
     public function shouldThrowIOnCallingHeartbeatForInvalidJob()
@@ -127,6 +127,19 @@ class JobTest extends QlessTestCase
         $queue->pop('worker-2');
 
         $job->heartbeat();
+    }
+
+    /**
+     * @test
+     * @expectedException \Qless\Exceptions\LostLockException
+     * @expectedExceptionMessage Job jid not currently running: waiting
+     */
+    public function shouldThrowLostLockExceptionWhenHeartbeatFail()
+    {
+        $queue = new Queue('testQueue', $this->client);
+        $queue->put('Foo', [], 'jid');
+
+        $this->client->jobs['jid']->heartbeat();
     }
 
     /** @test */
