@@ -1,15 +1,16 @@
 <?php
 
-namespace Qless\Tests;
+namespace Qless\Tests\Jobs;
 
 use Qless\Jobs\Job;
 use Qless\Queue;
+use Qless\Tests\QlessTestCase;
 use Qless\Tests\Stubs\JobHandler;
 
 /**
- * Qless\Tests\JobTest
+ * Qless\Tests\Jobs\JobTest
  *
- * @package Qless\Tests
+ * @package Qless\Tests\Jobs
  */
 class JobTest extends QlessTestCase
 {

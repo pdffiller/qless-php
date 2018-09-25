@@ -1,14 +1,14 @@
 <?php
 
-namespace Qless\Tests\Reservers;
+namespace Qless\Tests\Jobs\Reservers;
 
 use Qless\Jobs\Reservers\ShuffledRoundRobinReserver;
 use Qless\Queue;
 
 /**
- * Qless\Tests\Reservers\ShuffledRoundRobinReserver
+ * Qless\Tests\Jobs\Reservers\ShuffledRoundRobinReserver
  *
- * @package Qless\Tests\Reservers
+ * @package Qless\Tests\Jobs\Reservers
  */
 class ShuffledRoundRobinReserverTest extends RoundRobinReserverTest
 {
