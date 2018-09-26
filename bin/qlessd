@@ -44,8 +44,6 @@ Options:
 
 HLP;
 
-
-
     fprintf(STDOUT, $banner);
     foreach (array_keys($config) as $param) {
         $help = isset($options[$param]) ? $options[$param] : $options["{$param}:"];

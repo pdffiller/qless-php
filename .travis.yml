@@ -56,7 +56,7 @@ before_script:
 script:
   - composer diagnose || true
   - ./vendor/bin/phpcs
-  - ./vendor/bin/phpstan analyse -l max src
+  - ./vendor/bin/phpstan analyse -l max src bin
   - ./vendor/bin/phpunit --disallow-test-output
   - ./tests/simple-bench --port $REDIS_PORT --host $REDIS_HOST
 
