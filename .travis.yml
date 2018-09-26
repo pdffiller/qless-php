@@ -47,11 +47,13 @@ install:
         --no-progress \
         --no-suggest
   - chmod +x ./tests/simple-bench
+  - chmod +x ./bin/qlessd
 
 before_script:
   - phpenv which php
   - php -v
   - php -m | grep -e 'json\|pcntl\|posix\|redis\|sockets\|pcre'
+  - ./bin/qlessd --help
 
 script:
   - composer diagnose || true

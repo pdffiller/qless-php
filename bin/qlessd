@@ -12,11 +12,11 @@ use Qless\Workers\ForkingWorker;
 
 // First off, read the arguments
 $options = [
-    'dsn:'      => 'The redis backend. can have simple "host:port" format or use a DSN-style format',
-    'db:'       => 'The redis database',
+    'dsn:'      => 'The Redis backend. Can have simple "host:port" format or use a DSN-style format [default: 127.0.0.1]',
+    'db:'       => 'The Redis database index [default: 0]',
     'queue:'    => 'A list of queues to work',
-    'include:'  => 'A php file to include before qless initialization',
-    'log-name:' => 'Fallback logger name',
+    'include:'  => 'A PHP file to include before Qless initialization',
+    'log-name:' => 'Fallback logger name [default: QLESS]',
     'help'      => 'Show this help message',
     'debug'     => 'Use verbose logging',
 ];
@@ -47,7 +47,8 @@ HLP;
     fprintf(STDOUT, $banner);
     foreach (array_keys($config) as $param) {
         $help = isset($options[$param]) ? $options[$param] : $options["{$param}:"];
-        fprintf(STDOUT, "  --%-12s %s\n", $param, $help);
+        $value = array_key_exists("{$param}:", $options) ? '=' .strtoupper($param) : '';
+        fprintf(STDOUT, "  --%-22s %s\n", $param . $value, $help);
     }
     exit(0);
 }
