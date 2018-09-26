@@ -81,11 +81,10 @@ WRK;
     public function inaccessiblePropertyDataProvider()
     {
         return [
-            ['jobs',   JobsCollection::class],
-            ['config', Config::class],
-            ['lua',    LuaScript::class],
-            ['redis',  Redis::class],
-            ['workers',  WorkersCollection::class],
+            ['jobs',    JobsCollection::class],
+            ['config',  Config::class],
+            ['lua',     LuaScript::class],
+            ['workers', WorkersCollection::class],
         ];
     }
 

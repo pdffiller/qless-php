@@ -22,11 +22,8 @@ class QlessCoreEventTest extends QlessTestCase
         $events = [];
         $time   = time();
 
-        $config = $this->getRedisConfig();
         $listener = new QlessCoreSubscriber(
-            function (\Redis $redis) use ($config) {
-                $redis->connect($config['host'], $config['port'], $config['timeout']);
-            },
+            $this->redis(true),
             ['chan-1', 'chan-2']
         );
 

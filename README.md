@@ -131,7 +131,7 @@ use Qless\Client;
 $client = new Client();
 
 // Connect to somewhere else
-$client = new Client('foo.bar.com', 1234);
+$client = new Client('127.0.0.99:1234');
 ```
 
 Jobs should be classes that define a `perform` method, which must accept a single `Qless\Job` argument:
@@ -245,7 +245,7 @@ use Qless\Queue;
 use Qless\Workers\ForkingWorker;
 
 // Create a client
-$client = new Client('foo.bar.com', 1234);
+$client = new Client();
 
 // Get the queues you use
 $queues = array_map(function (string $name) use ($client) {

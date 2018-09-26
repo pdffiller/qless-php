@@ -2,13 +2,10 @@
 
 namespace Qless;
 
-use Qless\Exceptions\ExceptionInterface;
-use Qless\Exceptions\RuntimeException;
 use Qless\Exceptions\UnknownPropertyException;
 use Qless\Jobs\Collection as JobsCollection;
 use Qless\Subscribers\QlessCoreSubscriber;
 use Qless\Workers\Collection as WorkersCollection;
-use Redis;
 
 /**
  * Qless\Client
@@ -43,7 +40,6 @@ use Redis;
  * @property-read JobsCollection $jobs
  * @property-read WorkersCollection $workers
  * @property-read Config $config
- * @property-read Redis $redis
  * @property-read LuaScript $lua
  */
 class Client implements EventsManagerAwareInterface
@@ -66,43 +62,27 @@ class Client implements EventsManagerAwareInterface
     private $redis;
 
     /** @var string */
-    private $redisHost;
-
-    /** @var int */
-    private $redisPort = 6379;
-
-    /** @var float */
-    private $redisTimeout = 0.0;
-
-    /** @var int */
-    private $redisDatabase = 0;
-
-    /** @var string */
     private $workerName;
 
     /**
      * Client constructor.
      *
-     * @param string $host    Can be a host, or the path to a unix domain socket.
-     * @param int    $port    The redis port [optional].
-     * @param float  $timeout Value in seconds (optional, default is 0.0 meaning unlimited).
-     * @param int   $database Redis database (optional, default is 0).
+     * @param  string   $server   Host/port combination separated by a colon, DSN-formatted URI.
+     * @param  int|null $database Redis database (optional, default is 0).
+     *
+     * @throws \Qless\Exceptions\InvalidArgumentException
+     * @throws \Qless\Exceptions\RedisConnectionException
      */
-    public function __construct(string $host = '127.0.0.1', int $port = 6379, float $timeout = 0.0, int $database = 0)
+    public function __construct(string $server, ?int $database = null)
     {
-        $this->redisHost = $host;
-        $this->redisPort = $port;
-        $this->redisTimeout = $timeout;
-        $this->redisDatabase = $database;
-
         $this->workerName = gethostname() . '-' . getmypid();
 
-        $this->redis = new Redis();
-        $this->connect();
+        $this->redis = new Redis($server, $database);
+        $this->redis->connect();
 
         $this->setEventsManager(new EventsManager());
 
-        $this->lua = new LuaScript($this->redis);
+        $this->lua = new LuaScript($this->redis->getDriver());
         $this->config = new Config($this);
         $this->jobs = new JobsCollection($this);
         $this->workers = new WorkersCollection($this);
@@ -123,19 +103,17 @@ class Client implements EventsManagerAwareInterface
      *
      * @param  array $channels An array of channels to subscribe to.
      * @return QlessCoreSubscriber
+     *
+     * @throws \Qless\Exceptions\RedisConnectionException
      */
     public function createSubscriber(array $channels): QlessCoreSubscriber
     {
-        return new QlessCoreSubscriber(
-            function (Redis $redis) {
-                if ($redis->connect($this->redisHost, $this->redisPort, $this->redisTimeout)) {
-                    if ($this->redisDatabase !== 0) {
-                        $this->redis->select($this->redisDatabase);
-                    }
-                }
-            },
-            $channels
-        );
+        $redis = clone $this->redis;
+
+        $redis->getDriver()->close();
+        $redis->connect();
+
+        return new QlessCoreSubscriber($redis->getDriver(), $channels);
     }
 
     /**
@@ -145,7 +123,7 @@ class Client implements EventsManagerAwareInterface
      * @param  mixed  ...$arguments
      * @return mixed|null
      *
-     * @throws ExceptionInterface
+     * @throws \Qless\Exceptions\ExceptionInterface
      */
     public function call(string $command, ...$arguments)
     {
@@ -162,7 +140,7 @@ class Client implements EventsManagerAwareInterface
      * @param  array $arguments
      * @return mixed
      *
-     * @throws ExceptionInterface
+     * @throws \Qless\Exceptions\ExceptionInterface
      */
     public function __call(string $command, array $arguments)
     {
@@ -178,7 +156,7 @@ class Client implements EventsManagerAwareInterface
      * @param  string $name
      * @return mixed
      *
-     * @throws UnknownPropertyException
+     * @throws \Qless\Exceptions\UnknownPropertyException
      */
     public function __get(string $name)
     {
@@ -191,8 +169,6 @@ class Client implements EventsManagerAwareInterface
                 return $this->config;
             case 'lua':
                 return $this->lua;
-            case 'redis':
-                return $this->redis;
             default:
                 throw new UnknownPropertyException('Getting unknown property: ' . self::class . '::' . $name);
         }
@@ -205,35 +181,19 @@ class Client implements EventsManagerAwareInterface
      */
     public function flush(): void
     {
-        $this->redis->flushDB();
+        $this->redis->getDriver()->flushDB();
     }
 
     /**
      * Call to reconnect to Redis server.
      *
      * @return void
+     *
+     * @throws \Qless\Exceptions\RedisConnectionException
      */
     public function reconnect(): void
     {
-        $this->redis->close();
-        $this->connect();
-    }
-
-    /**
-     * Perform connection to the Redis server.
-     *
-     * @return void
-     *
-     * @throws RuntimeException
-     */
-    private function connect(): void
-    {
-        if ($this->redis->connect($this->redisHost, $this->redisPort, $this->redisTimeout) == false) {
-            throw new RuntimeException('Can not connect to the Redis server.');
-        }
-
-        if ($this->redisDatabase !== 0 && $this->redis->select($this->redisDatabase) == false) {
-            throw new RuntimeException('Can not select the Redis database.');
-        }
+        $this->redis->getDriver()->close();
+        $this->redis->connect();
     }
 }

@@ -3,8 +3,6 @@
 namespace Qless\Subscribers;
 
 use Qless\Events\QlessCoreEventFactory;
-use Redis;
-use Closure;
 
 /**
  * Qless\Subscribers\QlessCoreSubscriber
@@ -15,7 +13,7 @@ use Closure;
  */
 class QlessCoreSubscriber
 {
-    /** @var Redis */
+    /** @var \Redis */
     private $redis;
 
     /** @var array */
@@ -27,14 +25,11 @@ class QlessCoreSubscriber
      * NOTE: use separate connections for pub and sub.
      * @link https://stackoverflow.com/questions/22668244/should-i-use-separate-connections-for-pub-and-sub-with-redis
      *
-     * @param Closure $makeRedisConnection
-     * @param array   $channels
+     * @param \Redis $redis
+     * @param array  $channels
      */
-    public function __construct(Closure $makeRedisConnection, array $channels)
+    public function __construct(\Redis $redis, array $channels)
     {
-        $redis = new Redis();
-        $makeRedisConnection($redis);
-
         $this->redis = $redis;
         $this->channels = $channels;
     }
@@ -47,7 +42,7 @@ class QlessCoreSubscriber
      */
     public function messages(callable $callback): void
     {
-        $callback = function (Redis $redis, string $channel, ?string $data = null) use ($callback) {
+        $callback = function (\Redis $redis, string $channel, ?string $data = null) use ($callback) {
             call_user_func($callback, $channel, QlessCoreEventFactory::fromData($data));
         };
 

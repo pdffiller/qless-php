@@ -51,12 +51,7 @@ install:
 before_script:
   - phpenv which php
   - php -v
-  - php -m | grep -e 'json\|pcntl\|posix\|redis\|sockets'
-  - php --ri json
-  - php --ri pcntl
-  - php --ri posix
-  - php --ri redis
-  - php --ri sockets
+  - php -m | grep -e 'json\|pcntl\|posix\|redis\|sockets\|pcre'
 
 script:
   - composer diagnose || true

@@ -30,7 +30,7 @@ abstract class QlessTestCase extends TestCase
     public function setUp(): void
     {
         $config = $this->getRedisConfig();
-        $this->client = new Client($config['host'], $config['port'], $config['timeout']);
+        $this->client = new Client("redis://{$config['host']}:{$config['port']}/0?timeout={$config['timeout']}");
     }
 
     /**
