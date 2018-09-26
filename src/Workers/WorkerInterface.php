@@ -38,6 +38,13 @@ interface WorkerInterface
     public function setName(string $name): void;
 
     /**
+     * Gets the internal worker name.
+     *
+     * @return string
+     */
+    public function getName(): string;
+
+    /**
      * Register the job perform handler.
      *
      * @param  string $jobPerformClass The fully qualified class name.

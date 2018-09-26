@@ -162,6 +162,16 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     /**
      * {@inheritdoc}
      *
+     * @return string
+     */
+    final public function getName(): string
+    {
+        return $this->name;
+    }
+
+    /**
+     * {@inheritdoc}
+     *
      * @param  string $jobPerformClass The fully qualified class name.
      * @return void
      *
@@ -288,6 +298,8 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
      */
     public function shutdownNow(): void
     {
+        $this->logger->notice('{type}: Force an immediate shutdown of the worker', ['type' => $this->name]);
+
         $this->doShutdown();
         $this->killChildren();
     }

@@ -26,6 +26,7 @@
         Note that specifying any file or directory path
         on the command line will ignore all file tags.
     -->
+    <file>bin</file>
     <file>src</file>
     <file>tests</file>
 

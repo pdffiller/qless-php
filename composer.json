@@ -31,6 +31,7 @@
         "ext-sockets": "*",
         "ext-pcre": "*",
         "psr/log": "^1",
+        "monolog/monolog": "^1.23",
         "ramsey/uuid": "3.8.*",
         "seld/signal-handler": "1.1.*"
     },
@@ -39,7 +40,7 @@
     },
     "require-dev": {
         "infection/infection": "0.10.*",
-        "monolog/monolog": "^1.23",
+
         "phpstan/phpstan": "0.10.*",
         "phpunit/phpunit": ">=5.3 <8.0",
         "squizlabs/php_codesniffer": "3.*"

@@ -67,12 +67,15 @@ class SignalsAwareSubscriber
      */
     protected function registerSignalHandler(WorkerInterface $worker): void
     {
-        $this->logger->info('Register a signal handler that a worker should respond to.');
+        $this->logger->info('Register a signal handler that a worker should respond to');
 
         SignalHandler::create(
             SignalHandler::KNOWN_SIGNALS,
             function (int $signal, string $signalName) use ($worker) {
-                $this->logger->info("Was received known signal '{signal}'.", ['signal' => $signalName]);
+                $this->logger->info('{type}: Was received recognized signal {signal}', [
+                    'type'   => $worker->getName(),
+                    'signal' => $signalName,
+                ]);
 
                 switch ($signal) {
                     case SIGTERM:
