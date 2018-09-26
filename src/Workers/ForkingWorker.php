@@ -83,7 +83,7 @@ final class ForkingWorker extends AbstractWorker
         $this->logContext = ['type' => $this->who, 'job.identifier' => null];
         $this->logger->info('{type}: worker started', $this->logContext);
         $this->logger->info(
-            '{type}: Monitoring the following queues (in order), {queues}',
+            '{type}: monitoring the following queues (in order): {queues}',
             ['type' => $this->who, 'queues' => implode(', ', $this->reserver->getQueues())]
         );
 

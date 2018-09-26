@@ -54,8 +54,6 @@ final class Redis
     {
         list($host, $port, $dsnDatabase, $user, $password, $options) = $this->parseDsn($dsn);
 
-        $timeout = (float) $options['timeout'] ?? self::DEFAULT_TIMEOUT;
-
         $this->host = $host;
         $this->port = $port;
 
@@ -65,7 +63,7 @@ final class Redis
 
         $this->database = $database;
         $this->user = $user;
-        $this->timeout = $timeout;
+        $this->timeout = $options['timeout'];
         $this->password = $password;
         $this->options = $options ?: [];
 
@@ -189,6 +187,8 @@ final class Redis
         }
 
         $host = $parts['host'] ?? self::DEFAULT_HOST;
+
+        $options['timeout'] = isset($options['timeout']) ? (float) $options['timeout'] : self::DEFAULT_TIMEOUT;
 
         return [
             $host,

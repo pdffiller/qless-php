@@ -1,0 +1,138 @@
+#!/usr/bin/env php
+<?php
+
+use Monolog\Formatter\LineFormatter;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
+use Monolog\Processor\PsrLogMessageProcessor;
+use Qless\Client;
+use Qless\Jobs\Reservers\OrderedReserver;
+use Qless\Queue;
+use Qless\Workers\ForkingWorker;
+
+// First off, read the arguments
+$options = [
+    'dsn:'      => 'The redis backend. can have simple "host:port" format or use a DSN-style format',
+    'db:'       => 'The redis database',
+    'queue:'    => 'A list of queues to work',
+    'include:'  => 'A php file to include before qless initialization',
+    'log-name:' => 'Fallback logger name',
+    'help'      => 'Show this help message',
+    'debug'     => 'Use verbose logging',
+];
+
+$defaults = [
+    'dsn'      => getenv('REDIS_BACKEND') ?: '127.0.0.1',
+    'db'       => getenv('REDIS_BACKEND_DB') ?: null,
+    'queue'    => getenv('QUEUE') ?: null,
+    'include'  => getenv('APP_INCLUDE') ?: null,
+    'log-name' => getenv('LOG_NAME') ?: 'QLESS',
+    'debug'    => getenv('DEBUG') ?: getenv('VERBOSE') ?? getenv('VVERBOSE'),
+    'help'     => null,
+];
+
+$config = array_merge($defaults, getopt('', array_keys($options)));
+
+if ($config['help'] !== null) {
+    $banner =<<<HLP
+Qless PHP
+
+Usage:
+  qlessd [options]
+ 
+Options:
+
+HLP;
+
+
+
+    fprintf(STDOUT, $banner);
+    foreach (array_keys($config) as $param) {
+        $help = isset($options[$param]) ? $options[$param] : $options["{$param}:"];
+        fprintf(STDOUT, "  --%-12s %s\n", $param, $help);
+    }
+    exit(0);
+}
+
+// Find and initialize Composer
+$autoload = [
+    __DIR__ . '/../vendor/autoload.php',
+    __DIR__ . '/../../vendor/autoload.php',
+    __DIR__ . '/../../../autoload.php',
+    __DIR__ . '/../../../../autoload.php',
+];
+
+foreach ($autoload as $file) {
+    if (file_exists($file)) {
+        require_once $file;
+        break;
+    }
+}
+
+if (class_exists('Composer\Autoload\ClassLoader', false) == false) {
+    die (
+        'You need to set up the project dependencies using the following commands:' . PHP_EOL .
+        'curl -s http://getcomposer.org/installer | php' . PHP_EOL .
+        'php composer.phar install' . PHP_EOL
+    );
+}
+
+if (empty($config['queue']) == true) {
+    die ('Set QUEUE env var containing the list of queues to work or use "--queue" option.' . PHP_EOL);
+}
+
+if (empty($config['include']) == false) {
+    if (file_exists($config['include']) == false) {
+        die ("Include file ({$config['include']}) does not exist.". PHP_EOL);
+    }
+}
+
+// See if the APP_INCLUDE contains a logger object.
+// If none exists, fallback to internal logger.
+if (!isset($logger) || $logger instanceof Logger == false) {
+    $logger = new Logger(
+        $config['log-name'],
+        [],
+        [new PsrLogMessageProcessor()]
+    );
+}
+
+if ($config['debug'] === null) {
+    $logLevel = Logger::WARNING;
+} else {
+    $logLevel = Logger::DEBUG;
+}
+
+if (count($logger->getHandlers()) == 0) {
+    $handler = new StreamHandler(STDOUT, $logLevel);
+
+    $handler->setFormatter(
+        new LineFormatter(
+            "[%datetime%] %level_name%: %message%\n",
+            null,
+            false,
+            true
+        )
+    );
+
+    $logger->pushHandler($handler);
+}
+
+$logger->info('Start initializing qlessd...');
+
+// Create a client
+$client = new Client($config['dsn'], empty($config['db']) ? null : (int) $config['db']);
+
+// Get the queues to use
+$queues = array_map(function (string $name) use ($client) {
+    return new Queue(trim($name), $client);
+}, explode(',', $config['queue']));
+
+// Create a job reserver; different reservers use different
+// strategies for which order jobs are popped off of queues
+$reserver = new OrderedReserver($queues);
+
+$worker = new ForkingWorker($reserver, $client);
+$worker->setLogger($logger);
+
+$worker->run();
