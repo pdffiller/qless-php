@@ -93,19 +93,23 @@ function histogram($l) {
 $options = [
     'host:'    => 'The host to connect to as the Redis server',
     'port:'    => 'The port to connect on as the Redis server',
+    'db:'      => 'The database index',
+    'timeout:' => 'The Redis timeout (in seconds)',
     'no-flush' => "Don't flush Redis after running",
 ];
 
 $defaults = [
     'host'     => '127.0.0.1',
     'port'     => 6379,
+    'db'       => 0,
+    'timeout'  => 0.0,
     'no-flush' => null,
 ];
 
 $config = array_merge($defaults, getopt('', array_keys($options)));
 
 // Our qless client
-$client = new Client($config['host'], (int) $config['port']);
+$client = new Client("redis://{$config['host']}:{$config['port']}/{$config['db']}?timeout={$config['timeout']}");
 
 // The redis client for internal usage
 $redis = new Redis();

@@ -17,11 +17,12 @@ trait RedisAwareTrait
     /**
      * Gets the Redis instance.
      *
+     * @param  bool $recreate
      * @return Redis
      */
-    protected function redis(): Redis
+    protected function redis(bool $recreate = false): Redis
     {
-        if ($this->instance instanceof Redis == false) {
+        if ($this->instance instanceof Redis == false || $recreate === true) {
             $config = $this->getRedisConfig();
 
             $this->instance = new Redis();
