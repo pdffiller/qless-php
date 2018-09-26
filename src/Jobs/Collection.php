@@ -4,8 +4,6 @@ namespace  Qless\Jobs;
 
 use ArrayAccess;
 use Qless\Client;
-use Qless\EventsManagerAwareInterface;
-use Qless\EventsManagerAwareTrait;
 use Qless\Exceptions\ExceptionInterface;
 use Qless\Exceptions\UnsupportedFeatureException;
 

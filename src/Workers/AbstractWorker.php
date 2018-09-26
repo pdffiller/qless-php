@@ -13,6 +13,7 @@ use Qless\Jobs\Job;
 use Qless\Jobs\PerformAwareInterface;
 use Qless\Jobs\PerformHandlerFactory;
 use Qless\Jobs\Reservers\ReserverInterface;
+use Qless\Workers\Traits\ShutdownAwareTrait;
 
 /**
  * Qless\Workers\AbstractWorker
@@ -21,7 +22,7 @@ use Qless\Jobs\Reservers\ReserverInterface;
  */
 abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInterface
 {
-    use EventsManagerAwareTrait;
+    use EventsManagerAwareTrait, ShutdownAwareTrait;
 
     /**
      * The interval for checking for new jobs.
@@ -65,8 +66,26 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
      */
     protected $jobPerformClass;
 
-    /** @var PerformHandlerFactory */
-    private $performHandlerFactory;
+    /**
+     * Current job instance (if is set).
+     *
+     * @var Job|null
+     */
+    protected $job;
+
+    /**
+     * Is current iteration paused?
+     *
+     * @var bool
+     */
+    protected $paused = false;
+
+    /**
+     * Internal perform handler factory.
+     *
+     * @var PerformHandlerFactory
+     */
+    protected $performHandlerFactory;
 
     /**
      * Worker constructor.
@@ -82,11 +101,20 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
         $this->name = array_values(array_slice(explode('\\', get_class($this)), -1))[0];
 
         $this->setEventsManager($client->getEventsManager());
-
         $this->performHandlerFactory = new PerformHandlerFactory();
-        $this->performHandlerFactory->setEventsManager($client->getEventsManager());
 
         $this->onConstruct();
+    }
+
+    /**
+     * Sets current job.
+     *
+     * @param  Job|null $job
+     * @return void
+     */
+    final public function setCurrentJob(Job $job = null): void
+    {
+        $this->job = $job;
     }
 
     /**
@@ -96,16 +124,6 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
      */
     public function onConstruct(): void
     {
-    }
-
-    /**
-     * Get perform handler factory.
-     *
-     * @return PerformHandlerFactory
-     */
-    public function getPerformHandlerFactory(): PerformHandlerFactory
-    {
-        return $this->performHandlerFactory;
     }
 
     /**
@@ -195,7 +213,7 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     {
         $this->logger->info($value, $context);
 
-        $line = sprintf('qless-php-worker %s', $value);
+        $line = sprintf('Qless PHP: %s', $value);
 
         if (function_exists('setproctitle')) {
             \setproctitle($line);
@@ -228,4 +246,62 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     }
 
     abstract public function perform(): void;
+
+    /**
+     * {@inheritdoc}
+     *
+     * @return void
+     */
+    public function shutdown(): void
+    {
+        $this->logger->notice('{type}: QUIT received; shutting down', ['type' => $this->name]);
+
+        $this->doShutdown();
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @return void
+     */
+    public function pauseProcessing(): void
+    {
+        $this->logger->notice('{type}: USR2 received; pausing job processing', ['type' => $this->name]);
+        $this->paused = true;
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @return void
+     */
+    public function unPauseProcessing(): void
+    {
+        $this->logger->notice('{type}: CONT received; resuming job processing', ['type' => $this->name]);
+        $this->paused = false;
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @return void
+     */
+    public function shutdownNow(): void
+    {
+        $this->doShutdown();
+        $this->killChildren();
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @codeCoverageIgnoreStart
+     * @return void
+     */
+    public function killChildren(): void
+    {
+        // nothing to do
+        return;
+    }
+    // @codeCoverageIgnoreEnd
 }

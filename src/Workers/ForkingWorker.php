@@ -10,7 +10,6 @@ use Qless\Jobs\Job;
 use Qless\Signals\SignalHandler;
 use Qless\Subscribers\QlessCoreSubscriber;
 use Qless\Subscribers\SignalsAwareSubscriber;
-use Qless\Workers\Traits\ShutdownAwareTrait;
 
 /**
  * Qless\Workers\ForkingWorker
@@ -19,10 +18,8 @@ use Qless\Workers\Traits\ShutdownAwareTrait;
  *
  * @package Qless\Workers
  */
-final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
+final class ForkingWorker extends AbstractWorker
 {
-    use ShutdownAwareTrait;
-
     private const PROCESS_TYPE_MASTER = 0;
     private const PROCESS_TYPE_JOB = 1;
     private const PROCESS_TYPE_WATCHDOG = 2;
@@ -39,9 +36,6 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
     /** @var int */
     private $childProcesses = 0;
 
-    /** @var bool */
-    private $paused = false;
-
     /** @var string */
     private $who = 'master';
 
@@ -50,9 +44,6 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
 
     /** @var resource[] */
     private $sockets = [];
-
-    /** @var Job|null */
-    private $job;
 
     /** @var SignalsAwareSubscriber */
     private $signalsSubscriber;
@@ -124,7 +115,7 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
                 continue;
             }
 
-            $this->job = $job;
+            $this->setCurrentJob($job);
             $this->logContext['job.identifier'] = $job->jid;
 
             // fork processes
@@ -172,7 +163,7 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
             }
 
             $this->sockets  = [];
-            $this->job = null;
+            $this->setCurrentJob(null);
             $this->logContext['job.identifier'] = null;
             $did_work = true;
 
@@ -372,7 +363,10 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
 
         try {
             if ($this->jobPerformClass) {
-                $handler = $this->getPerformHandlerFactory()->create($this->jobPerformClass);
+                $handler = $this->performHandlerFactory->create(
+                    $this->jobPerformClass,
+                    $this->client->getEventsManager()
+                );
 
                 if (method_exists($handler, 'setUp')) {
                     $handler->setUp();
@@ -598,48 +592,16 @@ final class ForkingWorker extends AbstractWorker implements SignalAwareInterface
      *
      * @return void
      */
-    public function pauseProcessing(): void
-    {
-        $this->logger->notice('{type}: USR2 received; pausing job processing', $this->logContext);
-        $this->paused = true;
-    }
-
-    /**
-     * {@inheritdoc}
-     *
-     * @return void
-     */
-    public function unPauseProcessing(): void
-    {
-        $this->logger->notice('{type}: CONT received; resuming job processing', $this->logContext);
-        $this->paused = false;
-    }
-
-    /**
-     * {@inheritdoc}
-     *
-     * @return void
-     */
     public function shutdown(): void
     {
         if ($this->childPID) {
-            $this->logger->notice('{type}: QUIT received; shutting down after child completes work', $this->logContext);
+            $message = '{type}: QUIT received; shutting down after child completes work';
         } else {
-            $this->logger->notice('{type}: QUIT received; shutting down', $this->logContext);
+            $message = '{type}: QUIT received; shutting down';
         }
 
+        $this->logger->notice($message, ['type' => $this->name]);
         $this->doShutdown();
-    }
-
-    /**
-     * {@inheritdoc}
-     *
-     * @return void
-     */
-    public function shutdownNow(): void
-    {
-        $this->doShutdown();
-        $this->killChildren();
     }
 
     /**

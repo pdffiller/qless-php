@@ -5,7 +5,7 @@ namespace Qless\Subscribers;
 use Psr\Log\LoggerInterface;
 use Qless\Events\UserEvent;
 use Qless\Signals\SignalHandler;
-use Qless\Workers\SignalAwareInterface;
+use Qless\Workers\WorkerInterface;
 
 /**
  * Qless\Subscribers\SignalsAwareSubscriber
@@ -32,7 +32,7 @@ class SignalsAwareSubscriber
         $this->logger = $logger;
     }
 
-    public function beforeFirstFork(UserEvent $event, SignalAwareInterface $source): void
+    public function beforeFirstFork(UserEvent $event, WorkerInterface $source): void
     {
         /**
          * Do not use declare(ticks=1) instead use pcntl_async_signals(true)
@@ -45,7 +45,7 @@ class SignalsAwareSubscriber
         $this->registerSignalHandler($source);
     }
 
-    public function afterFork(UserEvent $event, SignalAwareInterface $source): void
+    public function afterFork(UserEvent $event, WorkerInterface $source): void
     {
         $this->clearSignalHandler();
     }
@@ -62,10 +62,10 @@ class SignalsAwareSubscriber
      *
      * @link   http://man7.org/linux/man-pages/man7/signal.7.html
      *
-     * @param  SignalAwareInterface $worker
+     * @param  WorkerInterface $worker
      * @return void
      */
-    protected function registerSignalHandler(SignalAwareInterface $worker): void
+    protected function registerSignalHandler(WorkerInterface $worker): void
     {
         $this->logger->info('Register a signal handler that a worker should respond to.');
 

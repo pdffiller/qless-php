@@ -2,30 +2,29 @@
 
 namespace Qless\Jobs;
 
+use Qless\EventsManager;
 use Qless\EventsManagerAwareInterface;
-use Qless\EventsManagerAwareTrait;
 
 /**
  * Qless\Jobs\PerformHandlerFactory
  *
  * @package Qless\Jobs
  */
-final class PerformHandlerFactory implements EventsManagerAwareInterface
+final class PerformHandlerFactory
 {
-    use EventsManagerAwareTrait;
-
     /**
      * Creates a job perform handler.
      *
-     * @param  string $className
+     * @param  string        $className
+     * @param  EventsManager $eventsManager
      * @return PerformAwareInterface
      */
-    public function create(string $className): PerformAwareInterface
+    public function create(string $className, EventsManager $eventsManager): PerformAwareInterface
     {
         $handler = new $className();
 
         if ($handler instanceof EventsManagerAwareInterface) {
-            $handler->setEventsManager($this->getEventsManager());
+            $handler->setEventsManager($eventsManager);
         }
 
         /** @var PerformAwareInterface|EventsManagerAwareInterface $handler */
