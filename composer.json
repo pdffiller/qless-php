@@ -32,7 +32,7 @@
         "ext-pcre": "*",
         "psr/log": "^1",
         "monolog/monolog": "^1.23",
-        "ramsey/uuid": "3.8.*",
+        "ramsey/uuid": "3.7.* || 3.8.*",
         "seld/signal-handler": "1.1.*"
     },
     "conflict": {
