@@ -11,7 +11,7 @@ php:
 matrix:
   fast_finish: true
   allow_failures:
-  - php: master
+    - php: master
 
 services:
   - redis-server
@@ -63,11 +63,13 @@ jobs:
   include:
     - stage: Static Code Analysis
       php: 7.2
+      env: PHPStan
       script:
         - ./vendor/bin/phpstan analyse -l max src bin
     - stage: Static Code Analysis
       php: 7.2
-      install:
+      env: PHP_CodeSniffer
+      before_script:
         - phpenv config-rm xdebug.ini || true
       script:
         - ./vendor/bin/phpcs
