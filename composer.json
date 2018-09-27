@@ -11,6 +11,7 @@
         "message",
         "messages"
     ],
+    "homepage": "https://pdffiller.com/",
     "license": "MIT",
     "authors": [
         {
@@ -64,5 +65,16 @@
         }
     },
     "minimum-stability": "dev",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "support": {
+        "issues": "https://github.com/pdffiller/qless-php/issues"
+    },
+    "bin": [
+        "qlessd"
+    ],
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.0-dev"
+        }
+    }
 }

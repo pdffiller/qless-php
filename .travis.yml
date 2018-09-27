@@ -42,12 +42,12 @@ before_install:
 install:
   - composer install $DEFAULT_COMPOSER_FLAGS
   - chmod +x ./tests/simple-bench
-  - chmod +x ./bin/qlessd
+  - chmod +x ./qlessd
 
 before_script:
   - phpenv which php
   - php -m | grep -e 'json\|pcntl\|posix\|redis\|sockets\|pcre'
-  - ./bin/qlessd --help
+  - ./qlessd --help
   - composer diagnose || true
 
 script:
@@ -65,7 +65,7 @@ jobs:
       php: 7.2
       env: PHPStan
       script:
-        - ./vendor/bin/phpstan analyse -l max src bin
+        - ./vendor/bin/phpstan analyse -l max src
     - stage: Static Code Analysis
       php: 7.2
       env: PHP_CodeSniffer
@@ -75,7 +75,7 @@ jobs:
         - ./vendor/bin/phpcs
     - stage: Benchmark
       php: 7.2
-      install:
+      before_script:
         - phpenv config-rm xdebug.ini || true
       script:
         - ./tests/simple-bench --port $REDIS_PORT --host $REDIS_HOST
