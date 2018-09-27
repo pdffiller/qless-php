@@ -233,7 +233,7 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
         if (@cli_set_process_title($line) === false) {
             if ('Darwin' === PHP_OS) {
                 trigger_error(
-                    'Running "cli_get_process_title" as an unprivileged user is not supported on macOS.',
+                    'Running "cli_set_process_title" as an unprivileged user is not supported on macOS.',
                     E_USER_WARNING
                 );
             } else {
