@@ -69,6 +69,7 @@ HLP;
 
 // Find and initialize Composer
 $autoload = [
+    __DIR__ . '/vendor/autoload.php',
     __DIR__ . '/../vendor/autoload.php',
     __DIR__ . '/../../vendor/autoload.php',
     __DIR__ . '/../../../autoload.php',
