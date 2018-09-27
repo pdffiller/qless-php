@@ -6,7 +6,12 @@ language: php
 php:
   - '7.1'
   - '7.2'
-  - nightly
+  - master
+
+matrix:
+  fast_finish: true
+  allow_failures:
+  - php: master
 
 services:
   - redis-server
@@ -21,17 +26,12 @@ cache:
   directories:
     - $HOME/.composer/cache
     - $HOME/pear
-
-matrix:
-  fast_finish: true
-  allow_failures:
-    - php: nightly
-
 env:
   global:
   - REDIS_HOST="127.0.0.1"
   - REDIS_PORT="6379"
   - REDIS_TIMEOUT="0.0"
+  - DEFAULT_COMPOSER_FLAGS="--no-interaction --no-ansi --no-progress --no-suggest"
 
 before_install:
   - if [[ ! -z "${GH_TOKEN}" ]]; then composer config github-oauth.github.com ${GH_TOKEN}; echo "Configured Github token"; fi;
@@ -40,32 +40,40 @@ before_install:
   - phpenv config-add $TRAVIS_BUILD_DIR/tests/ci/ci.ini
 
 install:
-  - |
-    composer install \
-        --no-interaction \
-        --no-ansi \
-        --no-progress \
-        --no-suggest
+  - composer install $DEFAULT_COMPOSER_FLAGS
   - chmod +x ./tests/simple-bench
   - chmod +x ./bin/qlessd
 
 before_script:
   - phpenv which php
-  - php -v
   - php -m | grep -e 'json\|pcntl\|posix\|redis\|sockets\|pcre'
   - ./bin/qlessd --help
+  - composer diagnose || true
 
 script:
-  - composer diagnose || true
-  - ./vendor/bin/phpcs
-  - ./vendor/bin/phpstan analyse -l max src bin
   - ./vendor/bin/phpunit --disallow-test-output
-  - ./tests/simple-bench --port $REDIS_PORT --host $REDIS_HOST
 
 after_success:
   - if [[ ! -z "${CODECOV_TOKEN}" ]]; then (bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"); fi;
 
 notifications:
-  email:
-    on_success: never
-    on_failure: never
+  email: false
+
+jobs:
+  include:
+    - stage: Static Code Analysis
+      php: 7.2
+      script:
+        - ./vendor/bin/phpstan analyse -l max src bin
+    - stage: Static Code Analysis
+      php: 7.2
+      install:
+        - phpenv config-rm xdebug.ini || true
+      script:
+        - ./vendor/bin/phpcs
+    - stage: Benchmark
+      php: 7.2
+      install:
+        - phpenv config-rm xdebug.ini || true
+      script:
+        - ./tests/simple-bench --port $REDIS_PORT --host $REDIS_HOST
