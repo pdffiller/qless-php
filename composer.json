@@ -26,12 +26,12 @@
         "php": ">=7.1 <8.0",
         "ext-json": "*",
         "ext-pcntl": "*",
+        "ext-pcre": "*",
         "ext-posix": "*",
         "ext-redis": "*",
         "ext-sockets": "*",
-        "ext-pcre": "*",
-        "psr/log": "^1",
         "monolog/monolog": "^1.23",
+        "psr/log": "^1",
         "ramsey/uuid": "3.7.* || 3.8.*",
         "seld/signal-handler": "1.1.*"
     },
@@ -40,10 +40,12 @@
     },
     "require-dev": {
         "infection/infection": "0.10.*",
-
         "phpstan/phpstan": "0.10.*",
         "phpunit/phpunit": ">=5.3 <8.0",
         "squizlabs/php_codesniffer": "3.*"
+    },
+    "suggest": {
+        "ext-proctitle": "Needed to support setting process title as an unprivileged user on macOS"
     },
     "config": {
         "optimize-autoloader": true,

@@ -26,8 +26,8 @@ $defaults = [
     'db'       => getenv('REDIS_BACKEND_DB') ?: null,
     'queue'    => getenv('QUEUE') ?: null,
     'include'  => getenv('APP_INCLUDE') ?: null,
-    'log-name' => getenv('LOG_NAME') ?: 'QLESS',
-    'debug'    => getenv('DEBUG') ?: getenv('VERBOSE') ?? getenv('VVERBOSE'),
+    'log-name' => getenv('LOG_NAME') ?: 'qless',
+    'debug'    => getenv('DEBUG') || getenv('VERBOSE') || getenv('VVERBOSE') || null,
     'help'     => null,
 ];
 

@@ -87,15 +87,20 @@ final class ForkingWorker extends AbstractWorker
             ['type' => $this->who, 'queues' => implode(', ', $this->reserver->getQueues())]
         );
 
-        $did_work = false;
+        $didWork = false;
         $this->reserver->beforeWork();
 
-        while ($this->isShuttingDown() == false) {
+        while (true) {
+            // Don't wait on any processes if we're already in shutdown mode.
+            if ($this->isShuttingDown() == true) {
+                break;
+            }
+
             while ($this->paused) {
                 usleep(250000);
             }
 
-            if ($did_work) {
+            if ($didWork) {
                 $this->title(
                     sprintf(
                         'Waiting for %s with interval %d sec',
@@ -103,7 +108,7 @@ final class ForkingWorker extends AbstractWorker
                         $this->interval
                     )
                 );
-                $did_work = false;
+                $didWork = false;
             }
 
             $job = $this->reserve();
@@ -165,7 +170,7 @@ final class ForkingWorker extends AbstractWorker
             $this->sockets  = [];
             $this->setCurrentJob(null);
             $this->logContext['job.identifier'] = null;
-            $did_work = true;
+            $didWork = true;
 
             /**
              * We need to reconnect due to bug in Redis library that always sends QUIT on destruction of \Redis
