@@ -68,18 +68,14 @@ HLP;
 }
 
 // Find and initialize Composer
-$autoload = [
-    __DIR__ . '/vendor/autoload.php',
-    __DIR__ . '/../vendor/autoload.php',
-    __DIR__ . '/../../vendor/autoload.php',
-    __DIR__ . '/../../../autoload.php',
-    __DIR__ . '/../../../../autoload.php',
-];
+foreach (['/', '/../../../'] as $path) {
+    if (class_exists('Composer\Autoload\ClassLoader', false) == true) {
+        break;
+    }
 
-foreach ($autoload as $file) {
+    $file = __DIR__ . "{$path}vendor/autoload.php";
     if (file_exists($file)) {
         require_once $file;
-        break;
     }
 }
 
