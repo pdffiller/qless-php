@@ -14,7 +14,6 @@ final class Redis
 {
     private const DEFAULT_HOST = '127.0.0.1';
     private const DEFAULT_PORT = 6379;
-    private const DEFAULT_DATABASE = 0;
     private const DEFAULT_TIMEOUT = 0.0;
     private const VALID_SCHEMES = ['redis', 'tcp', 'unix'];
 
@@ -169,7 +168,7 @@ final class Redis
         $port = (int) $parts['port'] ?? self::DEFAULT_PORT;
 
         // Get the database from the 'path' part of the URI.
-        $database = self::DEFAULT_DATABASE;
+        $database = null;
         if (isset($parts['path'])) {
             // Strip non-digit chars from path.
             $database = (int) preg_replace('/[^0-9]/', '', $parts['path']);

@@ -423,7 +423,10 @@ final class Job implements EventsManagerAwareInterface
                 $instance->tearDown();
             }
         } catch (\Throwable $e) {
-            $this->fail('system:fatal', $e->getMessage());
+            $this->fail(
+                'system:fatal',
+                sprintf('%s: %s in %s on line %d', get_class($e), $e->getMessage(), $e->getFile(), $e->getLine())
+            );
 
             return false;
         }

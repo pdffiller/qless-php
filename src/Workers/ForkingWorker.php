@@ -282,11 +282,11 @@ final class ForkingWorker extends AbstractWorker
             $handler = new ErrorFormatter();
 
             return sprintf(
-                '[%s] %s:%d %s',
+                '%s: %s in %s on line %d',
                 $handler->constant($error['type']) ?: 'Unknown',
+                $error['message'],
                 $error['file'],
-                $error['line'],
-                $error['message']
+                $error['line']
             );
         }
 
@@ -391,9 +391,12 @@ final class ForkingWorker extends AbstractWorker
             $this->logger->notice('{type}: job {job} has finished', $context);
         } catch (\Throwable $e) {
             $context['stack'] = $e->getMessage();
-
             $this->logger->critical('{type}: job {job} has failed {stack}', $context);
-            $job->fail('system:fatal', $e->getMessage());
+
+            $job->fail(
+                'system:fatal',
+                sprintf('%s: %s in %s on line %d', get_class($e), $e->getMessage(), $e->getFile(), $e->getLine())
+            );
         }
     }
 
