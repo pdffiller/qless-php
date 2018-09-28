@@ -1,17 +1,21 @@
-sudo: false
-dist: trusty
+sudo: required
+dist: xenial
 
 language: php
-
 php:
-  - '7.1'
+  - '7.3.0RC1'
   - '7.2'
-  - master
+  - '7.1'
 
 matrix:
   fast_finish: true
   allow_failures:
-    - php: master
+    - php: '7.3.0RC1'
+
+addons:
+  apt:
+    packages:
+      - libzip4
 
 services:
   - redis-server
@@ -41,16 +45,16 @@ before_install:
 
 install:
   - composer install $DEFAULT_COMPOSER_FLAGS
-  - chmod +x ./tests/simple-bench
-  - chmod +x ./qlessd
 
 before_script:
   - phpenv which php
+  - php --v
   - php -m | grep -e 'json\|pcntl\|posix\|redis\|sockets\|pcre'
-  - ./qlessd --help
   - composer diagnose || true
+  - chmod +x ./qlessd
 
 script:
+  - ./qlessd --help
   - ./vendor/bin/phpunit --disallow-test-output
 
 after_success:
@@ -78,4 +82,6 @@ jobs:
       before_script:
         - phpenv config-rm xdebug.ini || true
       script:
+        - chmod +x ./tests/simple-bench
         - ./tests/simple-bench --port $REDIS_PORT --host $REDIS_HOST
+
