@@ -23,13 +23,6 @@ services:
 git:
   depth: 1
 
-cache:
-  apt: true
-  ccache: true
-  timeout: 604800
-  directories:
-    - $HOME/.composer/cache
-    - $HOME/pear
 env:
   global:
   - REDIS_HOST="127.0.0.1"
@@ -40,8 +33,7 @@ env:
 before_install:
   - if [[ ! -z "${GH_TOKEN}" ]]; then composer config github-oauth.github.com ${GH_TOKEN}; echo "Configured Github token"; fi;
   - ulimit -c unlimited -S || true
-  - bash tests/ci/pear_setup.sh
-  - phpenv config-add $TRAVIS_BUILD_DIR/tests/ci/ci.ini
+  - echo "extension=redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
 
 install:
   - composer install $DEFAULT_COMPOSER_FLAGS
