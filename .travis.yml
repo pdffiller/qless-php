@@ -24,6 +24,13 @@ services:
 git:
   depth: 1
 
+cache:
+  apt: true
+  ccache: true
+  timeout: 604800
+  directories:
+    - $HOME/.composer/cache
+
 env:
   global:
   - REDIS_HOST="127.0.0.1"
