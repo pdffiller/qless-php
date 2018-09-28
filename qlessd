@@ -26,29 +26,29 @@ if (version_compare('7.1.0', PHP_VERSION, '>')) {
 
 // First off, read the arguments
 $options = [
-    'dsn:'      => 'The Redis backend. Can have simple "host:port" format or use a DSN-style format [default: 127.0.0.1]',
-    'db:'       => 'The Redis database index [default: 0]',
-    'queue:'    => 'A list of queues to work',
-    'include:'  => 'A PHP file to include before Qless initialization',
+    'dsn:' => 'The Redis backend. Can have simple "host:port" format or use a DSN-style format [default: 127.0.0.1]',
+    'db:' => 'The Redis database index [default: 0]',
+    'queue:' => 'A list of queues to work',
+    'prepend:' => "A PHP file to include before Composer's autoloader" ,
     'log-name:' => 'Fallback logger name [default: QLESS]',
-    'help'      => 'Show this help message',
-    'debug'     => 'Use verbose logging',
+    'help' => 'Show this help message',
+    'debug' => 'Use verbose logging',
 ];
 
 $defaults = [
-    'dsn'      => getenv('REDIS_BACKEND') ?: '127.0.0.1',
-    'db'       => getenv('REDIS_BACKEND_DB') ?: null,
-    'queue'    => getenv('QUEUE') ?: null,
-    'include'  => getenv('APP_INCLUDE') ?: null,
+    'dsn' => getenv('REDIS_BACKEND') ?: '127.0.0.1',
+    'db' => getenv('REDIS_BACKEND_DB') ?: null,
+    'queue' => getenv('QUEUE') ?: null,
+    'prepend' => getenv('APP_PREPEND') ?: null,
     'log-name' => getenv('LOG_NAME') ?: 'qless',
-    'debug'    => getenv('DEBUG') || getenv('VERBOSE') || getenv('VVERBOSE') || null,
-    'help'     => null,
+    'debug' => getenv('DEBUG') || getenv('VERBOSE') || getenv('VVERBOSE') || null,
+    'help' => null,
 ];
 
 $config = array_merge($defaults, getopt('', array_keys($options)));
 
 if ($config['help'] !== null) {
-    $banner =<<<HLP
+    $banner = <<<HLP
 Qless PHP
 
 Usage:
@@ -61,19 +61,37 @@ HLP;
     fprintf(STDOUT, $banner);
     foreach (array_keys($config) as $param) {
         $help = isset($options[$param]) ? $options[$param] : $options["{$param}:"];
-        $value = array_key_exists("{$param}:", $options) ? '=' .strtoupper($param) : '';
+        $value = array_key_exists("{$param}:", $options) ? '=' . strtoupper($param) : '';
         fprintf(STDOUT, "  --%-22s %s\n", $param . $value, $help);
     }
     exit(0);
 }
 
+if (empty($config['queue']) == true) {
+    die ('Set QUEUE env var containing the list of queues to work or use "--queue" option.' . PHP_EOL);
+}
+
+if (empty($config['prepend']) == false) {
+    foreach (explode(',', $config['prepend']) as $file) {
+        if (file_exists($file) == false) {
+            die ("prepend file ({$file}) does not exist." . PHP_EOL);
+        }
+
+        require_once $file;
+    }
+}
+
 // Find and initialize Composer
-foreach (['/', '/../../../'] as $path) {
+$autoload = [
+    __DIR__ . '/vendor/autoload.php',
+    __DIR__ . '/../../../vendor/autoload.php'
+];
+
+foreach ($autoload as $file) {
     if (class_exists('Composer\Autoload\ClassLoader', false) == true) {
         break;
     }
 
-    $file = __DIR__ . "{$path}vendor/autoload.php";
     if (file_exists($file)) {
         require_once $file;
     }
@@ -87,17 +105,7 @@ if (class_exists('Composer\Autoload\ClassLoader', false) == false) {
     );
 }
 
-if (empty($config['queue']) == true) {
-    die ('Set QUEUE env var containing the list of queues to work or use "--queue" option.' . PHP_EOL);
-}
-
-if (empty($config['include']) == false) {
-    if (file_exists($config['include']) == false) {
-        die ("Include file ({$config['include']}) does not exist.". PHP_EOL);
-    }
-}
-
-// See if the APP_INCLUDE contains a logger object.
+// See if the APP_PREPEND contains a logger object.
 // If none exists, fallback to internal logger.
 if (!isset($logger) || $logger instanceof Logger == false) {
     $logger = new Logger(
@@ -131,7 +139,7 @@ if (count($logger->getHandlers()) == 0) {
 $logger->info('Start initializing qlessd...');
 
 // Create a client
-$client = new Client($config['dsn'], empty($config['db']) ? null : (int) $config['db']);
+$client = new Client($config['dsn'], empty($config['db']) ? null : (int)$config['db']);
 
 // Get the queues to use
 $queues = array_map(function (string $name) use ($client) {
