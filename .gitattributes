@@ -1,22 +1,28 @@
-Makefile             text eol=lf linguist-language=Makefile linguist-vendored=false
+Makefile               text eol=lf linguist-language=Makefile linguist-vendored=false
 
-*.xml.dist           text eol=lf linguist-language=XML
-*.json               text eol=lf linguist-generated=false linguist-language=JSON linguist-vendored=false
+*.xml.dist             text eol=lf linguist-language=XML
+*.json                 text eol=lf linguist-generated=false linguist-language=JSON linguist-vendored=false
+*.json.dist            text eol=lf linguist-language=JSON linguist-vendored=false
 
-*.lua                text eol=lf linguist-language=Lua linguist-vendored=false
-*.php                text eol=lf linguist-language=PHP linguist-vendored=false
+*.lua                  text eol=lf linguist-language=Lua linguist-vendored=false
+*.php                  text eol=lf linguist-language=PHP linguist-vendored=false
 
-README.md            text eol=lf linguist-language=Markdown linguist-documentation
-CONTRIBUTING.md      text eol=lf linguist-language=Markdown linguist-documentation
-*.md                 text eol=lf linguist-language=Markdown linguist-documentation
-LICENSE.txt          text eol=lf linguist-documentation
-AUTHORS              text eol=lf linguist-documentation
-TODO                 text eol=lf linguist-documentation
+README.md              text eol=lf linguist-language=Markdown linguist-documentation
+CONTRIBUTING.md        text eol=lf linguist-language=Markdown linguist-documentation
+*.md                   text eol=lf linguist-language=Markdown linguist-documentation
+LICENSE.txt            text eol=lf linguist-documentation
+AUTHORS                text eol=lf linguist-documentation
+TODO                   text eol=lf linguist-documentation
 
-.editorconfig        text eol=lf linguist-vendored
-.gitignore           text eol=lf linguist-vendored=false
-.gitattributes       text eol=lf linguist-vendored=false
-.gitmodules          text eol=lf linguist-vendored=false
-.travis.yml          text eol=lf linguist-language=YAML linguist-vendored=false
-phpstan.neon         text eol=lf linguist-language=YAML linguist-vendored=false
-infection.json.dist  text eol=lf linguist-language=JSON linguist-vendored=false
+.editorconfig          text eol=lf linguist-vendored
+.gitignore             text eol=lf linguist-vendored=false
+.gitattributes         text eol=lf linguist-vendored=false
+.gitmodules            text eol=lf linguist-vendored=false
+.travis.yml            text eol=lf linguist-language=YAML linguist-vendored=false
+phpstan.neon           text eol=lf linguist-language=YAML linguist-vendored=false
+
+Dockerfile.            text eol=lf linguist-language=Dockerfile linguist-vendored=false
+Dockerfile.*           text eol=lf linguist-language=Dockerfile linguist-vendored=false
+docker-compose.yml     text eol=lf linguist-language=YAML linguist-vendored=false
+
+adm/supervisord/*.conf text eol=lf linguist-language=INI linguist-vendored=false
