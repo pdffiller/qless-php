@@ -141,9 +141,12 @@ $logger->info('Start initializing qlessd...');
 // Create a client
 $client = new Client($config['dsn'], empty($config['db']) ? null : (int)$config['db']);
 
-// Get the queues to use
-$queues = array_map(function (string $name) use ($client) {
-    return new Queue(trim($name), $client);
+/**
+ * Get the queues you use.
+ * @var \Qless\Queues\Queue[] $queues
+ */
+$queues = array_map(function (string $name) use ($client): Queue {
+    return $client->queues[trim($name)];
 }, explode(',', $config['queue']));
 
 // Create a job reserver; different reservers use different

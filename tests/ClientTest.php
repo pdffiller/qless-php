@@ -9,6 +9,7 @@ use Qless\Queues\Queue;
 use Qless\Subscribers\QlessCoreSubscriber;
 use Qless\Tests\Support\RedisAwareTrait;
 use Qless\Workers\Collection as WorkersCollection;
+use Qless\Queues\Collection as QueuesCollection;
 
 /**
  * Qless\Tests\ClientTest
@@ -84,6 +85,7 @@ WRK;
             ['config',  Config::class],
             ['lua',     LuaScript::class],
             ['workers', WorkersCollection::class],
+            ['queues',  QueuesCollection::class],
         ];
     }
 

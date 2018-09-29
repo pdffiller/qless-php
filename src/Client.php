@@ -6,6 +6,7 @@ use Qless\Exceptions\UnknownPropertyException;
 use Qless\Jobs\Collection as JobsCollection;
 use Qless\Subscribers\QlessCoreSubscriber;
 use Qless\Workers\Collection as WorkersCollection;
+use Qless\Queues\Collection as QueuesCollection;
 
 /**
  * Qless\Client
@@ -39,6 +40,7 @@ use Qless\Workers\Collection as WorkersCollection;
  *
  * @property-read JobsCollection $jobs
  * @property-read WorkersCollection $workers
+ * @property-read QueuesCollection $queues
  * @property-read Config $config
  * @property-read LuaScript $lua
  */
@@ -57,6 +59,9 @@ class Client implements EventsManagerAwareInterface
 
     /** @var WorkersCollection */
     private $workers;
+
+    /** @var QueuesCollection */
+    private $queues;
 
     /** @var Redis */
     private $redis;
@@ -86,6 +91,7 @@ class Client implements EventsManagerAwareInterface
         $this->config = new Config($this);
         $this->jobs = new JobsCollection($this);
         $this->workers = new WorkersCollection($this);
+        $this->queues = new QueuesCollection($this);
     }
 
     /**
@@ -150,9 +156,6 @@ class Client implements EventsManagerAwareInterface
     /**
      * Gets the internal Client's properties.
      *
-     * Do not call this method directly as it is a PHP magic method that
-     * will be implicitly called when executing `$value = $job->property;`.
-     *
      * @param  string $name
      * @return mixed
      *
@@ -165,6 +168,8 @@ class Client implements EventsManagerAwareInterface
                 return $this->jobs;
             case 'workers':
                 return $this->workers;
+            case 'queues':
+                return $this->queues;
             case 'config':
                 return $this->config;
             case 'lua':
