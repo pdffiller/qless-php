@@ -13,7 +13,6 @@ use Qless\Jobs\Job;
 use Qless\Jobs\PerformAwareInterface;
 use Qless\Jobs\PerformHandlerFactory;
 use Qless\Jobs\Reservers\ReserverInterface;
-use Qless\Workers\Traits\ShutdownAwareTrait;
 
 /**
  * Qless\Workers\AbstractWorker
@@ -22,7 +21,7 @@ use Qless\Workers\Traits\ShutdownAwareTrait;
  */
 abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInterface
 {
-    use EventsManagerAwareTrait, ShutdownAwareTrait;
+    use EventsManagerAwareTrait;
 
     /**
      * The interval for checking for new jobs.
@@ -88,6 +87,13 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     protected $performHandlerFactory;
 
     /**
+     * Is the worker has been halted.
+     *
+     * @var bool
+     */
+    private $shutdown = false;
+
+    /**
      * Worker constructor.
      *
      * @param ReserverInterface $reserver
@@ -115,6 +121,26 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     final public function setCurrentJob(Job $job = null): void
     {
         $this->job = $job;
+    }
+
+    /**
+     * Make a worker as a halted.
+     *
+     * @return void
+     */
+    protected function doShutdown(): void
+    {
+        $this->shutdown = true;
+    }
+
+    /**
+     * If the worker has been halted.
+     *
+     * @return bool
+     */
+    protected function isShuttingDown(): bool
+    {
+        return $this->shutdown;
     }
 
     /**
