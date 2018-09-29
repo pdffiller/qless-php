@@ -9,17 +9,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Introduced `Qless\Jobs\JobHandlerInterface` so that `Worker::registerJobPerformHandler` will require
   that its argument is implements the JobHandlerInterface interface
-- Increased test coverage
 - Added all the required PHP extensions to the Composer's `require` section so that
   now Composer will check dependencies on library installation time
 - Added support of default Worker's `perform` method
 - Added `Qless\Events\QlessCoreEvent` DTO and `Qless\Events\QlessCoreEventFactory` to interact with qless-core events
 - Added `Qless\Client::getWorkerName` to provide default worker name
 - Added ability to select the redis database
+- Added the `Qless\Queues\Collection` for accessing queues lazily
+- Added the `Qless\Workers\Collection` for accessing workers lazily
 - Workers now can set/get its own name via `setName`/`getName`
-- Introduced job reservers (ordered, round robin, shuffled round robin)
-- Introduced basic event system
-- Introduced initial qlessd daemon
+- Added job reservers (ordered, round robin, shuffled round robin)
+- Added basic event system
+- Added initial `qlessd` daemon
 
 ### Changed
 - PHP 5.x is no longer supported. Minimal required version is 7.1
