@@ -13,7 +13,6 @@ services:
   ui:
     image: seomoz/qless-ui:latest
     container_name: qless-ui
-    network_mode: host
     environment:
       - DB_NUM=0
       - REDIS_HOST=redis
