@@ -12,7 +12,6 @@ use Qless\Exceptions\RedisConnectionException;
  */
 final class Redis
 {
-    private const DEFAULT_HOST = '127.0.0.1';
     private const DEFAULT_PORT = 6379;
     private const DEFAULT_TIMEOUT = 0.0;
     private const VALID_SCHEMES = ['redis', 'tcp', 'unix'];
@@ -20,7 +19,7 @@ final class Redis
     /** @var string */
     private $host;
 
-    /** @var int */
+    /** @var ?int */
     private $port;
 
     /** @var ?int */
@@ -83,28 +82,26 @@ final class Redis
      */
     public function connect(): void
     {
-        $connected = $this->driver->connect(
-            $this->host,
-            $this->port,
-            $this->timeout
-        );
-
-        if ($connected == false) {
-            throw new RedisConnectionException('Unable to connect to the Redis server.');
+        try {
+            $this->driver->connect(
+                $this->host,
+                $this->port,
+                $this->timeout
+            );
+        } catch (\RedisException $e) {
+            throw new RedisConnectionException(rtrim($e->getMessage(), '.') . '.', $e->getCode(), $e);
         }
 
         if ($this->password !== null) {
-            $auth = $this->driver->auth($this->password);
-
-            if ($auth == false) {
-                throw new RedisConnectionException('Unable to authenticate the Redis connection using a password.');
+            if ($this->driver->auth($this->password) == false) {
+                throw new RedisConnectionException(
+                    'Unable to authenticate the Redis instance using provided password.'
+                );
             }
         }
 
         if ($this->database !== null) {
-            $selected = $this->driver->select($this->database);
-
-            if ($selected == false) {
+            if ($this->driver->select($this->database) == false) {
                 throw new RedisConnectionException('Unable to select the Redis database.');
             }
         }
@@ -135,13 +132,16 @@ final class Redis
     private function parseDsn(string $dsn)
     {
         if (empty($dsn)) {
-            $dsn = 'redis://' . self::DEFAULT_HOST;
+            // We should not guess and magically connect to a host
+            // that the user did not explicitly specified.
+            // This is why we don not use "127.0.0.1:6379" here.
+            throw new InvalidArgumentException('The Redis connection DSN is empty.');
         }
 
         if (substr($dsn, 0, 7) === 'unix://') {
             return [
                 $dsn,
-                self::DEFAULT_PORT,
+                null,
                 null,
                 null,
                 null,
@@ -153,8 +153,16 @@ final class Redis
 
         // Check the URI scheme.
         if (isset($parts['scheme']) && in_array($parts['scheme'], self::VALID_SCHEMES) == false) {
+            $valid = array_map(function (string $scheme) {
+                return '"' . $scheme  . '://"';
+            }, self::VALID_SCHEMES);
+
             throw new InvalidArgumentException(
-                sprintf('Invalid DSN. Supported schemes are %s.', implode(self::VALID_SCHEMES))
+                sprintf(
+                    'Invalid Redis connection DSN. Supported schemes are: %s, got %s.',
+                    implode(', ', $valid),
+                    '"' . $parts['scheme'] . '://"'
+                )
             );
         }
 
