@@ -193,7 +193,7 @@ final class Redis
             parse_str($parts['query'], $options);
         }
 
-        $host = $parts['host'] ?? self::DEFAULT_HOST;
+        $host = $parts['host'];
 
         $options['timeout'] = isset($options['timeout']) ? (float) $options['timeout'] : self::DEFAULT_TIMEOUT;
 
