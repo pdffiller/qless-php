@@ -1,7 +1,10 @@
 <?php
 
-namespace Qless;
+namespace Qless\Queues;
 
+use Qless\Client;
+use Qless\EventsManagerAwareInterface;
+use Qless\EventsManagerAwareTrait;
 use Qless\Exceptions\ExceptionInterface;
 use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\QlessException;
@@ -11,9 +14,9 @@ use Qless\Jobs\Job;
 use Ramsey\Uuid\Uuid;
 
 /**
- * Qless\Queue
+ * Qless\Queues\Queue
  *
- * @package Qless
+ * @package Qless\Queues
  *
  * @property int $heartbeat get / set the heartbeat timeout for the queue
  */

@@ -3,7 +3,7 @@
 namespace Qless\Tests\Events;
 
 use Qless\Jobs\Job;
-use Qless\Queue;
+use Qless\Queues\Queue;
 use Qless\Tests\QlessTestCase;
 use Qless\Tests\Stubs\JobHandler;
 use Qless\Tests\Stubs\JobSubscriber;

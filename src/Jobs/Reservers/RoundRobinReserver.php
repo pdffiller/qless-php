@@ -4,7 +4,7 @@ namespace  Qless\Jobs\Reservers;
 
 use Qless\Exceptions\InvalidArgumentException;
 use Qless\Jobs\Job;
-use Qless\Queue;
+use Qless\Queues\Queue;
 
 /**
  * Qless\Jobs\Reservers\RoundRobinReserver

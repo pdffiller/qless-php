@@ -254,7 +254,7 @@ final class Job implements EventsManagerAwareInterface
      *
      * Like Queue::put and Queue::move, it accepts a delay, and dependencies.
      *
-     * @see \Qless\Queue::put
+     * @see \Qless\Queues\Queue::put
      *
      * @param  string|null $nextq
      * @param  int         $delay

@@ -3,7 +3,7 @@
 namespace Qless\Tests\Events;
 
 use Qless\Jobs\Reservers\OrderedReserver;
-use Qless\Queue;
+use Qless\Queues\Queue;
 use Qless\Tests\QlessTestCase;
 use Qless\Tests\Stubs\EventsDrivenJobHandler;
 use Qless\Tests\Stubs\JobHandler;

@@ -2,7 +2,7 @@
 
 namespace Qless\Tests\Workers;
 
-use Qless\Queue;
+use Qless\Queues\Queue;
 use Qless\Tests\QlessTestCase;
 use Qless\Workers\Collection;
 

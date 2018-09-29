@@ -5,11 +5,10 @@ namespace Qless\Tests;
 use Qless\Config;
 use Qless\Jobs\Collection as JobsCollection;
 use Qless\LuaScript;
-use Qless\Queue;
+use Qless\Queues\Queue;
 use Qless\Subscribers\QlessCoreSubscriber;
 use Qless\Tests\Support\RedisAwareTrait;
 use Qless\Workers\Collection as WorkersCollection;
-use Redis;
 
 /**
  * Qless\Tests\ClientTest

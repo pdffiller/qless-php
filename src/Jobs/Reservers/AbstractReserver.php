@@ -3,7 +3,7 @@
 namespace  Qless\Jobs\Reservers;
 
 use Qless\Exceptions\InvalidArgumentException;
-use Qless\Queue;
+use Qless\Queues\Queue;
 
 /**
  * Qless\Jobs\Reservers\AbstractReserver

@@ -3,9 +3,9 @@
 namespace Qless\Tests\Jobs\Reservers;
 
 use Qless\Jobs\Job;
-use Qless\Queue;
-use Qless\Tests\QlessTestCase;
 use Qless\Jobs\Reservers\OrderedReserver;
+use Qless\Queues\Queue;
+use Qless\Tests\QlessTestCase;
 
 /**
  * Qless\Tests\Jobs\Reservers\OrderedReserverTest
