@@ -94,6 +94,7 @@ Prerequisite PHP extensions are:
 - [`json`](http://php.net/manual/en/book.json.php)
 - [`pcntl`](http://php.net/manual/en/book.pcntl.php)
 - [`posix`](http://php.net/manual/en/book.pcntl.php)
+- [`pcre`](http://php.net/manual/en/book.pcre.php)
 - [`sockets`](http://php.net/manual/en/book.sockets.php)
 - [`redis`](https://github.com/phpredis/phpredis)
 
@@ -116,6 +117,9 @@ composer update
 NOTE: The `master` branch will always contain the latest _unstable_ version.
 If you wish to check older versions or formal, tagged release, please switch to the relevant
 [release](https://github.com/pdffiller/qless-php/releases).
+
+
+The `adm` directory contains the configuration examples useful for system administrators.
 
 ## Usage
 
@@ -399,7 +403,10 @@ The events available in Qless are:
 
 ### Web Interface
 
-**`@todo`**
+The Qless PHP does not ships with a web app. However there is a resque-inspired web app provided by
+[seomoz/qless](https://github.com/seomoz/qless#web-interface). In addition, you can take advantage of
+[docker based](https://github.com/seomoz/qless-docker) dashboard. We're plan to create a robust and elegant web
+interface using PHP framework, but that task does not have the highest priority.
 
 ### Job Dependencies
 

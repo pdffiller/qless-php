@@ -1,0 +1,43 @@
+version: '3'
+
+services:
+
+  redis:
+    image: redis:3-alpine
+    container_name: qless-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis:/data
+
+  ui:
+    image: seomoz/qless-ui:latest
+    container_name: qless-ui
+    network_mode: host
+    environment:
+      - DB_NUM=0
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
+    ports:
+      - "9001:9000"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.development
+    command: tail -f /dev/null
+    container_name: qless-app
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_TIMEOUT=0.0
+    depends_on:
+      - redis
+    volumes:
+      - ../../.:/app
+
+volumes:
+  redis:
+    driver: local

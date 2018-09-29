@@ -1,0 +1,19 @@
+FROM php:7.2-alpine
+
+LABEL maintainer="Serghei Iakovlev <i.serghei@pdffiller.com>"
+
+RUN apk update \
+    && apk upgrade \
+    && apk add --no-cache --update --virtual buildDeps ${PHPIZE_DEPS} \
+    && printf "\n" | pecl install redis \
+    && echo extension=$(php-config --extension-dir)/redis.so > ${PHP_INI_DIR}/redis.ini \
+    && docker-php-ext-install sockets \
+    && docker-php-ext-install pcntl \
+    && php -m \
+    && apk del buildDeps \
+    && rm -rf \
+        /var/cache/apk/* \
+        /tmp/* \
+    && find /var/log -type f | while read f; do echo -ne '' > ${f} >/dev/null 2>&1 || true; done
+
+WORKDIR /app
