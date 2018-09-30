@@ -24,6 +24,11 @@ services:
 git:
   depth: 1
 
+branches:
+  only:
+    - master
+    - development
+
 cache:
   apt: true
   ccache: true

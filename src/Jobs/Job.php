@@ -8,6 +8,7 @@ use Qless\EventsManagerAwareTrait;
 use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\LostLockException;
 use Qless\Exceptions\QlessException;
+use Qless\Exceptions\RuntimeException;
 use Qless\Exceptions\UnknownPropertyException;
 
 /**
@@ -22,7 +23,7 @@ use Qless\Exceptions\UnknownPropertyException;
  * @property-read array $history
  * @property-read string[] $dependencies
  * @property-read string[] $dependents
- * @property-read int $priority
+ * @property int $priority
  * @property-read string $worker
  * @property-read string[] $tags
  * @property-read float $expires
@@ -133,6 +134,7 @@ final class Job implements EventsManagerAwareInterface
     /** @var array */
     private $rawData;
 
+    /** @var JobFactory */
     private $jobFactory;
 
     /**
@@ -206,6 +208,46 @@ final class Job implements EventsManagerAwareInterface
                 return $this->retries;
             default:
                 throw new UnknownPropertyException('Getting unknown property: ' . self::class . '::' . $name);
+        }
+    }
+
+    /**
+     * The magic setter to update Job's properties.
+     *
+     * @todo Recurring Job may have update all fields.
+     *
+     * @param  string $name
+     * @param  mixed  $value
+     * @return void
+     *
+     * @throws QlessException
+     * @throws RuntimeException
+     * @throws UnknownPropertyException
+     */
+    public function __set(string $name, $value)
+    {
+        switch ($name) {
+            case 'priority':
+                $this->setJobPriority($value);
+                break;
+            default:
+                throw new UnknownPropertyException('Setting unknown property: ' . self::class . '::' . $name);
+        }
+    }
+
+    /**
+     * Sets Job's priority.
+     *
+     * @param  int $priority
+     * @return void
+     *
+     * @throws QlessException
+     * @throws RuntimeException
+     */
+    private function setJobPriority(int $priority): void
+    {
+        if ($this->client->call('priority', $this->jid, $priority)) {
+            $this->priority = $priority;
         }
     }
 
