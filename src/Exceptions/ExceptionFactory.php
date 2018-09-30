@@ -15,9 +15,9 @@ class ExceptionFactory
      * Factory method to create an exception instance from an error message.
      *
      * @param  string $error
-     * @return ExceptionInterface
+     * @return InvalidJobException|JobLostException|QlessException
      */
-    public static function fromErrorMessage(string $error): ExceptionInterface
+    public static function fromErrorMessage(string $error): QlessException
     {
         $area = null;
         $message = $error;

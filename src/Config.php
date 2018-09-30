@@ -2,7 +2,7 @@
 
 namespace Qless;
 
-use Qless\Exceptions\ExceptionInterface;
+use Qless\Exceptions\QlessException;
 
 /**
  * Qless\Config
@@ -25,13 +25,13 @@ class Config
     }
 
     /**
-     * Gets the value for the specified config name, falling back to the default if it does not exist
+     * Gets the value for the specified config name, falling back to the default if it does not exist.
      *
-     * @param string $name
-     * @param mixed $default
+     * @param  string $name
+     * @param  mixed $default
      * @return mixed|null
      *
-     * @throws ExceptionInterface
+     * @throws QlessException
      */
     public function get(string $name, $default = null)
     {
@@ -41,27 +41,28 @@ class Config
     }
 
     /**
-     * Sets the config name to the specified value
+     * Sets the config name to the specified value.
      *
-     * @param string          $name
-     * @param string|int|bool $value
+     * @param  string          $name
+     * @param  string|int|bool $value
+     * @return void
      *
-     * @throws ExceptionInterface
+     * @throws QlessException
      */
-    public function set(string $name, $value)
+    public function set(string $name, $value): void
     {
         $this->client->call('config.set', $name, $value);
     }
 
     /**
-     * Clears the specified config name
+     * Clears the specified config name.
      *
      * @param string $name
      * @return void
      *
-     * @throws ExceptionInterface
+     * @throws QlessException
      */
-    public function clear($name)
+    public function clear($name): void
     {
         $this->client->call('config.unset', $name);
     }

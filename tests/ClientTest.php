@@ -110,7 +110,7 @@ WRK;
      * @param int    $expires
      * @param array  $data
      *
-     * @throws \Qless\Exceptions\ExceptionInterface
+     * @throws \Qless\Exceptions\QlessException
      */
     public function shouldGetTheNextJobOnTheDesiredQueue(
         string $qName,

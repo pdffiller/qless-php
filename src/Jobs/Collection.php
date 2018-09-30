@@ -4,7 +4,7 @@ namespace  Qless\Jobs;
 
 use ArrayAccess;
 use Qless\Client;
-use Qless\Exceptions\ExceptionInterface;
+use Qless\Exceptions\QlessException;
 use Qless\Exceptions\UnsupportedFeatureException;
 
 /**
@@ -30,9 +30,8 @@ class Collection implements ArrayAccess
     /**
      * Return a paginated list of JIDs which are in a completed state
      *
-     * @param int $offset
-     * @param int $count
-     *
+     * @param  int $offset
+     * @param  int $count
      * @return string[]
      */
     public function completed(int $offset = 0, int $count = 25)
@@ -43,13 +42,12 @@ class Collection implements ArrayAccess
     /**
      * Return a {@see Job} instance for the specified job identifier or null if the job does not exist
      *
-     * @param string $jid the job identifier to fetch
-     *
+     * @param  string $jid the job identifier to fetch
      * @return Job|null
      *
-     * @throws ExceptionInterface
+     * @throws QlessException
      */
-    public function get(string $jid)
+    public function get(string $jid): ?Job
     {
         return $this->offsetGet($jid);
     }
@@ -57,8 +55,7 @@ class Collection implements ArrayAccess
     /**
      * Returns an array of jobs for the specified job identifiers, keyed by job identifier
      *
-     * @param string[] $jids
-     *
+     * @param  string[] $jids
      * @return Job[]
      */
     public function multiget(array $jids): array
@@ -135,7 +132,7 @@ class Collection implements ArrayAccess
      * @param  string $jid
      * @return Job|null
      *
-     * @throws ExceptionInterface
+     * @throws QlessException
      */
     public function offsetGet($jid)
     {

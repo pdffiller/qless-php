@@ -11,7 +11,7 @@ use Throwable;
  *
  * @package Qless\Exceptions
  */
-class QlessException extends RuntimeException implements ExceptionInterface
+class QlessException extends RuntimeException
 {
     /** @var string|null */
     protected $area;

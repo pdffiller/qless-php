@@ -5,7 +5,6 @@ namespace Qless\Queues;
 use Qless\Client;
 use Qless\EventsManagerAwareInterface;
 use Qless\EventsManagerAwareTrait;
-use Qless\Exceptions\ExceptionInterface;
 use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\QlessException;
 use Qless\Exceptions\RuntimeException;
@@ -62,7 +61,7 @@ class Queue implements EventsManagerAwareInterface
      * @param  string[]|null $depends   A list of JIDs this job must wait on before executing.
      * @return string The job identifier.
      *
-     * @throws ExceptionInterface
+     * @throws QlessException
      * @throws RuntimeException
      */
     public function put(
@@ -162,7 +161,7 @@ class Queue implements EventsManagerAwareInterface
      *
      * @return mixed
      *
-     * @throws ExceptionInterface
+     * @throws QlessException
      * @throws RuntimeException
      */
     public function recur(
@@ -252,7 +251,7 @@ class Queue implements EventsManagerAwareInterface
      * @return int
      *
      * @throws UnknownPropertyException
-     * @throws ExceptionInterface
+     * @throws QlessException
      */
     public function __get(string $name)
     {
@@ -267,6 +266,7 @@ class Queue implements EventsManagerAwareInterface
     }
 
     /**
+     * The magic setter to update Queue's properties.
      *
      * @param  string $name
      * @param  mixed  $value
@@ -274,7 +274,7 @@ class Queue implements EventsManagerAwareInterface
      *
      * @throws UnknownPropertyException
      * @throws InvalidArgumentException
-     * @throws ExceptionInterface
+     * @throws QlessException
      */
     public function __set(string $name, $value): void
     {
