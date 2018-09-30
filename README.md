@@ -163,16 +163,21 @@ class MyJobClass
 Now you can access a queue, and add a job to that queue.
 
 ```php
-// This references a new or existing queue 'testing'
-$queue = new Qless\Queue('testing', $client);
+/**
+ * This references a new or existing queue 'testing'.
+ * @var \Qless\Queues\Queue $queue
+ */
+$queue = $client->queues['testing'];
 
 // Let's add a job, with some data. Returns Job ID
 $jid = $queue->put(MyJobClass::class, ['hello' => 'howdy']);
 // $jid here is "696c752a-7060-49cd-b227-a9fcfe9f681b"
 
-// Now we can ask for a job
+/**
+ * Now we can ask for a job.
+ * @var \Qless\Jobs\Job $job
+ */
 $job = $queue->pop();
-// $job here is an array of the Qless\Job instances
 
 // And we can do the work associated with it!
 $job->perform();
@@ -245,15 +250,17 @@ You could write a simple script to do this, for example:
 
 use Qless\Client;
 use Qless\Jobs\Reservers\OrderedReserver;
-use Qless\Queue;
 use Qless\Workers\ForkingWorker;
 
 // Create a client
 $client = new Client();
 
-// Get the queues you use
-$queues = array_map(function (string $name) use ($client) {
-    return new Queue($name, $client);
+/**
+ * Get the queues you use.
+ * @var \Qless\Queues\Queue[] $queues
+ */
+$queues = array_map(function (string $name) use ($client): Queue {
+    return $client->queues[$name];
 }, ['testing', 'testing-2', 'testing-3']);
 
 // Create a job reserver; different reservers use different
@@ -410,7 +417,28 @@ interface using PHP framework, but that task does not have the highest priority.
 
 ### Job Dependencies
 
-**`@todo`**
+Let's say you have one job that depends on another, but the task definitions are fundamentally different.
+You need to bake a turkey, and you need to make stuffing, but you can't make the turkey until the stuffing is made:
+
+```php
+/** @var \Qless\Queues\Queue $queue */
+$queue = $client->queues['cook'];
+
+$jid = $queue->put(MakeStuffing::class, ['lots' => 'of butter']);
+
+$queue->put(
+    MakeTurkey::class,      // The class with the job perform method.
+    ['with' => 'stuffing'], // An array of parameters for job.
+    null,                   // The specified job id, if not a specified, a jid will be generated.
+    null,                   // The specified delay to run job.
+    null,                   // Number of retries allowed.
+    null,                   // A greater priority will execute before jobs of lower priority.
+    null,                   // A list of the job tags.
+    [$jid]                  // A list of JIDs this job must wait on before executing.
+);
+```
+
+When the stuffing job completes, the turkey job is unlocked and free to be processed.
 
 ### Priority
 

@@ -52,7 +52,7 @@ class Queue implements EventsManagerAwareInterface
      * subsequent attempts by that worker to either `heartbeat` or `complete` the
      * job should fail and return `false`.
      *
-     * @param  string        $className The class with the 'performMethod' specified in the data.
+     * @param  string        $className The class with the job perform method.
      * @param  array         $data      An array of parameters for job.
      * @param  string|null   $jid       The specified job id, if not a specified, a jid will be generated.
      * @param  int|null      $delay     The specified delay to run job.

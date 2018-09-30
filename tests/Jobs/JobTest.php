@@ -275,10 +275,32 @@ class JobTest extends QlessTestCase
     {
         $queue = $this->client->queues['test-queue'];
 
-        $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0);
-        $queue->put('SampleJobPerformClass', [], 'jid-2', 0, 0,  0, [], ['jid-1']);
+        $queue->put('SampleJobPerformClass', [], 'jid-1', null, 0);
+        $queue->put('SampleJobPerformClass', [], 'jid-2', null, 0, null, null, ['jid-1']);
 
         $queue->pop()->cancel();
+    }
+
+    /** @test */
+    public function shouldUnlockJobWhenDependenciesIsCompleted()
+    {
+        $queue = $this->client->queues['test-queue'];
+
+        $jid = $queue->put('MakeStuffing', ['lots' => 'of butter'], 'jid-1');
+        $queue->put('MakeTurkey', ['with' => 'stuffing'], 'jid-2', null, null, null, null, [$jid]);
+
+        $stuffingJob = $queue->pop();
+        $turkeyJob = $queue->pop();
+
+        $this->assertEquals(['jid-2'], $stuffingJob->dependents);
+        $this->assertEquals('jid-1', $stuffingJob->jid);
+
+        $this->assertNull($turkeyJob);
+
+        $stuffingJob->complete();
+        $turkeyJob = $queue->pop();
+
+        $this->assertEquals('jid-2', $turkeyJob->jid);
     }
 
     public function testItCanAddTagsToAJobWithNoExistingTags()
