@@ -47,7 +47,7 @@ class QueueTest extends QlessTestCase
     {
         $queue = new Queue('test-queue', $this->client);
 
-        array_map(function(int $id) use ($queue) {
+        array_map(function (int $id) use ($queue): void {
             $queue->put('SampleClass', [], "jid-{$id}");
         }, range(1, 10));
 

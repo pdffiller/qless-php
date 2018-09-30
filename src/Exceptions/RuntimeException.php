@@ -7,6 +7,6 @@ namespace Qless\Exceptions;
  *
  * @package Qless\Exceptions
  */
-class RuntimeException extends \RuntimeException implements ExceptionInterface
+class RuntimeException extends \RuntimeException
 {
 }

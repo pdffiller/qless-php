@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added initial `qlessd` daemon
 
 ### Changed
-- PHP 5.x is no longer supported. Minimal required version is 7.1
+- PHP 5.x no longer supported. Minimal required version is 7.1
 - Updated qless-core
 - Move `Qless\Lua` to the `Qless\LuaScript`
 - Move `Qless\Listener` to the `Qless\Subscribers\QlessCoreSubscriber`
@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Move `Qless\Worker` to the `Qless\Workers\ForkingWorker`
 - Move `Qless\Queue` to the `Qless\Queues\Queue`
 - More code quality improvements to follow the SRP. Thus the code base for almost all classes has been changed
-- Move all the exceptions to the common namespace and implement the same `Qless\Exceptions\ExceptionInterface`
+- Move all the exceptions to the common `Qless\Exceptions` namespace
 - Changed `Qless\Queues\Queue::put` signature from the `put($className, $jid, $data, ...)`
   to the `put(string className, array $data, ?string $jid = null, ...)`
 - Now `Qless\Queues\Queue::pop` does not require the mandatory presence of the worker name as its 1st argument.

@@ -3,7 +3,7 @@
 namespace Qless;
 
 use Qless\Exceptions\ExceptionFactory;
-use Qless\Exceptions\ExceptionInterface;
+use Qless\Exceptions\QlessException;
 use Qless\Exceptions\RuntimeException;
 use Redis;
 
@@ -45,8 +45,8 @@ class LuaScript
      * @param  array  $args
      * @return mixed|null
      *
-     * @throws ExceptionInterface
      * @throws RuntimeException
+     * @throws QlessException
      */
     public function run(string $command, array $args)
     {
@@ -86,7 +86,7 @@ class LuaScript
      * @param  string $error
      * @return void
      *
-     * @throws ExceptionInterface
+     * @throws QlessException
      */
     private function handleError(string $error): void
     {

@@ -7,6 +7,6 @@ namespace Qless\Exceptions;
  *
  * @package Qless\Exceptions
  */
-class InvalidArgumentException extends \InvalidArgumentException implements ExceptionInterface
+class InvalidArgumentException extends \InvalidArgumentException
 {
 }

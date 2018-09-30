@@ -2,11 +2,12 @@
 
 namespace Qless;
 
+use Qless\Exceptions\QlessException;
 use Qless\Exceptions\UnknownPropertyException;
 use Qless\Jobs\Collection as JobsCollection;
+use Qless\Queues\Collection as QueuesCollection;
 use Qless\Subscribers\QlessCoreSubscriber;
 use Qless\Workers\Collection as WorkersCollection;
-use Qless\Queues\Collection as QueuesCollection;
 
 /**
  * Qless\Client
@@ -129,7 +130,7 @@ class Client implements EventsManagerAwareInterface
      * @param  mixed  ...$arguments
      * @return mixed|null
      *
-     * @throws \Qless\Exceptions\ExceptionInterface
+     * @throws QlessException
      */
     public function call(string $command, ...$arguments)
     {
@@ -146,7 +147,7 @@ class Client implements EventsManagerAwareInterface
      * @param  array $arguments
      * @return mixed
      *
-     * @throws \Qless\Exceptions\ExceptionInterface
+     * @throws QlessException
      */
     public function __call(string $command, array $arguments)
     {
