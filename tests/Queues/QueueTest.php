@@ -12,11 +12,12 @@ use Qless\Queues\Queue;
  */
 class QueueTest extends QlessTestCase
 {
-    public function testPutAndPop()
+    /** @test */
+    public function shouldPutAndPopAJob()
     {
         $queue = new Queue('test-queue', $this->client);
 
-        $queue->put('Xxx\Yyy', [], "jid");
+        $queue->put('Xxx\Yyy', [], 'jid');
 
         $job = $queue->pop();
 
@@ -24,13 +25,15 @@ class QueueTest extends QlessTestCase
         $this->assertEquals('jid', $job->jid);
     }
 
-    public function testPutWithFalseJobIDGeneratesUUID()
+    /** @test */
+    public function shouldGenerateAJobIdIfNotProvided()
     {
         $queue = new Queue('test-queue', $this->client);
 
-        $testData = ["performMethod"=>'myPerformMethod',"payload"=>"otherData"];
-        $res = $queue->put('Xxx\Yyy', $testData, null);
-        $this->assertRegExp('/^[[:xdigit:]]{8}-([[:xdigit:]]{4}-){3}[[:xdigit:]]{12}/', $res);
+        $this->assertRegExp(
+            '/^[[:xdigit:]]{8}-([[:xdigit:]]{4}-){3}[[:xdigit:]]{12}/',
+            $queue->put('Xxx\Yyy', [])
+        );
     }
 
     /** @test */
@@ -39,15 +42,16 @@ class QueueTest extends QlessTestCase
         $this->assertNull((new Queue('test-queue', $this->client))->pop());
     }
 
-    public function testQueueLength()
+    /** @test */
+    public function shouldGetTheQueueLength()
     {
         $queue = new Queue('test-queue', $this->client);
-        $testData = ["performMethod"=>'myPerformMethod',"payload"=>"otherData"];
-        foreach (range(1, 10) as $i) {
-            $queue->put('Xxx\Yyy', $testData, "jid-" . $i);
-        }
-        $len = $queue->length();
-        $this->assertEquals(10, $len);
+
+        array_map(function(int $id) use ($queue) {
+            $queue->put('SampleClass', [], "jid-{$id}");
+        }, range(1, 10));
+
+        $this->assertEquals(10, $queue->length());
     }
 
     /** @test */
@@ -62,42 +66,74 @@ class QueueTest extends QlessTestCase
         $this->assertCount(10, $queue->pop(null, 10));
     }
 
-    public function testCorrectOrderOfPushingAndPoppingJobs()
+    /** @test */
+    public function shouldPutAndPopInTheSameOrder()
     {
         $queue = new Queue('test-queue', $this->client);
-        $testData = ["performMethod"=>'myPerformMethod',"payload"=>"otherData"];
-        $jids = array_map(function ($i) {
-            return "jid-$i";
+
+        $putJids = array_map(function (int $id) use ($queue): string {
+            return $queue->put('SampleHandler', [], "jid-{$id}");
         }, range(1, 10));
 
-        foreach ($jids as $jid) {
-            $queue->put('Xxx\Yyy', $testData, $jid);
-        }
 
-        $results = array_map(function () use ($queue) {
+        $popJids = array_map(function () use ($queue): string {
             return $queue->pop()->jid;
-        }, $jids);
+        }, $putJids);
 
-        $this->assertEquals($jids, $results);
+        $this->assertTrue(is_array($putJids));
+        $this->assertTrue(is_array($popJids));
+
+        $this->assertCount(10, $putJids);
+        $this->assertCount(10, $popJids);
+
+        $this->assertEquals($putJids, $popJids);
     }
 
-    public function testHigherPriorityJobsArePoppedSooner()
+    /** @test */
+    public function shouldPutJobWithPriority()
     {
         $queue = new Queue('test-queue', $this->client);
-        $testData = ["performMethod"=>'myPerformMethod',"payload"=>"otherData"];
-        $jids = array_map(function ($i) {
-            return "jid-$i";
+
+        $jid = $queue->put('SampleHandler', [], null, null, null, -10);
+        $job = $queue->pop();
+
+        $this->assertEquals($jid, $job->jid);
+        $this->assertEquals(-10, $job->priority);
+
+        $job->complete();
+
+        $jid = $queue->put('SampleHandler', []);
+        $job = $queue->pop();
+
+        $this->assertEquals($jid, $job->jid);
+        $this->assertEquals(0, $job->priority);
+    }
+
+    /** @test */
+    public function shouldPopJobsWithHigherPriorityFirst()
+    {
+        $queue = new Queue('test-queue', $this->client);
+
+        $putJids = array_map(function (int $id) {
+            return "jid-{$id}";
         }, range(1, 10));
 
-        foreach ($jids as $k => $jid) {
-            $queue->put('Xxx\Yyy', $testData, $jid, 0, 5, $k);
+        shuffle($putJids);
+        foreach ($putJids as $k => $jid) {
+            $queue->put('SampleHandler', [], $jid, null, null, $k);
         }
 
-        $results = array_map(function () use ($queue) {
+        $popJids = array_map(function () use ($queue) {
             return $queue->pop()->jid;
-        }, $jids);
+        }, $putJids);
 
-        $this->assertEquals(array_reverse($jids), $results);
+        $this->assertTrue(is_array($putJids));
+        $this->assertTrue(is_array($popJids));
+
+        $this->assertCount(10, $putJids);
+        $this->assertCount(10, $popJids);
+
+        $this->assertEquals(array_reverse($putJids), $popJids);
     }
 
     public function testRunningJobIsReplaced()
