@@ -52,15 +52,14 @@ class Queue implements EventsManagerAwareInterface
      * subsequent attempts by that worker to either `heartbeat` or `complete` the
      * job should fail and return `false`.
      *
-     * @param string      $className The class with the 'performMethod' specified in the data.
-     * @param array       $data      An array of parameters for job.
-     * @param string|null $jid       The specified job id, if not a specified, a jid will be generated.
-     * @param int         $delay     The specified delay to run job.
-     * @param int         $retries   Number of retries allowed.
-     * @param int         $priority  A greater priority will execute before jobs of lower priority.
-     * @param string[]    $tags
-     * @param string[]    $depends   A list of JIDs this job must wait on before executing
-     *
+     * @param  string        $className The class with the 'performMethod' specified in the data.
+     * @param  array         $data      An array of parameters for job.
+     * @param  string|null   $jid       The specified job id, if not a specified, a jid will be generated.
+     * @param  int|null      $delay     The specified delay to run job.
+     * @param  int|null      $retries   Number of retries allowed.
+     * @param  int|null      $priority  A greater priority will execute before jobs of lower priority.
+     * @param  string[]|null $tags      A list of the job tags.
+     * @param  string[]|null $depends   A list of JIDs this job must wait on before executing.
      * @return string The job identifier.
      *
      * @throws ExceptionInterface
@@ -70,11 +69,11 @@ class Queue implements EventsManagerAwareInterface
         string $className,
         array $data,
         ?string $jid = null,
-        int $delay = 0,
-        int $retries = 5,
-        int $priority = 0,
-        array $tags = [],
-        array $depends = []
+        ?int $delay = null,
+        ?int $retries = null,
+        ?int $priority = null,
+        ?array $tags = null,
+        ?array $depends = null
     ) {
         try {
             $jid = $jid ?: Uuid::uuid4()->toString();
@@ -82,8 +81,7 @@ class Queue implements EventsManagerAwareInterface
             throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
         }
 
-        $putData = json_encode($data, JSON_UNESCAPED_SLASHES);
-        if (empty($putData)) {
+        if (!$putData = json_encode($data, JSON_UNESCAPED_SLASHES)) {
             throw new RuntimeException(
                 sprintf(
                     'Unable to encode payload to put the described job "%s" to the "%s" queue.',
@@ -99,15 +97,15 @@ class Queue implements EventsManagerAwareInterface
             $jid,
             $className,
             $putData,
-            $delay,
+            is_null($delay) ? 0 : $delay,
             'priority',
-            $priority,
+            is_null($priority) ? 0 : $priority,
             'tags',
-            json_encode($tags, JSON_UNESCAPED_SLASHES),
+            json_encode($tags ?: [], JSON_UNESCAPED_SLASHES),
             'retries',
-            $retries,
+            is_null($retries) ? 5 : $retries,
             'depends',
-            json_encode($depends, JSON_UNESCAPED_SLASHES)
+            json_encode($depends ?: [], JSON_UNESCAPED_SLASHES)
         );
 
         $this->getEventsManager()->fire(

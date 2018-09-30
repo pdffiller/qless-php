@@ -260,8 +260,8 @@ class JobTest extends QlessTestCase
     {
         $queue = $this->client->queues['test-queue'];
 
-        $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0);
-        $queue->put('SampleJobPerformClass', [], 'jid-2', 0, 0,  0,  [], ['jid-1']);
+        $queue->put('SampleJobPerformClass', [], 'jid-1', null, 0);
+        $queue->put('SampleJobPerformClass', [], 'jid-2', null, 0, null, null, ['jid-1']);
 
         $this->assertEquals(['jid-1', 'jid-2'], $queue->pop()->cancel(true));
     }
@@ -276,7 +276,7 @@ class JobTest extends QlessTestCase
         $queue = $this->client->queues['test-queue'];
 
         $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0);
-        $queue->put('SampleJobPerformClass', [], 'jid-2', 0, 0,  0,  [], ['jid-1']);
+        $queue->put('SampleJobPerformClass', [], 'jid-2', 0, 0,  0, [], ['jid-1']);
 
         $queue->pop()->cancel();
     }
@@ -296,7 +296,7 @@ class JobTest extends QlessTestCase
     {
         $queue = $this->client->queues['test-queue'];
 
-        $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0,  0, ['1', '2']);
+        $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0, 0, ['1', '2']);
         $queue->pop()->tag('a', 'b');
 
         $data = json_decode($this->client->get('jid-1'));
@@ -307,7 +307,7 @@ class JobTest extends QlessTestCase
     {
         $queue = $this->client->queues['test-queue'];
 
-        $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0,  0, ['1', '2', '3']);
+        $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0, 0, ['1', '2', '3']);
         $queue->pop()->untag('2', '3');
 
         $data = json_decode($this->client->get('jid-1'));
