@@ -2,11 +2,12 @@
 
 namespace Qless\Tests\Stubs;
 
-use Qless\Jobs\Job;
+use Qless\Jobs\BaseJob;
 use Qless\EventsManagerAwareInterface;
 use Qless\EventsManagerAwareTrait;
 use Qless\Events\UserEvent;
 use Qless\Jobs\PerformAwareInterface;
+use Qless\Jobs\RecurringJob;
 
 /**
  * Qless\Tests\Stubs\EventsDrivenJobHandler
@@ -42,10 +43,10 @@ class EventsDrivenJobHandler implements EventsManagerAwareInterface, PerformAwar
     /**
      * {@inheritdoc}
      *
-     * @param Job $job
+     * @param BaseJob|RecurringJob $job
      * @return void
      */
-    public function perform(Job $job): void
+    public function perform(BaseJob $job): void
     {
         $_SERVER['caller']['stack'][] = "{$job->jid}:perform";
 

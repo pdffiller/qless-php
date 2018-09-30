@@ -12,7 +12,7 @@ use Qless\Exceptions\RuntimeException;
 use Qless\Exceptions\UnknownPropertyException;
 
 /**
- * Qless\Jobs\Job
+ * Qless\Jobs\BaseJob
  *
  * @package Qless\Jobs
  *
@@ -30,7 +30,7 @@ use Qless\Exceptions\UnknownPropertyException;
  * @property-read int $remaining
  * @property-read int $retries
  */
-final class Job implements EventsManagerAwareInterface
+class BaseJob implements EventsManagerAwareInterface
 {
     use EventsManagerAwareTrait;
 

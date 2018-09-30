@@ -2,7 +2,7 @@
 
 namespace Qless\Tests\Events;
 
-use Qless\Jobs\Job;
+use Qless\Jobs\BaseJob;
 use Qless\Queues\Queue;
 use Qless\Tests\QlessTestCase;
 use Qless\Tests\Stubs\JobHandler;
@@ -68,7 +68,7 @@ class JobEventsTest extends QlessTestCase
         $this->assertEquals($expected, $job->data->toArray());
     }
 
-    private function popJob(): Job
+    private function popJob(): BaseJob
     {
         $queue = new Queue('testing', $this->client);
         return $queue->pop();

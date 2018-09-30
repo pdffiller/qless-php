@@ -9,7 +9,7 @@ use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\QlessException;
 use Qless\Exceptions\RuntimeException;
 use Qless\Exceptions\UnknownPropertyException;
-use Qless\Jobs\Job;
+use Qless\Jobs\BaseJob;
 use Ramsey\Uuid\Uuid;
 
 /**
@@ -75,7 +75,7 @@ class Queue implements EventsManagerAwareInterface
         ?array $depends = null
     ) {
         try {
-            $jid = $jid ?: Uuid::uuid4()->toString();
+            $jid = $jid ?: str_replace('-', '', Uuid::uuid4()->toString());
         } catch (\Exception $e) {
             throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
         }
@@ -122,7 +122,7 @@ class Queue implements EventsManagerAwareInterface
      * @param string|null $worker  Worker name popping the job.
      * @param int         $numJobs Number of jobs to pop off of the queue.
      *
-     * @return null|Job|Job[]
+     * @return BaseJob|BaseJob[]|null
      *
      * @throws QlessException
      */
@@ -133,7 +133,7 @@ class Queue implements EventsManagerAwareInterface
 
         $jobs = [];
         array_map(function (array $data) use (&$jobs) {
-            $job = new Job($this->client, $data);
+            $job = new BaseJob($this->client, $data);
             $job->setEventsManager($this->getEventsManager());
 
             $jobs[] = $job;

@@ -138,19 +138,19 @@ $client = new Client();
 $client = new Client('127.0.0.99:1234');
 ```
 
-Jobs should be classes that define a `perform` method, which must accept a single `Qless\Job` argument:
+Jobs should be classes that define a `perform` method, which must accept a single `Qless\Jobs\BaseJob` argument:
 
 ```php
-use Qless\Job;
+use Qless\Jobs\BaseJob;
 
 class MyJobClass
 {
     /**
-     * @param Job $job Is an instance of `Qless\Job` and provides access to
-     *                 the payload data via `$job->getData()`, a means to cancel
-     *                 the job (`$job->cancel()`), and more.
+     * @param BaseJob $job Is an instance of `Qless\Jobs\BaseJob` and provides access
+     *                     to the payload data via `$job->getData()`, a means to cancel
+     *                     the job (`$job->cancel()`), and more.
      */
-    public function perform(Job $job): void
+    public function perform(BaseJob $job): void
     {
         // ...
         echo 'Perform ', $job->getId(), ' job', PHP_EOL;
@@ -175,7 +175,7 @@ $jid = $queue->put(MyJobClass::class, ['hello' => 'howdy']);
 
 /**
  * Now we can ask for a job.
- * @var \Qless\Jobs\Job $job
+ * @var \Qless\Jobs\BaseJob $job
  */
 $job = $queue->pop();
 
@@ -340,7 +340,7 @@ Per-job subscribes can defined the same as worker subscribers:
 
 ```php
 use Qless\Events\UserEvent;
-use Qless\Jobs\Job;
+use Qless\Jobs\BaseJob;
 use Qless\Jobs\PerformAwareInterface;
 use My\Database\Connection;
 
@@ -355,7 +355,7 @@ class ReEstablishDBConnection
 
     /**
      * @param UserEvent $event
-     * @param Job|PerformAwareInterface $source
+     * @param BaseJob|PerformAwareInterface $source
      */
     public function beforePerform(UserEvent $event, $source): void
     {
@@ -368,9 +368,7 @@ To add them to a job class, you first have to make your job class events-aware b
 group. To achieve this just implement `setUp` method and subscribe to the desired events:
 
 ```php
-<?php
-
-use Qless\Jobs\Job;
+use Qless\Jobs\BaseJob;
 use Qless\EventsManagerAwareInterface;
 use Qless\EventsManagerAwareTrait;
 
@@ -383,7 +381,7 @@ class EventsDrivenJobHandler implements EventsManagerAwareInterface
         $this->getEventsManager()->attach('job', new ReEstablishDBConnection());
     }
 
-    public function perform(Job $job): void
+    public function perform(BaseJob $job): void
     {
         // ...
 

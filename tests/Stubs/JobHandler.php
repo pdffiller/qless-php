@@ -2,8 +2,9 @@
 
 namespace Qless\Tests\Stubs;
 
-use Qless\Jobs\Job;
+use Qless\Jobs\BaseJob;
 use Qless\Jobs\PerformAwareInterface;
+use Qless\Jobs\RecurringJob;
 
 /**
  * Qless\Tests\Stubs\JobHandler
@@ -15,17 +16,17 @@ class JobHandler implements PerformAwareInterface
     /**
      * {@inheritdoc}
      *
-     * @param  Job $job
+     * @param  BaseJob|RecurringJob $job
      * @return void
      */
-    public function perform(Job $job): void
+    public function perform(BaseJob $job): void
     {
         $job->data['stack'][] = __METHOD__;
 
         $job->complete();
     }
 
-    public function myPerformMethod(Job $job): void
+    public function myPerformMethod(BaseJob $job): void
     {
         $job->complete();
     }

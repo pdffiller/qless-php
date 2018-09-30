@@ -4,7 +4,7 @@ namespace Qless\Workers;
 
 use Psr\Log\LoggerInterface;
 use Qless\Exceptions\RuntimeException;
-use Qless\Jobs\Job;
+use Qless\Jobs\BaseJob;
 
 /**
  * Qless\Workers\WorkerInterface
@@ -57,9 +57,9 @@ interface WorkerInterface
     /**
      * Reserve a job to perform work.
      *
-     * @return null|Job
+     * @return null|BaseJob
      */
-    public function reserve(): ?Job;
+    public function reserve(): ?BaseJob;
 
     /**
      * Starts the worker.

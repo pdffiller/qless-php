@@ -29,11 +29,7 @@ class QueueTest extends QlessTestCase
     public function shouldGenerateAJobIdIfNotProvided()
     {
         $queue = new Queue('test-queue', $this->client);
-
-        $this->assertRegExp(
-            '/^[[:xdigit:]]{8}-([[:xdigit:]]{4}-){3}[[:xdigit:]]{12}/',
-            $queue->put('Xxx\Yyy', [])
-        );
+        $this->assertRegExp('/^[[:xdigit:]]{32}$/', $queue->put('Xxx\Yyy', []));
     }
 
     /** @test */

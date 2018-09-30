@@ -2,7 +2,7 @@
 
 namespace Qless\Tests\Jobs\Reservers;
 
-use Qless\Jobs\Job;
+use Qless\Jobs\BaseJob;
 use Qless\Jobs\Reservers\RoundRobinReserver;
 use Qless\Queues\Queue;
 use Qless\Tests\QlessTestCase;
@@ -33,7 +33,7 @@ class RoundRobinReserverTest extends QlessTestCase
         $_SERVER['performed'] = '';
 
         $class = new class {
-            public function perform(Job $job): void
+            public function perform(BaseJob $job): void
             {
                 $_SERVER['performed'] .= "{$job->data[0]}";
             }

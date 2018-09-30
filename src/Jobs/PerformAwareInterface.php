@@ -12,8 +12,8 @@ interface PerformAwareInterface
     /**
      * The Job perform handler.
      *
-     * @param  Job $job
+     * @param  BaseJob|RecurringJob $job
      * @return void
      */
-    public function perform(Job $job): void;
+    public function perform(BaseJob $job): void;
 }

@@ -2,7 +2,7 @@
 
 namespace  Qless\Jobs\Reservers;
 
-use Qless\Jobs\Job;
+use Qless\Jobs\BaseJob;
 use Qless\Queues\Queue;
 
 /**
@@ -29,9 +29,9 @@ interface ReserverInterface
     /**
      * Reserve a job to perform work.
      *
-     * @return Job|null
+     * @return BaseJob|null
      */
-    public function reserve(): ?Job;
+    public function reserve(): ?BaseJob;
 
     /**
      * Preparing before work.
