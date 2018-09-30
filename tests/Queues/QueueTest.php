@@ -90,7 +90,7 @@ class QueueTest extends QlessTestCase
         }, range(1, 10));
 
         foreach ($jids as $k => $jid) {
-            $queue->put('Xxx\Yyy', $testData, $jid, 0, 5, true, $k);
+            $queue->put('Xxx\Yyy', $testData, $jid, 0, 5, $k);
         }
 
         $results = array_map(function () use ($queue) {
@@ -110,7 +110,7 @@ class QueueTest extends QlessTestCase
 
         $this->assertEquals(
             'jid-1',
-            $queue->put('Xxx\Yyy', [], "jid-1", 0, 5, true)
+            $queue->put('Xxx\Yyy', [], "jid-1")
         );
     }
 
@@ -156,7 +156,7 @@ class QueueTest extends QlessTestCase
 
         $queue->put('Xxx\Yyy', $data, "jid-1");
         $queue->put('Xxx\Yyy', $data, "jid-2");
-        $queue->put('Xxx\Yyy', $data, "jid-high", 0, 0, true, 1);
+        $queue->put('Xxx\Yyy', $data, "jid-high", 0, 0, 1);
         $queue->put('Xxx\Yyy', $data, "jid-3");
 
         $this->assertEquals('jid-high', $queue->pop()->jid);

@@ -380,13 +380,16 @@ final class Job implements EventsManagerAwareInterface
     }
 
     /**
-     * Cancels the specified job and optionally all it's dependents
+     * Cancel a job.
+     *
+     * It will be deleted from the system, the thinking being that if you don't want
+     * to do any work on it, it shouldn't be in the queuing system. Optionally cancels all jobs's dependents.
      *
      * @param bool $dependents true if associated dependents should also be cancelled
      *
-     * @return int
+     * @return array
      */
-    public function cancel($dependents = false)
+    public function cancel($dependents = false): array
     {
         if ($dependents && !empty($this->rawData['dependents'])) {
             return call_user_func_array(

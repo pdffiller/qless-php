@@ -22,7 +22,7 @@ use Qless\Queues\Collection as QueuesCollection;
  * @method int length(string $queue)
  * @method float heartbeat(...$args)
  * @method int retry(string $jid, string $queue, string $worker, int $delay, string $group, string $message)
- * @method int cancel(string $jid)
+ * @method array cancel(string $jid)
  * @method int unrecur(string $jid)
  * @method bool|string fail(string $jid, string $worker, string $group, string $message, ?string $data = null)
  * @method string[] jobs(string $state, int $offset = 0, int $count = 25)

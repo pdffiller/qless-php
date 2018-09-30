@@ -15,7 +15,7 @@ class JobHandler implements PerformAwareInterface
     /**
      * {@inheritdoc}
      *
-     * @param Job $job
+     * @param  Job $job
      * @return void
      */
     public function perform(Job $job): void
