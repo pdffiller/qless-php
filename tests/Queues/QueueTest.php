@@ -136,6 +136,18 @@ class QueueTest extends QlessTestCase
         $this->assertEquals(array_reverse($putJids), $popJids);
     }
 
+    /** @test */
+    public function shouldScheduleJob()
+    {
+        $queue = new Queue('test-queue', $this->client);
+        $queue->put('MyJobClass', ['foo' => 'bar'], null, 1);
+
+        $this->assertNull($queue->pop());
+
+        sleep(1);
+        $this->assertIsJob($queue->pop());
+    }
+
     public function testRunningJobIsReplaced()
     {
         $queue = new Queue('test-queue', $this->client);

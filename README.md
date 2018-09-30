@@ -442,11 +442,48 @@ When the stuffing job completes, the turkey job is unlocked and free to be proce
 
 ### Priority
 
-**`@todo`**
+Some jobs need to get popped sooner than others. Whether it's a trouble ticket, or debugging, you can do this pretty
+easily when you put a job in a queue:
+
+```php
+/** @var \Qless\Queues\Queue $queue */
+$queue->put(MyJobClass::class, ['foo' => 'bar'], null, null, null, 10);
+```
+
+What happens when you want to adjust a job's priority while it's still waiting in a queue?
+
+```php
+/** @var \Qless\Client $client */
+$job = $client->jobs['0c53b0404c56012f69fa482a1427ab7d'];
+
+// Now this will get popped before any job of lower priority.
+$job->priority = 10;
+```
 
 ### Scheduled Jobs
 
-**`@todo`**
+If you don't want a job to be run right away but some time in the future, you can specify a delay:
+
+```php
+/**
+ * Run at least 10 minutes from now.
+ *
+ * @var \Qless\Queues\Queue $queue
+ */
+$queue->put(MyJobClass::class, ['foo' => 'bar'], null, 600);
+```
+
+This doesn't guarantee that job will be run exactly at 10 minutes. You can accomplish this by changing the job's
+priority so that once 10 minutes has elapsed, it's put before lesser-priority jobs:
+
+```php
+/**
+ * Run in 10 minutes.
+ *
+ * @var \Qless\Queues\Queue $queue
+ */
+$queue->put(MyJobClass::class, ['foo' => 'bar'], null, 600, null, 100);
+```
 
 ### Recurring Jobs
 

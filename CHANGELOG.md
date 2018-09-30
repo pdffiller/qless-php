@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added job reservers (ordered, round robin, shuffled round robin)
 - Added basic event system
 - Added initial `qlessd` daemon
+- Added ability to adjust a job's priority while it's still waiting in a queue
 
 ### Changed
 - PHP 5.x no longer supported. Minimal required version is 7.1
