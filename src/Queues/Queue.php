@@ -52,24 +52,14 @@ class Queue implements EventsManagerAwareInterface
      * subsequent attempts by that worker to either `heartbeat` or `complete` the
      * job should fail and return `false`.
      *
-     * The `priority` argument should be negative to be run sooner rather than
-     * later, and positive if it's less important. The `tags` argument should be
-     * a JSON array of the tags associated with the instance and the `valid after`
-     * argument should be in how many seconds the instance should be considered
-     * actionable.
-     *
      * @param string      $className The class with the 'performMethod' specified in the data.
      * @param array       $data      An array of parameters for job.
      * @param string|null $jid       The specified job id, if not a specified, a jid will be generated.
      * @param int         $delay     The specified delay to run job.
      * @param int         $retries   Number of retries allowed.
-     * @param bool        $replace   False to prevent the job from being replaced if it is already running.
      * @param int         $priority  A greater priority will execute before jobs of lower priority.
-     * @param array       $resources A list of resource identifiers this job must acquire before being processed.
-     * @param float       $interval  The minimum number of seconds required to transpire before the next
-     *                               instance of this job can run.
-     * @param array       $tags
-     * @param array       $depends   A list of JIDs this job must wait on before executing
+     * @param string[]    $tags
+     * @param string[]    $depends   A list of JIDs this job must wait on before executing
      *
      * @return string The job identifier.
      *
@@ -80,14 +70,11 @@ class Queue implements EventsManagerAwareInterface
         string $className,
         array $data,
         ?string $jid = null,
-        $delay = 0,
-        $retries = 5,
-        $replace = true,
-        $priority = 0,
-        $resources = [],
-        $interval = 0.0,
-        $tags = [],
-        $depends = []
+        int $delay = 0,
+        int $retries = 5,
+        int $priority = 0,
+        array $tags = [],
+        array $depends = []
     ) {
         try {
             $jid = $jid ?: Uuid::uuid4()->toString();
@@ -120,13 +107,7 @@ class Queue implements EventsManagerAwareInterface
             'retries',
             $retries,
             'depends',
-            json_encode($depends, JSON_UNESCAPED_SLASHES),
-            'resources',
-            json_encode($resources, JSON_UNESCAPED_SLASHES),
-            'replace',
-            $replace ? 1 : 0,
-            'interval',
-            $interval
+            json_encode($depends, JSON_UNESCAPED_SLASHES)
         );
 
         $this->getEventsManager()->fire(
@@ -239,9 +220,9 @@ class Queue implements EventsManagerAwareInterface
      *
      * @param string $jid
      *
-     * @return int
+     * @return array
      */
-    public function cancel(string $jid)
+    public function cancel(string $jid): array
     {
         return $this->client->cancel($jid);
     }

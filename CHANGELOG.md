@@ -38,10 +38,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Now `Qless\Queues\Queue::pop` does not require the mandatory presence of the worker name as its 1st argument.
   If the the worker name is not passed the `Qless\Client::getWorkerName` will be used
 - Now calling `Qless\Queues\Queue::pop` without 2nd argument (number of jobs to pop off of the queue) will return
-  `Qless\Job|null` so that there is no need to play with arrays like `$job[0]->function()`
+  `Qless\Jobs\Job|null` so that there is no need to play with arrays like `$job[0]->function()`
 - Rework Job class to remove no longer needed getters
-- Changed signature of the `Qless\Job::requeue` from `requeue(array $opts = []): string` to
+- Changed signature of the `Qless\Jobs\Job::requeue` from `requeue(array $opts = []): string` to
   `requeue(?string $queue = null, array $opts = []): string` so that there is an ability to move job to a new queue
+- Changed signature of the `Qless\Queues\Queue::put` so that `resources`, `replace` and `interval` no longer used 
 
 ### Removed
 - Fully refactor the `Qless\Client` class and removed no longer used code

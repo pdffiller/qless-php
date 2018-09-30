@@ -3,7 +3,6 @@
 namespace Qless\Tests\Jobs;
 
 use Qless\Jobs\Job;
-use Qless\Queues\Queue;
 use Qless\Tests\QlessTestCase;
 use Qless\Tests\Stubs\JobHandler;
 
@@ -21,12 +20,12 @@ class JobTest extends QlessTestCase
      */
     public function shouldThrowsExpectedExceptionWhenGetInstanceWithNonExistentClass()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
 
         $this->client->config->set('heartbeat', -10);
         $this->client->config->set('grace-period', 0);
 
-        $queue->put('SampleJobPerformClass', ['performMethod' => 'myPerformMethod', 'payload' => 'otherData']);
+        $queue->put('SampleJobPerformClass', []);
 
         $job = $queue->pop();
         $queue->pop();
@@ -41,7 +40,7 @@ class JobTest extends QlessTestCase
      */
     public function shouldThrowsExpectedExceptionWhenGetInstanceWithNonExistentPerformMethod()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
 
         $this->client->config->set('heartbeat', -10);
         $this->client->config->set('grace-period', 0);
@@ -64,7 +63,7 @@ class JobTest extends QlessTestCase
             'Job class "Qless\Tests\Stubs\JobHandler" does not contain perform method "myPerformMethod2".'
         );
 
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
 
         $this->client->config->set('heartbeat', -10);
         $this->client->config->set('grace-period', 0);
@@ -80,7 +79,7 @@ class JobTest extends QlessTestCase
     /** @test */
     public function shouldGetWorkerInstance()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
 
         $this->client->config->set('heartbeat', -10);
         $this->client->config->set('grace-period', 0);
@@ -96,12 +95,12 @@ class JobTest extends QlessTestCase
     /** @test */
     public function shouldGetWorkerInstanceWithDefaultPerformMethod()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
 
         $this->client->config->set('heartbeat', -10);
         $this->client->config->set('grace-period', 0);
 
-        $queue->put(JobHandler::class, ['payload' => 'otherData']);
+        $queue->put(JobHandler::class, []);
 
         $job = $queue->pop();
         $queue->pop();
@@ -116,12 +115,12 @@ class JobTest extends QlessTestCase
      */
     public function shouldThrowIOnCallingHeartbeatForInvalidJob()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
 
         $this->client->config->set('heartbeat', -10);
         $this->client->config->set('grace-period', 0);
 
-        $queue->put('SampleJobPerformClass', ['performMethod' => 'myPerformMethod', 'payload' => 'otherData']);
+        $queue->put('SampleJobPerformClass', []);
 
         $job = $queue->pop('worker-1');
         $queue->pop('worker-2');
@@ -136,7 +135,7 @@ class JobTest extends QlessTestCase
      */
     public function shouldThrowLostLockExceptionWhenHeartbeatFail()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
         $queue->put('Foo', [], 'jid');
 
         $this->client->jobs['jid']->heartbeat();
@@ -145,7 +144,7 @@ class JobTest extends QlessTestCase
     /** @test */
     public function shouldGetCorrectTtl()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
         $queue->put('SampleJobPerformClass', []);
 
         $this->assertGreaterThan(55, $queue->pop()->ttl());
@@ -154,7 +153,7 @@ class JobTest extends QlessTestCase
     /** @test */
     public function shouldCompleteJob()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
         $queue->put('SampleJobPerformClass', []);
 
         $this->assertEquals('complete', $queue->pop()->complete());
@@ -163,8 +162,8 @@ class JobTest extends QlessTestCase
     /** @test */
     public function shouldCompleteJobAndPutItInAnotherQueue()
     {
-        $queue1 = new Queue('test-queue-1', $this->client);
-        $queue2 = new Queue('test-queue-2', $this->client);
+        $queue1 = $this->client->queues['test-queue-1'];
+        $queue2 = $this->client->queues['test-queue-2'];
 
         $queue1->put('SampleJobPerformClass', ['size' => 2]);
 
@@ -190,7 +189,7 @@ class JobTest extends QlessTestCase
     /** @test */
     public function shouldNotPopFailedJob()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
 
         $queue->put('SampleJobPerformClass', [], 'jid');
 
@@ -200,10 +199,9 @@ class JobTest extends QlessTestCase
 
     public function testRetryDoesReturnJobAndDefaultsToFiveRetries()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
 
-        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
-        $queue->put('SampleJobPerformClass', $testData, 'jid');
+        $queue->put('SampleJobPerformClass', [], 'jid');
 
         $job1 = $queue->pop();
         $remaining = $job1->retry('account', 'failed to connect');
@@ -215,7 +213,7 @@ class JobTest extends QlessTestCase
 
     public function testRetryDoesRespectRetryParameterWithOneRetry()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
 
         $queue->put('SampleJobPerformClass', [], 'jid', 0, 1);
 
@@ -225,10 +223,9 @@ class JobTest extends QlessTestCase
 
     public function testRetryDoesReturnNegativeWhenNoMoreAvailable()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
 
-        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
-        $queue->put('SampleJobPerformClass', $testData, 'jid', 0, 0);
+        $queue->put('SampleJobPerformClass', [], 'jid', 0, 0);
 
         $job1 = $queue->pop();
         $remaining = $job1->retry('account', 'failed to connect');
@@ -237,10 +234,9 @@ class JobTest extends QlessTestCase
 
     public function testRetryTransitionsToFailedWhenExhaustedRetries()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
 
-        $testData = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
-        $queue->put('SampleJobPerformClass', $testData, 'jid', 0, 0);
+        $queue->put('SampleJobPerformClass', [], 'jid', 0, 0);
 
         $job = $queue->pop();
         $job->retry('account', 'failed to connect');
@@ -251,12 +247,10 @@ class JobTest extends QlessTestCase
     /** @test */
     public function shouldCancelRemovesJob()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
 
-        $data = ['performMethod' => 'myPerformMethod', 'payload' => 'otherData'];
-
-        $queue->put('SampleJobPerformClass', $data, 'jid-1', 0, 0);
-        $queue->put('SampleJobPerformClass', $data, 'jid-2', 0, 0);
+        $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0);
+        $queue->put('SampleJobPerformClass', [], 'jid-2', 0, 0);
 
         $this->assertEquals(['jid-1'], $queue->pop()->cancel());
     }
@@ -264,34 +258,32 @@ class JobTest extends QlessTestCase
     /** @test */
     public function shouldCancelRemovesJobWithDependents()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
 
-        $data = ['performMethod' => 'myPerformMethod', 'payload' => 'otherData'];
-
-        $queue->put('SampleJobPerformClass', $data, 'jid-1', 0, 0);
-        $queue->put('SampleJobPerformClass', $data, 'jid-2', 0, 0, true, 0, [], 0, [], ['jid-1']);
+        $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0);
+        $queue->put('SampleJobPerformClass', [], 'jid-2', 0, 0,  0,  [], ['jid-1']);
 
         $this->assertEquals(['jid-1', 'jid-2'], $queue->pop()->cancel(true));
     }
 
     /**
+     * @test
      * @expectedException \Qless\Exceptions\QlessException
+     * @expectedExceptionMessage jid-1 is a dependency of jid-2 but is not mentioned to be canceled
      */
-    public function testCancelThrowsExceptionWithDependents()
+    public function shouldThrowExceptionOnCancelWithoutDependencies()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
 
-        $data = ['performMethod' => 'myPerformMethod', 'payload' => 'otherData'];
-
-        $queue->put('SampleJobPerformClass', $data, 'jid-1', 0, 0);
-        $queue->put('SampleJobPerformClass', $data, 'jid-2', 0, 0, true, 0, [], 0, [], ['jid-1']);
+        $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0);
+        $queue->put('SampleJobPerformClass', [], 'jid-2', 0, 0,  0,  [], ['jid-1']);
 
         $queue->pop()->cancel();
     }
 
     public function testItCanAddTagsToAJobWithNoExistingTags()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
 
         $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0);
         $queue->pop()->tag('a', 'b');
@@ -302,9 +294,9 @@ class JobTest extends QlessTestCase
 
     public function testItCanAddTagsToAJobWithExistingTags()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
 
-        $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0, true, 0, [], 0, ['1', '2']);
+        $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0,  0, ['1', '2']);
         $queue->pop()->tag('a', 'b');
 
         $data = json_decode($this->client->get('jid-1'));
@@ -313,9 +305,9 @@ class JobTest extends QlessTestCase
 
     public function testItCanRemoveExistingTags()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
 
-        $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0, true, 0, [], 0, ['1', '2', '3']);
+        $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0,  0, ['1', '2', '3']);
         $queue->pop()->untag('2', '3');
 
         $data = json_decode($this->client->get('jid-1'));
@@ -325,9 +317,9 @@ class JobTest extends QlessTestCase
     /** @test */
     public function shouldRequeueJob()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
 
-        $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0, true, 1, [], 5, ['tag1','tag2']);
+        $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0, 1, ['tag1','tag2']);
         $queue->pop()->requeue();
 
         $job = $queue->pop();
@@ -338,9 +330,9 @@ class JobTest extends QlessTestCase
 
     public function testRequeueJobWithNewTags()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
 
-        $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0, true, 1, [], 5, ['tag1','tag2']);
+        $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0, 1, [], ['tag1','tag2']);
         $queue->pop()->requeue(null, ['tags' => ['nnn']]);
 
         $job = $queue->pop();
@@ -353,10 +345,10 @@ class JobTest extends QlessTestCase
      */
     public function testThrowsInvalidJobExceptionWhenRequeuingCancelledJob()
     {
-        $queue = new Queue('testQueue', $this->client);
+        $queue = $this->client->queues['test-queue'];
 
         $data = ['performMethod' => 'myPerformMethod', 'payload' => 'otherData'];
-        $queue->put('SampleJobPerformClass', $data, 'jid-1', 0, 0, true, 1, [], 5, ['tag1','tag2']);
+        $queue->put('SampleJobPerformClass', $data, 'jid-1', 0, 0, 1, [], ['tag1','tag2']);
 
         $job = $queue->pop();
         $this->client->cancel('jid-1');
