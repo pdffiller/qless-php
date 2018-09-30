@@ -1,13 +1,14 @@
 <?php
 
-namespace Qless\Tests;
+namespace Qless\Tests\Queues;
 
-use Qless\Queue;
+use Qless\Tests\QlessTestCase;
+use Qless\Queues\Queue;
 
 /**
- * Qless\Tests\QueueTest
+ * Qless\Tests\Queues\QueueTest
  *
- * @package Qless\Tests
+ * @package Qless\Tests\Queues
  */
 class QueueTest extends QlessTestCase
 {
@@ -15,8 +16,7 @@ class QueueTest extends QlessTestCase
     {
         $queue = new Queue('test-queue', $this->client);
 
-        $testData = ["performMethod"=>'myPerformMethod',"payload"=>"otherData"];
-        $queue->put('Xxx\Yyy', $testData, "jid");
+        $queue->put('Xxx\Yyy', [], "jid");
 
         $job = $queue->pop();
 

@@ -1,32 +1,46 @@
 <?php
 
-namespace Qless\Tests\Workers;
+namespace Qless\Tests\Queues;
 
 use Qless\Queues\Queue;
 use Qless\Tests\QlessTestCase;
-use Qless\Workers\Collection;
+use Qless\Queues\Collection;
 
 /**
- * Qless\Tests\Workers\CollectionTest
+ * Qless\Tests\Queues\CollectionTest
  *
- * @package Qless\Tests\Workers
+ * @package Qless\Tests\Queues
  */
 class CollectionTest extends QlessTestCase
 {
     /** @test */
-    public function shouldGetWorkersList()
+    public function shouldGetQueuesList()
     {
         $collection = new Collection($this->client);
-
         $this->assertEquals([], $collection->counts);
-        $this->client->pop('test-queue', 'w1', 1);
-        $this->assertEquals([['stalled' => 0, 'name' => 'w1', 'jobs' => 0]], $collection->counts);
+
+        $this->client->put('w1', 'test-queue', 'j1', 'klass', '{}', 0);
+
+        $expected = [
+            [
+                'paused'    => false,
+                'running'   => 0,
+                'name'      => 'test-queue',
+                'waiting'   => 1,
+                'recurring' => 0,
+                'depends'   => 0,
+                'stalled'   => 0,
+                'scheduled' => 0,
+            ]
+        ];
+
+        $this->assertEquals($expected, $collection->counts);
     }
 
     /**
      * @test
      * @expectedException \Qless\Exceptions\UnknownPropertyException
-     * @expectedExceptionMessage Getting unknown property: Qless\Workers\Collection::foo
+     * @expectedExceptionMessage Getting unknown property: Qless\Queues\Collection::foo
      */
     public function shouldThrowExceptionWhenGetInaccessibleProperty()
     {
@@ -42,30 +56,24 @@ class CollectionTest extends QlessTestCase
         $this->assertFalse(isset($collection['foo']));
         $this->assertFalse(isset($collection['bar']));
 
-        $this->client->pop('test-queue', 'foo', 1);
+        $this->client->put('w1', 'foo', 'j1', 'klass', '{}', 0);
 
         $this->assertTrue(isset($collection['foo']));
         $this->assertFalse(isset($collection['bar']));
     }
 
     /** @test */
-    public function shouldGetWorker()
+    public function shouldGetQueues()
     {
         $collection = new Collection($this->client);
 
-        $this->assertEquals(['stalled' => [], 'jobs' => []], $collection['w1']);
-
-        $queue = new Queue('test-queue', $this->client);
-        $queue->put('Sample', [], 'jid');
-        $queue->pop('w1');
-
-        $this->assertEquals(['stalled' => [], 'jobs' => ['jid']], $collection['w1']);
+        $this->assertInstanceOf(Queue::class, $collection['q1']);
     }
 
     /**
      * @test
      * @expectedException \Qless\Exceptions\UnsupportedFeatureException
-     * @expectedExceptionMessage Deleting a worker is not supported using Workers collection.
+     * @expectedExceptionMessage Deleting a queue is not supported using Queues collection.
      */
     public function shouldThrowExceptionOnDeletingProperty()
     {
@@ -76,7 +84,7 @@ class CollectionTest extends QlessTestCase
     /**
      * @test
      * @expectedException \Qless\Exceptions\UnsupportedFeatureException
-     * @expectedExceptionMessage Setting a worker is not supported using Workers collection.
+     * @expectedExceptionMessage Setting a queue is not supported using Queues collection.
      */
     public function shouldThrowExceptionOnSettingProperty()
     {

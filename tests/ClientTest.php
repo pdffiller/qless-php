@@ -5,11 +5,11 @@ namespace Qless\Tests;
 use Qless\Config;
 use Qless\Jobs\Collection as JobsCollection;
 use Qless\LuaScript;
-use Qless\Queue;
+use Qless\Queues\Queue;
 use Qless\Subscribers\QlessCoreSubscriber;
 use Qless\Tests\Support\RedisAwareTrait;
 use Qless\Workers\Collection as WorkersCollection;
-use Redis;
+use Qless\Queues\Collection as QueuesCollection;
 
 /**
  * Qless\Tests\ClientTest
@@ -85,6 +85,7 @@ WRK;
             ['config',  Config::class],
             ['lua',     LuaScript::class],
             ['workers', WorkersCollection::class],
+            ['queues',  QueuesCollection::class],
         ];
     }
 

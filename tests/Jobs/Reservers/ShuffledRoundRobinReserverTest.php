@@ -3,7 +3,7 @@
 namespace Qless\Tests\Jobs\Reservers;
 
 use Qless\Jobs\Reservers\ShuffledRoundRobinReserver;
-use Qless\Queue;
+use Qless\Queues\Queue;
 
 /**
  * Qless\Tests\Jobs\Reservers\ShuffledRoundRobinReserver

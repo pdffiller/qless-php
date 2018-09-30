@@ -9,17 +9,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Introduced `Qless\Jobs\JobHandlerInterface` so that `Worker::registerJobPerformHandler` will require
   that its argument is implements the JobHandlerInterface interface
-- Increased test coverage
 - Added all the required PHP extensions to the Composer's `require` section so that
   now Composer will check dependencies on library installation time
 - Added support of default Worker's `perform` method
 - Added `Qless\Events\QlessCoreEvent` DTO and `Qless\Events\QlessCoreEventFactory` to interact with qless-core events
 - Added `Qless\Client::getWorkerName` to provide default worker name
 - Added ability to select the redis database
+- Added the `Qless\Queues\Collection` for accessing queues lazily
+- Added the `Qless\Workers\Collection` for accessing workers lazily
 - Workers now can set/get its own name via `setName`/`getName`
-- Introduced job reservers (ordered, round robin, shuffled round robin)
-- Introduced basic event system
-- Introduced initial qlessd daemon
+- Added job reservers (ordered, round robin, shuffled round robin)
+- Added basic event system
+- Added initial `qlessd` daemon
 
 ### Changed
 - PHP 5.x is no longer supported. Minimal required version is 7.1
@@ -29,13 +30,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Move `Qless\Job` to the `Qless\Jobs\Job`
 - Move `Qless\Jobs` to the `Qless\Jobs\Collection`
 - Move `Qless\Worker` to the `Qless\Workers\ForkingWorker`
+- Move `Qless\Queue` to the `Qless\Queues\Queue`
 - More code quality improvements to follow the SRP. Thus the code base for almost all classes has been changed
 - Move all the exceptions to the common namespace and implement the same `Qless\Exceptions\ExceptionInterface`
-- Changed `Qless\Queue::put` signature from the `put($className, $jid, $data, ...)`
+- Changed `Qless\Queues\Queue::put` signature from the `put($className, $jid, $data, ...)`
   to the `put(string className, array $data, ?string $jid = null, ...)`
-- Now `Qless\Queue::pop` does not require the mandatory presence of the worker name as its 1st argument.
+- Now `Qless\Queues\Queue::pop` does not require the mandatory presence of the worker name as its 1st argument.
   If the the worker name is not passed the `Qless\Client::getWorkerName` will be used
-- Now calling `Qless\Queue::pop` without 2nd argument (number of jobs to pop off of the queue) will return
+- Now calling `Qless\Queues\Queue::pop` without 2nd argument (number of jobs to pop off of the queue) will return
   `Qless\Job|null` so that there is no need to play with arrays like `$job[0]->function()`
 - Rework Job class to remove no longer needed getters
 - Changed signature of the `Qless\Job::requeue` from `requeue(array $opts = []): string` to
@@ -47,7 +49,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Removed no longer needed `Qless\Qless` class
 - Removed no longer needed `Qless\Job::fromJobData`
 - Removed no longer supported by qless-core `Qless\Resource`, `Qless\Job::getResources` and `Qless\Job::getInterval`
-- The `Qless\Client::paused` no longer provided by qless-core (but we're saved `Qless\Queue::isPaused`)
+- The `Qless\Client::paused` no longer provided by qless-core (but we're saved `Qless\Queues\Queue::isPaused`)
 
 ### Fixed
 - Fixed demo

@@ -1,8 +1,8 @@
 #!/usr/bin/env php
 <?php
 
-use Qless\Queue;
 use Qless\Client;
+use Qless\Queues\Queue;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
