@@ -88,7 +88,7 @@ class BaseJob extends AbstractJob implements \ArrayAccess
     }
 
     /**
-     * Gets the internal Job's properties.
+     * {@inheritdoc}
      *
      * Do not call this method directly as it is a PHP magic method that
      * will be implicitly called when executing `$value = $job->property;`.

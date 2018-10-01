@@ -2,9 +2,7 @@
 
 namespace Qless\Tests\Jobs;
 
-use Qless\Jobs\RecurringJob;
 use Qless\Tests\QlessTestCase;
-use Qless\Tests\Stubs\JobHandler;
 
 /**
  * Qless\Tests\Jobs\RecurringJobTest
@@ -13,6 +11,37 @@ use Qless\Tests\Stubs\JobHandler;
  */
 class RecurringJobTest extends QlessTestCase
 {
+    /**
+     * @test
+     * @dataProvider jobPropertiesDataProvider
+     *
+     * @param string $property
+     * @param string $type
+     */
+    public function shouldGetInternalProperties(string $property, string $type)
+    {
+        $this->client->queues['test-queue']->recur('Foo', [], 'jid', 60);
+        $job = $this->client->jobs['jid'];
+
+        $this->assertEquals($type, gettype($job->{$property}));
+    }
+
+    public function jobPropertiesDataProvider()
+    {
+        return [
+            ['jid', 'string'],
+            ['klass', 'string'],
+            ['queue', 'string'],
+            ['tags', 'array'],
+            ['priority', 'integer'],
+            ['retries', 'integer'],
+            ['data', 'object'],
+            ['interval', 'integer'],
+            ['count', 'integer'],
+            ['backlog', 'integer'],
+        ];
+    }
+
     /** @test */
     public function shouldChangeJobPriority()
     {
@@ -21,5 +50,15 @@ class RecurringJobTest extends QlessTestCase
 
         $this->client->jobs['jid']->priority = 10;
         $this->assertEquals(10, $this->client->jobs['jid']->priority);
+    }
+
+    /** @test */
+    public function shouldChangeJobRetries()
+    {
+        $this->client->queues['test-queue']->recur('Foo', [], 'jid', 60, null, 2);
+        $this->assertEquals(2, $this->client->jobs['jid']->retries);
+
+        $this->client->jobs['jid']->retries = 10;
+        $this->assertEquals(10, $this->client->jobs['jid']->retries);
     }
 }

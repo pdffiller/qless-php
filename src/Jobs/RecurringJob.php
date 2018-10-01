@@ -15,6 +15,7 @@ use Qless\Exceptions\UnknownPropertyException;
  * @property-read int $interval
  * @property-read int $count
  * @property-read int $backlog
+ * @property int $retries
  *
  * @package Qless\Jobs
  */
@@ -45,7 +46,7 @@ class RecurringJob extends AbstractJob
     }
 
     /**
-     * Gets the internal Job's properties.
+     * {@inheritdoc}
      *
      * Do not call this method directly as it is a PHP magic method that
      * will be implicitly called when executing `$value = $job->property;`.
@@ -70,6 +71,28 @@ class RecurringJob extends AbstractJob
     }
 
     /**
+     * The magic setter to update Job's properties.
+     *
+     * @param  string $name
+     * @param  mixed  $value
+     * @return void
+     *
+     * @throws QlessException
+     * @throws RuntimeException
+     * @throws UnknownPropertyException
+     */
+    public function __set(string $name, $value)
+    {
+        switch ($name) {
+            case 'retries':
+                $this->setJobRetries($value);
+                break;
+            default:
+                parent::__set($name, $value);
+        }
+    }
+
+    /**
      * {@inheritdoc}
      *
      * @param  int $priority
@@ -82,6 +105,22 @@ class RecurringJob extends AbstractJob
     {
         if ($this->client->call('recur.update', $this->jid, 'priority', $priority)) {
             $this->priority = $priority;
+        }
+    }
+
+    /**
+     * Sets Job's retries.
+     *
+     * @param  int $retries
+     * @return void
+     *
+     * @throws QlessException
+     * @throws RuntimeException
+     */
+    private function setJobRetries(int $retries): void
+    {
+        if ($this->client->call('recur.update', $this->jid, 'retries', $retries)) {
+            $this->retries = $retries;
         }
     }
 }
