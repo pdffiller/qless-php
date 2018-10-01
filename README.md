@@ -534,7 +534,7 @@ $queue->recur(MyJobClass::class, ['howdy' => 'hello'], 3600, 23 * 60);
 
 Recurring jobs also have priority, a configurable number of retries, and tags. These settings don't apply to the
 recurring jobs, but rather the jobs that they create. In the case where more than one interval passes before a worker
-tries to pop the job, more than one job is created. The thinking is that while it's completely client-managed,
+tries to pop the job, **more than one job is created**. The thinking is that while it's completely client-managed,
 the state should not be dependent on how often workers are trying to pop jobs.
 
 ```php
