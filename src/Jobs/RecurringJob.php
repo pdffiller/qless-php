@@ -88,19 +88,19 @@ class RecurringJob extends AbstractJob
     {
         switch ($name) {
             case 'retries':
-                $this->setJobRetries($value);
+                $this->updateRetries($value);
                 break;
             case 'interval':
-                $this->setJobInterval($value);
+                $this->updateInterval($value);
                 break;
             case 'data':
-                $this->setJobData($value);
+                $this->updateData($value);
                 break;
             case 'klass':
-                $this->setJobKlass($value);
+                $this->updateKlass($value);
                 break;
             case 'backlog':
-                $this->setJobBacklog($value);
+                $this->updateBacklog($value);
                 break;
             default:
                 parent::__set($name, $value);
@@ -116,7 +116,7 @@ class RecurringJob extends AbstractJob
      * @throws QlessException
      * @throws RuntimeException
      */
-    protected function setJobPriority(int $priority): void
+    protected function updatePriority(int $priority): void
     {
         if ($this->client->call('recur.update', $this->jid, 'priority', $priority)) {
             $this->setPriority($priority);
@@ -133,11 +133,11 @@ class RecurringJob extends AbstractJob
      * @throws QlessException
      * @throws RuntimeException
      */
-    protected function setJobData($data): void
+    protected function updateData($data): void
     {
         if (is_array($data) || $data instanceof JobData) {
             $update = json_encode($data, JSON_UNESCAPED_SLASHES);
-        } else if (is_string($data)) {
+        } elseif (is_string($data)) {
             // Assume this is JSON
             $update = $data;
         } else {
@@ -150,7 +150,13 @@ class RecurringJob extends AbstractJob
         }
 
         if ($this->client->call('recur.update', $this->jid, 'data', $update)) {
-            $this->setData(new JobData(json_decode($update, true)));
+            if ($data instanceof JobData) {
+                $this->setData($data);
+            } elseif (is_array($data)) {
+                $this->setData(new JobData($data));
+            } else {
+                $this->setData(new JobData(json_decode($data, true) ?: []));
+            }
         }
     }
 
@@ -163,7 +169,7 @@ class RecurringJob extends AbstractJob
      * @throws QlessException
      * @throws RuntimeException
      */
-    private function setJobBacklog(int $backlog): void
+    private function updateBacklog(int $backlog): void
     {
         if ($this->client->call('recur.update', $this->jid, 'backlog', $backlog)) {
             $this->backlog = $backlog;
@@ -179,7 +185,7 @@ class RecurringJob extends AbstractJob
      * @throws QlessException
      * @throws RuntimeException
      */
-    private function setJobKlass(string $className): void
+    private function updateKlass(string $className): void
     {
         if ($this->client->call('recur.update', $this->jid, 'klass', $className)) {
             $this->setKlass($className);
@@ -195,7 +201,7 @@ class RecurringJob extends AbstractJob
      * @throws QlessException
      * @throws RuntimeException
      */
-    private function setJobRetries(int $retries): void
+    private function updateRetries(int $retries): void
     {
         if ($this->client->call('recur.update', $this->jid, 'retries', $retries)) {
             $this->setRetries($retries);
@@ -211,7 +217,7 @@ class RecurringJob extends AbstractJob
      * @throws QlessException
      * @throws RuntimeException
      */
-    private function setJobInterval(int $interval): void
+    private function updateInterval(int $interval): void
     {
         if ($this->client->call('recur.update', $this->jid, 'interval', $interval)) {
             $this->interval = $interval;
@@ -224,10 +230,52 @@ class RecurringJob extends AbstractJob
      * @param  string $queue
      * @return void
      */
-    public function move(string $queue): void
+    public function requeue(string $queue): void
     {
         if ($this->client->call('recur.update', $this->jid, 'queue', $queue)) {
             $this->setQueue($queue);
         }
+    }
+
+    /**
+     * Cancel a job.
+     *
+     * @return int
+     */
+    public function cancel(): int
+    {
+        return $this->client->call('unrecur', $this->jid);
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @param  string ...$tags A list of tags to to add to this job.
+     * @return void
+     */
+    public function tag(...$tags): void
+    {
+        $response = call_user_func_array(
+            [$this->client, 'call'],
+            array_merge(['recur.tag', $this->jid], array_values(func_get_args()))
+        );
+
+        $this->setTags(json_decode($response, true) ?: []);
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @param  string ...$tags A list of tags to remove from this job.
+     * @return void
+     */
+    public function untag(...$tags): void
+    {
+        $response = call_user_func_array(
+            [$this->client, 'call'],
+            array_merge(['recur.untag', $this->jid], array_values(func_get_args()))
+        );
+
+        $this->setTags(json_decode($response, true) ?: []);
     }
 }

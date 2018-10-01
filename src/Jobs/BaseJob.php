@@ -129,11 +129,32 @@ class BaseJob extends AbstractJob implements \ArrayAccess
      * @throws QlessException
      * @throws RuntimeException
      */
-    protected function setJobPriority(int $priority): void
+    protected function updatePriority(int $priority): void
     {
         if ($this->client->call('priority', $this->jid, $priority)) {
             $this->setPriority($priority);
         }
+    }
+
+    /**
+     * Cancel a job.
+     *
+     * It will be deleted from the system, the thinking being that if you don't want
+     * to do any work on it, it shouldn't be in the queuing system. Optionally cancels all jobs's dependents.
+     *
+     * @param  bool $dependents true if associated dependents should also be cancelled
+     * @return array
+     */
+    public function cancel($dependents = false): array
+    {
+        if ($dependents && !empty($this->rawData['dependents'])) {
+            return call_user_func_array(
+                [$this->client, 'cancel'],
+                array_merge([$this->jid], $this->rawData['dependents'])
+            );
+        }
+
+        return $this->client->cancel($this->jid);
     }
 
     /**

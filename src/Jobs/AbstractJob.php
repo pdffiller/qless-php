@@ -107,10 +107,9 @@ abstract class AbstractJob implements EventsManagerAwareInterface
 
         $this->setRetries((int) $data['retries'] ?? 0);
         $this->setPriority((int) $data['priority'] ?? 0);
+        $this->setTags($data['tags'] ?? []);
 
         $this->setData(new JobData(json_decode($data['data'], true) ?: []));
-
-        $this->tags = $data['tags'] ?? [];
     }
 
     /**
@@ -161,7 +160,7 @@ abstract class AbstractJob implements EventsManagerAwareInterface
     {
         switch ($name) {
             case 'priority':
-                $this->setJobPriority($value);
+                $this->updatePriority($value);
                 break;
             default:
                 throw new UnknownPropertyException('Setting unknown property: ' . get_class($this) . '::' . $name);
@@ -177,56 +176,38 @@ abstract class AbstractJob implements EventsManagerAwareInterface
      * @throws QlessException
      * @throws RuntimeException
      */
-    abstract protected function setJobPriority(int $priority): void;
+    abstract protected function updatePriority(int $priority): void;
 
     /**
      * Add the specified tags to this job.
      *
-     * @param  string ...$tags A list of tags to remove from this job.
+     * @param  string ...$tags A list of tags to to add to this job.
      * @return void
      */
     public function tag(...$tags): void
     {
-        $tags = func_get_args();
-        $response = call_user_func_array([$this->client, 'call'], array_merge(['tag', 'add', $this->jid], $tags));
+        $response = call_user_func_array(
+            [$this->client, 'call'],
+            array_merge(['tag', 'add', $this->jid], array_values(func_get_args()))
+        );
 
-        $this->tags = json_decode($response, true);
+        $this->setTags(json_decode($response, true));
     }
 
     /**
-     * Remove the specified tags to this job
+     * Remove the specified tags to this job.
      *
-     * @param  string ...$tags A list of tags to to add to this job.
+     * @param  string ...$tags A list of tags to remove from this job.
      * @return void
      */
     public function untag(...$tags): void
     {
-        $tags = func_get_args();
-        $this->tags = json_decode(
-            call_user_func_array([$this->client, 'call'], array_merge(['tag', 'remove', $this->jid], $tags)),
-            true
+        $response = call_user_func_array(
+            [$this->client, 'call'],
+            array_merge(['tag', 'remove', $this->jid], array_values(func_get_args()))
         );
-    }
 
-    /**
-     * Cancel a job.
-     *
-     * It will be deleted from the system, the thinking being that if you don't want
-     * to do any work on it, it shouldn't be in the queuing system. Optionally cancels all jobs's dependents.
-     *
-     * @param  bool $dependents true if associated dependents should also be cancelled
-     * @return array
-     */
-    public function cancel($dependents = false): array
-    {
-        if ($dependents && !empty($this->rawData['dependents'])) {
-            return call_user_func_array(
-                [$this->client, 'cancel'],
-                array_merge([$this->jid], $this->rawData['dependents'])
-            );
-        }
-
-        return $this->client->cancel($this->jid);
+        $this->setTags(json_decode($response, true));
     }
 
     /**
@@ -282,5 +263,16 @@ abstract class AbstractJob implements EventsManagerAwareInterface
     protected function setQueue(string $queue): void
     {
         $this->queue = $queue;
+    }
+
+    /**
+     * Sets Job's tags.
+     *
+     * @param  array $tags
+     * @return void
+     */
+    protected function setTags(array $tags): void
+    {
+        $this->tags = $tags;
     }
 }

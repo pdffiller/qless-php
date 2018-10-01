@@ -122,4 +122,46 @@ class RecurringJobTest extends QlessTestCase
         $this->client->jobs['jid']->backlog = 10;
         $this->assertEquals(10, $this->client->jobs['jid']->backlog);
     }
+
+    /** @test */
+    public function shouldRequeueJob()
+    {
+        $this->client->queues['test-queue']->recur('Foo', [], 'jid');
+        $this->assertEquals('test-queue', $this->client->jobs['jid']->queue);
+
+        $this->client->jobs['jid']->requeue('bar');
+        $this->assertEquals('bar', $this->client->jobs['jid']->queue);
+    }
+
+    /** @test */
+    public function shouldCancelJob()
+    {
+        $this->client->queues['test-queue']->recur('Foo', [], 'jid');
+
+        $this->assertEquals(1, $this->client->jobs['jid']->cancel());
+        $this->assertNull($this->client->jobs['jid']);
+    }
+
+    /** @test */
+    public function shouldSetTags()
+    {
+        $this->client->queues['test-queue']->recur('Foo', [], 'jid');
+
+        $job = $this->client->jobs['jid'];
+
+        $this->assertEquals([], $job->tags);
+
+        $job->tag('foo', 'bar');
+        $this->assertEquals(['foo', 'bar'], $job->tags);
+
+        $this->assertEquals(['foo', 'bar'], $this->client->jobs['jid']->tags);
+
+        $job->untag('bar');
+        $this->assertEquals(['foo'], $job->tags);
+        $this->assertEquals(['foo'], $this->client->jobs['jid']->tags);
+
+        $job->untag('baz');
+        $this->assertEquals(['foo'], $job->tags);
+        $this->assertEquals(['foo'], $this->client->jobs['jid']->tags);
+    }
 }
