@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added the `Qless\Workers\Collection` for accessing workers lazily
 - Workers now can set/get its own name via `setName`/`getName`
 - Added job reservers (ordered, round robin, shuffled round robin)
+- Added `Qless\Jobs\RecurringJob` to wrap recurring jobs
 - Added basic event system
 - Added initial `qlessd` daemon
 - Added ability to adjust a job's priority while it's still waiting in a queue
@@ -44,6 +45,35 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Changed signature of the `Qless\Jobs\BaseJob::requeue` from `requeue(array $opts = []): string` to
   `requeue(?string $queue = null, array $opts = []): string` so that there is an ability to move job to a new queue
 - Changed signature of the `Qless\Queues\Queue::put` so that `resources`, `replace` and `interval` no longer used 
+- Changed signature of the `Qless\Queues\Queue::recur` from
+  ```php
+  Queue::recur(
+      $klass,
+      $jid,
+      $data,
+      $interval = 0,
+      $offset = 0,
+      $retries = 5,
+      $priority = 0,
+      $resources = [],
+      $tags = []
+  )
+  ```
+  to
+  ```php
+  Queue::recur(
+      string $className,
+      array $data,
+      ?string $jid = null,
+      ?int $interval = null,
+      ?int $offset = null,
+      ?int $retries = null,
+      ?int $priority = null,
+      ?int $backlog = null,
+      ?array $tags = null
+  )
+  ```
+  to follow actual qless-core API
 
 ### Removed
 - Fully refactor the `Qless\Client` class and removed no longer used code
