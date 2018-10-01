@@ -210,12 +210,6 @@ class BaseJobTest extends QlessTestCase
         $this->client->jobs['jid']->track();
         $this->assertTrue($this->client->jobs['jid']->tracked);
 
-        $t1 = $this->client->jobs->tagged('foo-1');
-        $this->client->jobs['jid']->tag('foo-1');
-        $t2 = $this->client->jobs->tagged('foo-1');
-
-        var_dump($t1, $t2);
-
         $this->client->jobs['jid']->untrack();
         $this->assertFalse($this->client->jobs['jid']->tracked);
     }

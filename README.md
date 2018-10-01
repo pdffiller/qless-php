@@ -552,7 +552,17 @@ echo count($jobs), ' jobs got popped'; // 5 jobs got popped
 
 ### Configuration Options
 
-**`@todo`**
+You can get and set global (read: in the context of the same Redis instance) configuration to change the behavior for
+heartbeating, and so forth. There aren't a tremendous number of configuration options, but an important one is how
+long job data is kept around. Job data is expired after it has been completed for `jobs-history` seconds, but is limited
+to the last `jobs-history-count` completed jobs. These default to 50k jobs, and 30 days, but depending on volume,
+your needs may change. To only keep the last 500 jobs for up to 7 days:
+
+```php
+/** @var \Qless\Client $client */
+$client->config['jobs-history'] = 7 * 86400;
+$client->config['jobs-history-count'] = 500;
+```
 
 ### Tagging / Tracking
 
