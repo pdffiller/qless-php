@@ -385,7 +385,7 @@ class BaseJob extends AbstractJob implements \ArrayAccess
     }
 
     /**
-     * Stops tracking current job.
+     * Stop tracking current job.
      *
      * @return void
      */

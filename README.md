@@ -188,11 +188,11 @@ The job data must be serializable to JSON, and it is recommended that you use a 
 See below for a list of the supported job options.
 
 
-The argument returned by `queue->put()` is the job ID, or `jid`.
+The argument returned by `queue->put()` is the `jid` (Job ID).
 Every Qless job has a unique `jid`, and it provides a means to interact with an existing job:
 
 ```php
-// find an existing job by it's jid
+// find an existing job by it's JID
 $job = $client->jobs[$jid];
 
 // query it to find out details about it:
@@ -209,6 +209,7 @@ $job->tags;         // array of tags for this job
 $job->expires;      // when you must either check in with a heartbeat or turn it in as completed
 $job->remaining;    // the number of retries remaining for this job
 $job->retries;      // the number of retries originally requested
+$job->tracked;      // is job flagged as important
 
 // there is a way to get seconds remaining before this job will timeout:
 $job->ttl();
@@ -218,6 +219,8 @@ $job->requeue('some_other_queue'); // move it to a new queue
 $job->cancel();                    // cancel the job
 $job->tag('foo');                  // add a tag
 $job->untag('foo');                // remove a tag
+$job->track();                     // start tracking current job
+$job->untrack();                   // stop tracking current job
 ```
 
 ### Running A Worker
