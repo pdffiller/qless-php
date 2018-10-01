@@ -33,21 +33,21 @@ abstract class AbstractJob implements EventsManagerAwareInterface
      *
      * @var string
      */
-    private $jid;
+    private $jid = '';
 
     /**
      * The class of the job.
      *
      * @var string
      */
-    private $klass;
+    private $klass = '';
 
     /**
      * The queue the job is in.
      *
      * @var string
      */
-    private $queue;
+    private $queue = '';
 
     /**
      * Array of tags for this job.
@@ -68,7 +68,7 @@ abstract class AbstractJob implements EventsManagerAwareInterface
      *
      * @var int
      */
-    private $retries;
+    private $retries = 0;
 
     /**
      * The data for the job.
@@ -78,7 +78,7 @@ abstract class AbstractJob implements EventsManagerAwareInterface
     private $data;
 
     /** @var array */
-    protected $rawData;
+    protected $rawData = [];
 
     /** @var JobFactory */
     protected $jobFactory;
@@ -102,14 +102,15 @@ abstract class AbstractJob implements EventsManagerAwareInterface
         $this->jid = $jid;
         $this->rawData = $data;
 
-        $this->klass = $data['klass'];
-        $this->queue = $data['queue'];
+        $this->setKlass($data['klass']);
+        $this->setQueue($data['queue']);
 
-        $this->data = new JobData(json_decode($data['data'], true) ?: []);
+        $this->setRetries((int) $data['retries'] ?? 0);
+        $this->setPriority((int) $data['priority'] ?? 0);
+
+        $this->setData(new JobData(json_decode($data['data'], true) ?: []));
 
         $this->tags = $data['tags'] ?? [];
-        $this->priority = (int) $data['priority'] ?? 0;
-        $this->retries = (int) $data['retries'] ?? 0;
     }
 
     /**
@@ -226,5 +227,60 @@ abstract class AbstractJob implements EventsManagerAwareInterface
         }
 
         return $this->client->cancel($this->jid);
+    }
+
+    /**
+     * Sets Job's data.
+     *
+     * @param  JobData $data
+     * @return void
+     */
+    protected function setData(JobData $data): void
+    {
+        $this->data = $data;
+    }
+
+    /**
+     * Sets Job's priority.
+     *
+     * @param  int $priority
+     * @return void
+     */
+    protected function setPriority(int $priority): void
+    {
+        $this->priority = $priority;
+    }
+
+    /**
+     * Sets Job's retries.
+     *
+     * @param  int $retries
+     * @return void
+     */
+    protected function setRetries(int $retries): void
+    {
+        $this->retries = $retries;
+    }
+
+    /**
+     * Sets Job's klass.
+     *
+     * @param  string $className
+     * @return void
+     */
+    protected function setKlass(string $className): void
+    {
+        $this->klass = $className;
+    }
+
+    /**
+     * Sets Job's queue name.
+     *
+     * @param  string $queue
+     * @return void
+     */
+    protected function setQueue(string $queue): void
+    {
+        $this->queue = $queue;
     }
 }

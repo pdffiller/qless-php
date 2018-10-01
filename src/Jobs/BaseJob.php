@@ -132,7 +132,7 @@ class BaseJob extends AbstractJob implements \ArrayAccess
     protected function setJobPriority(int $priority): void
     {
         if ($this->client->call('priority', $this->jid, $priority)) {
-            $this->priority = $priority;
+            $this->setPriority($priority);
         }
     }
 

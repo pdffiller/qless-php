@@ -24,7 +24,7 @@ use Qless\Exceptions\UnknownPropertyException;
 class RecurringJob extends AbstractJob
 {
     /** @var int  */
-    private $interval = 0;
+    private $interval = 60;
 
     /** @var int  */
     private $count = 0;
@@ -42,7 +42,7 @@ class RecurringJob extends AbstractJob
     {
         parent::__construct($client, $data['jid'], $data);
 
-        $this->interval = $data['interval'] ?? 0;
+        $this->interval = $data['interval'] ?? 60;
         $this->count = (int) $data['count'] ?? 0;
         $this->backlog = (int) $data['backlog'] ?? 0;
     }
@@ -119,7 +119,7 @@ class RecurringJob extends AbstractJob
     protected function setJobPriority(int $priority): void
     {
         if ($this->client->call('recur.update', $this->jid, 'priority', $priority)) {
-            $this->priority = $priority;
+            $this->setPriority($priority);
         }
     }
 
@@ -150,7 +150,7 @@ class RecurringJob extends AbstractJob
         }
 
         if ($this->client->call('recur.update', $this->jid, 'data', $update)) {
-            $this->data = new JobData(json_decode($update, true));
+            $this->setData(new JobData(json_decode($update, true)));
         }
     }
 
@@ -182,7 +182,7 @@ class RecurringJob extends AbstractJob
     private function setJobKlass(string $className): void
     {
         if ($this->client->call('recur.update', $this->jid, 'klass', $className)) {
-            $this->klass = $className;
+            $this->setKlass($className);
         }
     }
 
@@ -198,7 +198,7 @@ class RecurringJob extends AbstractJob
     private function setJobRetries(int $retries): void
     {
         if ($this->client->call('recur.update', $this->jid, 'retries', $retries)) {
-            $this->retries = $retries;
+            $this->setRetries($retries);
         }
     }
 
@@ -215,6 +215,19 @@ class RecurringJob extends AbstractJob
     {
         if ($this->client->call('recur.update', $this->jid, 'interval', $interval)) {
             $this->interval = $interval;
+        }
+    }
+
+    /**
+     * Sets Job's queue name.
+     *
+     * @param  string $queue
+     * @return void
+     */
+    public function move(string $queue): void
+    {
+        if ($this->client->call('recur.update', $this->jid, 'queue', $queue)) {
+            $this->setQueue($queue);
         }
     }
 }
