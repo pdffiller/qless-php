@@ -3,6 +3,7 @@
 namespace Qless\Jobs;
 
 use Qless\Client;
+use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\QlessException;
 use Qless\Exceptions\RuntimeException;
 use Qless\Exceptions\UnknownPropertyException;
@@ -12,10 +13,11 @@ use Qless\Exceptions\UnknownPropertyException;
  *
  * Wraps a recurring job.
  *
- * @property-read int $interval
+ * @property int $interval
  * @property-read int $count
- * @property-read int $backlog
+ * @property int $backlog
  * @property int $retries
+ * @property string $klass
  *
  * @package Qless\Jobs
  */
@@ -80,12 +82,25 @@ class RecurringJob extends AbstractJob
      * @throws QlessException
      * @throws RuntimeException
      * @throws UnknownPropertyException
+     * @throws InvalidArgumentException
      */
     public function __set(string $name, $value)
     {
         switch ($name) {
             case 'retries':
                 $this->setJobRetries($value);
+                break;
+            case 'interval':
+                $this->setJobInterval($value);
+                break;
+            case 'data':
+                $this->setJobData($value);
+                break;
+            case 'klass':
+                $this->setJobKlass($value);
+                break;
+            case 'backlog':
+                $this->setJobBacklog($value);
                 break;
             default:
                 parent::__set($name, $value);
@@ -109,6 +124,69 @@ class RecurringJob extends AbstractJob
     }
 
     /**
+     * Sets Job's data.
+     *
+     * @param  string|array|JobData $data
+     * @return void
+     *
+     * @throws InvalidArgumentException
+     * @throws QlessException
+     * @throws RuntimeException
+     */
+    protected function setJobData($data): void
+    {
+        if (is_array($data) || $data instanceof JobData) {
+            $update = json_encode($data, JSON_UNESCAPED_SLASHES);
+        } else if (is_string($data)) {
+            // Assume this is JSON
+            $update = $data;
+        } else {
+            throw new InvalidArgumentException(
+                sprintf(
+                    "Job's data must be either an array, or a JobData instance, or a JSON string, %s given.",
+                    gettype($data)
+                )
+            );
+        }
+
+        if ($this->client->call('recur.update', $this->jid, 'data', $update)) {
+            $this->data = new JobData(json_decode($update, true));
+        }
+    }
+
+    /**
+     * Sets Job's backlog.
+     *
+     * @param  int $backlog
+     * @return void
+     *
+     * @throws QlessException
+     * @throws RuntimeException
+     */
+    private function setJobBacklog(int $backlog): void
+    {
+        if ($this->client->call('recur.update', $this->jid, 'backlog', $backlog)) {
+            $this->backlog = $backlog;
+        }
+    }
+
+    /**
+     * Sets Job's klass.
+     *
+     * @param  string $className
+     * @return void
+     *
+     * @throws QlessException
+     * @throws RuntimeException
+     */
+    private function setJobKlass(string $className): void
+    {
+        if ($this->client->call('recur.update', $this->jid, 'klass', $className)) {
+            $this->klass = $className;
+        }
+    }
+
+    /**
      * Sets Job's retries.
      *
      * @param  int $retries
@@ -121,6 +199,22 @@ class RecurringJob extends AbstractJob
     {
         if ($this->client->call('recur.update', $this->jid, 'retries', $retries)) {
             $this->retries = $retries;
+        }
+    }
+
+    /**
+     * Sets Job's interval.
+     *
+     * @param  int $interval
+     * @return void
+     *
+     * @throws QlessException
+     * @throws RuntimeException
+     */
+    private function setJobInterval(int $interval): void
+    {
+        if ($this->client->call('recur.update', $this->jid, 'interval', $interval)) {
+            $this->interval = $interval;
         }
     }
 }

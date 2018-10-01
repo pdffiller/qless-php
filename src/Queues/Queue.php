@@ -194,7 +194,7 @@ class Queue implements EventsManagerAwareInterface
             $className,
             $data,
             'interval',
-            is_null($interval) ? 0 : $interval,
+            is_null($interval) ? 60 : $interval,
             is_null($offset) ? 0 : $offset,
             'priority',
             is_null($priority) ? 0 : $priority,
