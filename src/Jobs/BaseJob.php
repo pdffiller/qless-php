@@ -14,43 +14,16 @@ use Qless\Exceptions\UnknownPropertyException;
  *
  * @package Qless\Jobs
  *
- * @property-read string $klass
- * @property-read string $queue
- * @property JobData $data
  * @property-read array $history
  * @property-read string[] $dependencies
  * @property-read string[] $dependents
- * @property int $priority
  * @property-read string $worker
- * @property-read string[] $tags
  * @property-read float $expires
  * @property-read int $remaining
- * @property-read int $retries
  * @property-read string $description
  */
-class BaseJob extends AbstractJob
+class BaseJob extends AbstractJob implements \ArrayAccess
 {
-    /**
-     * The class of the job.
-     *
-     * @var string
-     */
-    private $klass;
-
-    /**
-     * The queue the job is in.
-     *
-     * @var string
-     */
-    private $queue;
-
-    /**
-     * The data for the job.
-     *
-     * @var JobData
-     */
-    private $data;
-
     /**
      * The history of what has happened to the job so far.
      *
@@ -73,25 +46,11 @@ class BaseJob extends AbstractJob
     private $dependents;
 
     /**
-     * The priority of this job.
-     *
-     * var int
-     */
-    private $priority;
-
-    /**
      * The internal worker name (usually consumer identifier).
      *
      * @var string
      */
     private $worker;
-
-    /**
-     * Array of tags for this job.
-     *
-     * @var string[]
-     */
-    private $tags;
 
     /**
      * When you must either check in with a heartbeat or turn it in as completed.
@@ -107,21 +66,8 @@ class BaseJob extends AbstractJob
      */
     private $remaining;
 
-    /**
-     * The number of retries originally requested.
-     *
-     * @var int
-     */
-    private $retries;
-
     /** @var ?object */
     private $instance;
-
-    /** @var array */
-    private $rawData;
-
-    /** @var JobFactory */
-    private $jobFactory;
 
     /**
      * Job constructor.
@@ -131,25 +77,14 @@ class BaseJob extends AbstractJob
      */
     public function __construct(Client $client, array $data)
     {
-        parent::__construct($client, $data['jid']);
+        parent::__construct($client, $data['jid'], $data);
 
-        $this->rawData = $data;
-
-        $this->jobFactory = new JobFactory();
-        $this->jobFactory->setEventsManager($client->getEventsManager());
-
-        $this->klass = $data['klass'];
-        $this->queue = $data['queue'];
-        $this->data = new JobData(json_decode($data['data'], true) ?: []);
         $this->history = $data['history'] ?? [];
         $this->dependencies = $data['dependencies'] ?? [];
         $this->dependents = $data['dependents'] ?? [];
-        $this->priority = (int) $data['priority'] ?? 0;
         $this->worker = $data['worker'];
-        $this->tags = $data['tags'] ?? [];
         $this->expires = (float) ($data['expires'] ?? 0.0);
         $this->remaining = (int) $data['remaining'] ?? 0;
-        $this->retries = (int) $data['retries'] ?? 0;
     }
 
     /**
@@ -166,65 +101,27 @@ class BaseJob extends AbstractJob
     public function __get(string $name)
     {
         switch ($name) {
-            case 'jid':
-                return $this->jid;
-            case 'klass':
-                return $this->klass;
-            case 'queue':
-                return $this->queue;
-            case 'data':
-                return $this->data;
             case 'history':
                 return $this->history;
             case 'dependencies':
                 return $this->dependencies;
             case 'dependents':
                 return $this->dependents;
-            case 'priority':
-                return $this->priority;
             case 'worker':
                 return $this->worker;
-            case 'tags':
-                return $this->tags;
             case 'expires':
                 return $this->expires;
             case 'remaining':
                 return $this->remaining;
-            case 'retries':
-                return $this->retries;
             case 'description':
                 return "{$this->klass} {$this->jid} / {$this->queue}";
             default:
-                throw new UnknownPropertyException('Getting unknown property: ' . self::class . '::' . $name);
+                return parent::__get($name);
         }
     }
 
     /**
-     * The magic setter to update Job's properties.
-     *
-     * @todo Recurring Job may have update all fields.
-     *
-     * @param  string $name
-     * @param  mixed  $value
-     * @return void
-     *
-     * @throws QlessException
-     * @throws RuntimeException
-     * @throws UnknownPropertyException
-     */
-    public function __set(string $name, $value)
-    {
-        switch ($name) {
-            case 'priority':
-                $this->setJobPriority($value);
-                break;
-            default:
-                throw new UnknownPropertyException('Setting unknown property: ' . self::class . '::' . $name);
-        }
-    }
-
-    /**
-     * Sets Job's priority.
+     * {@inheritdoc}
      *
      * @param  int $priority
      * @return void
@@ -247,35 +144,6 @@ class BaseJob extends AbstractJob
     public function ttl(): float
     {
         return $this->expires - microtime(true);
-    }
-
-    /**
-     * Add the specified tags to this job.
-     *
-     * @param  string ...$tags A list of tags to remove from this job.
-     * @return void
-     */
-    public function tag(...$tags): void
-    {
-        $tags = func_get_args();
-        $response = call_user_func_array([$this->client, 'call'], array_merge(['tag', 'add', $this->jid], $tags));
-
-        $this->tags = json_decode($response, true);
-    }
-
-    /**
-     * Remove the specified tags to this job
-     *
-     * @param  string $tags... list of tags to add to this job
-     * @return void
-     */
-    public function untag($tags): void
-    {
-        $tags = func_get_args();
-        $this->tags = json_decode(
-            call_user_func_array([$this->client, 'call'], array_merge(['tag', 'remove', $this->jid], $tags)),
-            true
-        );
     }
 
     /**
@@ -410,29 +278,7 @@ class BaseJob extends AbstractJob
     }
 
     /**
-     * Cancel a job.
-     *
-     * It will be deleted from the system, the thinking being that if you don't want
-     * to do any work on it, it shouldn't be in the queuing system. Optionally cancels all jobs's dependents.
-     *
-     * @param bool $dependents true if associated dependents should also be cancelled
-     *
-     * @return array
-     */
-    public function cancel($dependents = false): array
-    {
-        if ($dependents && !empty($this->rawData['dependents'])) {
-            return call_user_func_array(
-                [$this->client, 'cancel'],
-                array_merge([$this->jid], $this->rawData['dependents'])
-            );
-        }
-
-        return $this->client->cancel($this->jid);
-    }
-
-    /**
-     * {@inheritdoc}
+     * Creates the instance to perform the job and calls the method on the instance.
      *
      * The instance must be specified in the payload['performMethod'];
      *
