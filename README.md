@@ -171,7 +171,7 @@ $queue = $client->queues['testing'];
 
 // Let's add a job, with some data. Returns Job ID
 $jid = $queue->put(MyJobClass::class, ['hello' => 'howdy']);
-// $jid here is "696c752a-7060-49cd-b227-a9fcfe9f681b"
+// $jid here is "696c752a706049cdb227a9fcfe9f681b"
 
 /**
  * Now we can ask for a job.
@@ -181,7 +181,7 @@ $job = $queue->pop();
 
 // And we can do the work associated with it!
 $job->perform();
-// Perform 316eb06a-30d2-4d66-ad0d-33361306a7a1 job
+// Perform 316eb06a30d24d66ad0d33361306a7a1 job
 ```
 
 The job data must be serializable to JSON, and it is recommended that you use a hash for it.
@@ -485,7 +485,70 @@ $queue->put(MyJobClass::class, ['foo' => 'bar'], null, 600, null, 100);
 
 ### Recurring Jobs
 
-**`@todo`**
+Sometimes it's not enough simply to schedule one job, but you want to run jobs regularly.
+In particular, maybe you have some batch operation that needs to get run once an hour and you don't care what
+worker runs it. Recurring jobs are specified much like other jobs:
+
+```php
+/**
+ * Run every hour.
+ *
+ * @var \Qless\Queues\Queue $queue
+ */
+$jid = $queue->recur(MyJobClass::class, ['widget' => 'warble'], 3600);
+// $jid here is "696c752a706049cdb227a9fcfe9f681b"
+```
+
+You can even access them in much the same way as you would normal jobs:
+
+```php
+/**
+ * @var \Qless\Client $client
+ * @var \Qless\Jobs\RecurringJob $job
+ */
+$job = $client->jobs['696c752a706049cdb227a9fcfe9f681b'];
+```
+
+Changing the interval at which it runs after the fact is trivial:
+
+```php
+/**
+ * I think I only need it to run once every two hours.
+ *
+ * @var \Qless\Jobs\RecurringJob $job
+ */
+$job->interval = 7200;
+```
+
+If you want it to run every hour on the hour, but it's 2:37 right now, you can specify an offset which is how long
+it should wait before popping the first job:
+
+```php
+/**
+ * 23 minutes of waiting until it should go.
+ *
+ * @var \Qless\Queues\Queue $queue
+ */
+$queue->recur(MyJobClass::class, ['howdy' => 'hello'], 3600, 23 * 60);
+```
+
+Recurring jobs also have priority, a configurable number of retries, and tags. These settings don't apply to the
+recurring jobs, but rather the jobs that they create. In the case where more than one interval passes before a worker
+tries to pop the job, more than one job is created. The thinking is that while it's completely client-managed,
+the state should not be dependent on how often workers are trying to pop jobs.
+
+```php
+/**
+ * Recur every minute.
+ *
+ * @var \Qless\Queues\Queue $queue
+ */
+$queue->recur(MyJobClass::class, ['lots' => 'of jobs'], 60);
+
+// Wait 5 minutes
+$jobs = $queue->pop(null, 10);
+echo count($jobs), ' jobs got popped'; // 5 jobs got popped
+```
 
 ### Configuration Options
 

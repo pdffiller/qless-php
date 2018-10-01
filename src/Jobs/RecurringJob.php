@@ -255,12 +255,10 @@ class RecurringJob extends AbstractJob
      */
     public function tag(...$tags): void
     {
-        $response = call_user_func_array(
+        call_user_func_array(
             [$this->client, 'call'],
             array_merge(['recur.tag', $this->jid], array_values(func_get_args()))
         );
-
-        $this->setTags(json_decode($response, true) ?: []);
     }
 
     /**
@@ -271,11 +269,9 @@ class RecurringJob extends AbstractJob
      */
     public function untag(...$tags): void
     {
-        $response = call_user_func_array(
+        call_user_func_array(
             [$this->client, 'call'],
             array_merge(['recur.untag', $this->jid], array_values(func_get_args()))
         );
-
-        $this->setTags(json_decode($response, true) ?: []);
     }
 }

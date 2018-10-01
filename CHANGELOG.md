@@ -64,9 +64,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   Queue::recur(
       string $className,
       array $data,
-      ?string $jid = null,
       ?int $interval = null,
       ?int $offset = null,
+      ?string $jid = null,
       ?int $retries = null,
       ?int $priority = null,
       ?int $backlog = null,

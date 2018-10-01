@@ -147,9 +147,9 @@ class Queue implements EventsManagerAwareInterface
      *
      * @param  string      $className The class with the job perform method.
      * @param  array       $data      An array of parameters for job.
-     * @param  string|null $jid       The specified job id, if not a specified, a jid will be generated.
      * @param  int|null    $interval  The recurring interval in seconds.
      * @param  int|null    $offset    A delay before the first run in seconds.
+     * @param  string|null $jid       The specified job id, if not a specified, a jid will be generated.
      * @param  int|null    $retries   Number of times the job can retry when it runs.
      * @param  int|null    $priority  A negative priority will run sooner.
      * @param  int|null    $backlog
@@ -163,9 +163,9 @@ class Queue implements EventsManagerAwareInterface
     public function recur(
         string $className,
         array $data,
-        ?string $jid = null,
         ?int $interval = null,
         ?int $offset = null,
+        ?string $jid = null,
         ?int $retries = null,
         ?int $priority = null,
         ?int $backlog = null,
