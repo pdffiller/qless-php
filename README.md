@@ -431,7 +431,7 @@ $queue->put(
     null,                   // The specified delay to run job.
     null,                   // Number of retries allowed.
     null,                   // A greater priority will execute before jobs of lower priority.
-    null,                   // A list of the job tags.
+    null,                   // An array of tags to add to the job.
     [$jid]                  // A list of JIDs this job must wait on before executing.
 );
 ```
