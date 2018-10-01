@@ -3,8 +3,6 @@
 namespace Qless\Jobs;
 
 use Qless\Client;
-use Qless\EventsManagerAwareInterface;
-use Qless\EventsManagerAwareTrait;
 use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\LostLockException;
 use Qless\Exceptions\QlessException;
@@ -16,7 +14,6 @@ use Qless\Exceptions\UnknownPropertyException;
  *
  * @package Qless\Jobs
  *
- * @property-read string $jid
  * @property-read string $klass
  * @property-read string $queue
  * @property JobData $data
@@ -29,18 +26,10 @@ use Qless\Exceptions\UnknownPropertyException;
  * @property-read float $expires
  * @property-read int $remaining
  * @property-read int $retries
+ * @property-read string $description
  */
-class BaseJob implements EventsManagerAwareInterface
+class BaseJob extends AbstractJob
 {
-    use EventsManagerAwareTrait;
-
-    /**
-     * The job id.
-     *
-     * @var string
-     */
-    private $jid;
-
     /**
      * The class of the job.
      *
@@ -125,9 +114,6 @@ class BaseJob implements EventsManagerAwareInterface
      */
     private $retries;
 
-    /** @var Client */
-    private $client;
-
     /** @var ?object */
     private $instance;
 
@@ -145,13 +131,13 @@ class BaseJob implements EventsManagerAwareInterface
      */
     public function __construct(Client $client, array $data)
     {
-        $this->client = $client;
+        parent::__construct($client, $data['jid']);
+
         $this->rawData = $data;
 
         $this->jobFactory = new JobFactory();
         $this->jobFactory->setEventsManager($client->getEventsManager());
 
-        $this->jid = $data['jid'];
         $this->klass = $data['klass'];
         $this->queue = $data['queue'];
         $this->data = new JobData(json_decode($data['data'], true) ?: []);
@@ -161,7 +147,7 @@ class BaseJob implements EventsManagerAwareInterface
         $this->priority = (int) $data['priority'] ?? 0;
         $this->worker = $data['worker'];
         $this->tags = $data['tags'] ?? [];
-        $this->expires = (float) $data['expires'] ?? 0.0;
+        $this->expires = (float) ($data['expires'] ?? 0.0);
         $this->remaining = (int) $data['remaining'] ?? 0;
         $this->retries = (int) $data['retries'] ?? 0;
     }
@@ -206,6 +192,8 @@ class BaseJob implements EventsManagerAwareInterface
                 return $this->remaining;
             case 'retries':
                 return $this->retries;
+            case 'description':
+                return "{$this->klass} {$this->jid} / {$this->queue}";
             default:
                 throw new UnknownPropertyException('Getting unknown property: ' . self::class . '::' . $name);
         }
@@ -244,7 +232,7 @@ class BaseJob implements EventsManagerAwareInterface
      * @throws QlessException
      * @throws RuntimeException
      */
-    private function setJobPriority(int $priority): void
+    protected function setJobPriority(int $priority): void
     {
         if ($this->client->call('priority', $this->jid, $priority)) {
             $this->priority = $priority;
@@ -444,7 +432,7 @@ class BaseJob implements EventsManagerAwareInterface
     }
 
     /**
-     * Creates the instance to perform the job and calls the method on the instance.
+     * {@inheritdoc}
      *
      * The instance must be specified in the payload['performMethod'];
      *
@@ -537,5 +525,35 @@ class BaseJob implements EventsManagerAwareInterface
     protected function getPerformMethod(): string
     {
         return $this->data['performMethod'] ?? 'perform';
+    }
+
+    /**
+     * String representation of the job.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return sprintf('%s %s', get_class($this), $this->description);
+    }
+
+    public function offsetExists($offset)
+    {
+        return isset($this->data[$offset]);
+    }
+
+    public function offsetGet($offset)
+    {
+        return $this->data[$offset];
+    }
+
+    public function offsetSet($offset, $value)
+    {
+        $this->data[$offset] = $value;
+    }
+
+    public function offsetUnset($offset)
+    {
+        unset($this->data[$offset]);
     }
 }

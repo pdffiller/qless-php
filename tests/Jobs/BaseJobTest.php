@@ -187,6 +187,48 @@ class BaseJobTest extends QlessTestCase
     }
 
     /** @test */
+    public function shouldProvideAccessToHeartbeat()
+    {
+        $this->client->config->set('heartbeat', 10);
+        $this->client->queues['foo']->put('Foo', [], 'jid');
+
+        $job = $this->client->queues['foo']->pop();
+        $before = $job->ttl();
+
+        $this->client->config->set('heartbeat', 20);
+        $job->heartbeat();
+
+        $this->assertTrue($job->ttl() > $before);
+    }
+
+    // Times out the job now rather than when its lock is normally set to expire
+
+    /**
+     * @test
+     * @expectedException \Qless\Exceptions\QlessException
+     * @expectedExceptionMessage Job jid not running
+     */
+    public function shouldThrowExceptionWhenTimeoutFail()
+    {
+        $this->client->queues['foo']->put('Foo', [], 'jid');
+        $this->client->jobs['jid']->timeout();
+    }
+
+    /** @test */
+    public function shouldTimeoutJob()
+    {
+        $this->client->queues['foo']->put('Foo', [], 'jid');
+        $job = $this->client->queues['foo']->pop();
+
+        $job->timeout();
+        unset($job);
+
+        $job = $this->client->queues['foo']->pop();
+
+        $this->assertEquals('timed-out', $job->history[2]['what']);
+    }
+
+    /** @test */
     public function shouldGetCorrectTtl()
     {
         $queue = $this->client->queues['test-queue'];
@@ -346,5 +388,92 @@ class BaseJobTest extends QlessTestCase
         $turkeyJob = $queue->pop();
 
         $this->assertEquals('jid-2', $turkeyJob->jid);
+    }
+
+    /**
+     * @test
+     * @dataProvider jobPropertiesDataProvider
+     *
+     * @param string $property
+     * @param string $type
+     */
+    public function shouldGetInternalProperties(string $property, string $type)
+    {
+        $queue = $this->client->queues['test-queue'];
+
+        $queue->put('SampleJobPerformClass', []);
+        $job = $queue->pop();
+
+        $this->assertEquals($type, gettype($job->{$property}));
+    }
+
+    public function jobPropertiesDataProvider()
+    {
+        return [
+            ['jid', 'string'],
+            ['klass', 'string'],
+            ['queue', 'string'],
+            ['data', 'object'],
+            ['history', 'array'],
+            ['dependencies', 'array'],
+            ['dependents', 'array'],
+            ['priority', 'integer'],
+            ['worker', 'string'],
+            ['tags', 'array'],
+            ['expires', 'double'], // I ❤︎ PHP
+            ['remaining', 'integer'],
+            ['retries', 'integer'],
+            ['description', 'string'],
+        ];
+    }
+
+    /**
+     * @test
+     * @expectedException \Qless\Exceptions\UnknownPropertyException
+     * @expectedExceptionMessage Getting unknown property: Qless\Jobs\BaseJob::foo
+     */
+    public function shouldThrowExceptionWhenGetInaccessibleProperty()
+    {
+        $queue = $this->client->queues['test-queue'];
+
+        $queue->put('SampleJobPerformClass', []);
+        $job = $queue->pop();
+
+        $job->foo;
+    }
+
+    /** @test */
+    public function shouldTreatedLikeAString()
+    {
+        $queue = $this->client->queues['test-queue'];
+
+        $queue->put('SampleJobPerformClass', [], 'job-id');
+        $job = $queue->pop();
+
+        $expected = 'Qless\Jobs\BaseJob SampleJobPerformClass job-id / test-queue';
+
+        $this->assertEquals($expected, (string) $job);
+        $this->assertEquals($expected, $job->__toString());
+    }
+
+    /** @test */
+    public function shouldProvideAccessToTheDataUsingArrayNotation()
+    {
+        $queue = $this->client->queues['test-queue'];
+
+        $queue->put('SampleJobPerformClass', ['foo' => 'bar'], 'job-id');
+        $job = $queue->pop();
+
+        $this->assertTrue(isset($job['foo']));
+        $this->assertEquals('bar', $job['foo']);
+
+        $job['baz'] = 'buz';
+
+        $this->assertTrue(isset($job['baz']));
+        $this->assertEquals('buz', $job['baz']);
+
+        unset($job['baz']);
+
+        $this->assertFalse(isset($job['baz']));
     }
 }
