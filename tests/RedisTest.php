@@ -12,7 +12,7 @@ class RedisTest extends QlessTestCase
     /**
      * @test
      * @expectedException \Qless\Exceptions\RedisConnectionException
-     * @expectedExceptionMessage Network is unreachable.
+     * @expectedExceptionMessageRegExp  '^Unable to connect to the Redis server: .*\.$'
      */
     public function shouldThrowExceptionWhenConnectToBogusAddress()
     {

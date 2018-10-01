@@ -89,7 +89,11 @@ final class Redis
                 $this->timeout
             );
         } catch (\RedisException $e) {
-            throw new RedisConnectionException(rtrim($e->getMessage(), '.') . '.', $e->getCode(), $e);
+            throw new RedisConnectionException(
+                sprintf('Unable to connect to the Redis server: %s.', rtrim($e->getMessage(), '.')),
+                $e->getCode(),
+                $e
+            );
         }
 
         if ($this->password !== null) {
