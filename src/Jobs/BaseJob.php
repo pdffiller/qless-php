@@ -21,6 +21,7 @@ use Qless\Exceptions\UnknownPropertyException;
  * @property-read float $expires
  * @property-read int $remaining
  * @property-read string $description
+ * @property-read bool $tracked
  */
 class BaseJob extends AbstractJob implements \ArrayAccess
 {
@@ -66,6 +67,13 @@ class BaseJob extends AbstractJob implements \ArrayAccess
      */
     private $remaining;
 
+    /**
+     * Is current job tracked.
+     *
+     * @var bool
+     */
+    private $tracked = false;
+
     /** @var ?object */
     private $instance;
 
@@ -85,6 +93,7 @@ class BaseJob extends AbstractJob implements \ArrayAccess
         $this->worker = $data['worker'];
         $this->expires = (float) ($data['expires'] ?? 0.0);
         $this->remaining = (int) $data['remaining'] ?? 0;
+        $this->tracked = (bool) $data['tracked'] ?? false;
     }
 
     /**
@@ -113,6 +122,8 @@ class BaseJob extends AbstractJob implements \ArrayAccess
                 return $this->expires;
             case 'remaining':
                 return $this->remaining;
+            case 'tracked':
+                return $this->tracked;
             case 'description':
                 return "{$this->klass} {$this->jid} / {$this->queue}";
             default:
@@ -359,6 +370,30 @@ class BaseJob extends AbstractJob implements \ArrayAccess
     public function timeout(): void
     {
         $this->client->timeout($this->jid);
+    }
+
+    /**
+     * Start tracking current job.
+     *
+     * @return void
+     */
+    public function track(): void
+    {
+        if ($this->client->call('track', 'track', $this->jid)) {
+            $this->tracked = true;
+        }
+    }
+
+    /**
+     * Stops tracking current job.
+     *
+     * @return void
+     */
+    public function untrack(): void
+    {
+        if ($this->client->call('track', 'untrack', $this->jid)) {
+            $this->tracked = false;
+        }
     }
 
     /**

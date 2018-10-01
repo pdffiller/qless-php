@@ -201,7 +201,24 @@ class BaseJobTest extends QlessTestCase
         $this->assertTrue($job->ttl() > $before);
     }
 
-    // Times out the job now rather than when its lock is normally set to expire
+    /** @test */
+    public function shouldStartTrackingJob()
+    {
+        $this->client->queues['foo']->put('Foo', [], 'jid');
+        $this->assertFalse($this->client->jobs['jid']->tracked);
+
+        $this->client->jobs['jid']->track();
+        $this->assertTrue($this->client->jobs['jid']->tracked);
+
+        $t1 = $this->client->jobs->tagged('foo-1');
+        $this->client->jobs['jid']->tag('foo-1');
+        $t2 = $this->client->jobs->tagged('foo-1');
+
+        var_dump($t1, $t2);
+
+        $this->client->jobs['jid']->untrack();
+        $this->assertFalse($this->client->jobs['jid']->tracked);
+    }
 
     /**
      * @test
@@ -423,6 +440,7 @@ class BaseJobTest extends QlessTestCase
             ['expires', 'double'], // I ❤︎ PHP
             ['remaining', 'integer'],
             ['retries', 'integer'],
+            ['tracked', 'boolean'],
             ['description', 'string'],
         ];
     }
