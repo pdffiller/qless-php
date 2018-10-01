@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added the `Qless\Workers\Collection` for accessing workers lazily
 - Workers now can set/get its own name via `setName`/`getName`
 - Added job reservers (ordered, round robin, shuffled round robin)
+- Added `Qless\Jobs\RecurringJob` to wrap recurring jobs
 - Added basic event system
 - Added initial `qlessd` daemon
 - Added ability to adjust a job's priority while it's still waiting in a queue
@@ -28,7 +29,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Updated qless-core
 - Move `Qless\Lua` to the `Qless\LuaScript`
 - Move `Qless\Listener` to the `Qless\Subscribers\QlessCoreSubscriber`
-- Move `Qless\Job` to the `Qless\Jobs\Job`
+- Move `Qless\Job` to the `Qless\Jobs\BaseJob`
 - Move `Qless\Jobs` to the `Qless\Jobs\Collection`
 - Move `Qless\Worker` to the `Qless\Workers\ForkingWorker`
 - Move `Qless\Queue` to the `Qless\Queues\Queue`
@@ -39,11 +40,40 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Now `Qless\Queues\Queue::pop` does not require the mandatory presence of the worker name as its 1st argument.
   If the the worker name is not passed the `Qless\Client::getWorkerName` will be used
 - Now calling `Qless\Queues\Queue::pop` without 2nd argument (number of jobs to pop off of the queue) will return
-  `Qless\Jobs\Job|null` so that there is no need to play with arrays like `$job[0]->function()`
-- Rework Job class to remove no longer needed getters
-- Changed signature of the `Qless\Jobs\Job::requeue` from `requeue(array $opts = []): string` to
+  `Qless\Jobs\BaseJob|null` so that there is no need to play with arrays like `$job[0]->function()`
+- Rework job classes to remove no longer needed getters
+- Changed signature of the `Qless\Jobs\BaseJob::requeue` from `requeue(array $opts = []): string` to
   `requeue(?string $queue = null, array $opts = []): string` so that there is an ability to move job to a new queue
 - Changed signature of the `Qless\Queues\Queue::put` so that `resources`, `replace` and `interval` no longer used 
+- Changed signature of the `Qless\Queues\Queue::recur` from
+  ```php
+  Queue::recur(
+      $klass,
+      $jid,
+      $data,
+      $interval = 0,
+      $offset = 0,
+      $retries = 5,
+      $priority = 0,
+      $resources = [],
+      $tags = []
+  )
+  ```
+  to
+  ```php
+  Queue::recur(
+      string $className,
+      array $data,
+      ?int $interval = null,
+      ?int $offset = null,
+      ?string $jid = null,
+      ?int $retries = null,
+      ?int $priority = null,
+      ?int $backlog = null,
+      ?array $tags = null
+  )
+  ```
+  to follow actual qless-core API
 
 ### Removed
 - Fully refactor the `Qless\Client` class and removed no longer used code

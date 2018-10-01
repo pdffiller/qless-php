@@ -9,7 +9,7 @@ use Qless\EventsManagerAwareInterface;
 use Qless\EventsManagerAwareTrait;
 use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\RuntimeException;
-use Qless\Jobs\Job;
+use Qless\Jobs\BaseJob;
 use Qless\Jobs\PerformAwareInterface;
 use Qless\Jobs\PerformHandlerFactory;
 use Qless\Jobs\Reservers\ReserverInterface;
@@ -68,7 +68,7 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     /**
      * Current job instance (if is set).
      *
-     * @var Job|null
+     * @var BaseJob|null
      */
     protected $job;
 
@@ -115,10 +115,10 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     /**
      * Sets current job.
      *
-     * @param  Job|null $job
+     * @param  BaseJob|null $job
      * @return void
      */
-    final public function setCurrentJob(Job $job = null): void
+    final public function setCurrentJob(BaseJob $job = null): void
     {
         $this->job = $job;
     }
@@ -229,9 +229,9 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     /**
      * {@inheritdoc}
      *
-     * @return null|Job
+     * @return null|BaseJob
      */
-    final public function reserve(): ?Job
+    final public function reserve(): ?BaseJob
     {
         return $this->reserver->reserve();
     }

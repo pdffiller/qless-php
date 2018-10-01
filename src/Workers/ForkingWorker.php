@@ -6,7 +6,7 @@ use Psr\Log\LoggerInterface;
 use Qless\Events\QlessCoreEvent;
 use Qless\Exceptions\ErrorFormatter;
 use Qless\Exceptions\RuntimeException;
-use Qless\Jobs\Job;
+use Qless\Jobs\BaseJob;
 use Qless\Signals\SignalHandler;
 use Qless\Subscribers\QlessCoreSubscriber;
 use Qless\Subscribers\SignalsAwareSubscriber;
@@ -336,7 +336,7 @@ final class ForkingWorker extends AbstractWorker
             return;
         }
 
-        if ($this->job instanceof Job == false) {
+        if ($this->job instanceof BaseJob == false) {
             return;
         }
 
@@ -359,10 +359,10 @@ final class ForkingWorker extends AbstractWorker
     /**
      * Process a single job.
      *
-     * @param  Job $job The job to be processed.
+     * @param  BaseJob $job The job to be processed.
      * @return void
      */
-    public function childPerform(Job $job): void
+    public function childPerform(BaseJob $job): void
     {
         $context = ['job' => $job->jid, 'type' => $this->who];
 
@@ -415,7 +415,7 @@ final class ForkingWorker extends AbstractWorker
                 $code = pcntl_wexitstatus($status);
                 $res = $this->handleProcessExitStatus($this->childPID, self::PROCESS_TYPE_JOB, $code);
 
-                if ($res !== false && $this->job instanceof Job) {
+                if ($res !== false && $this->job instanceof BaseJob) {
                     $this->job->fail('system:fatal', $res);
                 }
                 return true;
@@ -474,7 +474,7 @@ final class ForkingWorker extends AbstractWorker
             return;
         }
 
-        if ($this->job instanceof Job == false) {
+        if ($this->job instanceof BaseJob == false) {
             return;
         }
 

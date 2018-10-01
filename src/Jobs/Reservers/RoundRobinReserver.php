@@ -3,7 +3,7 @@
 namespace  Qless\Jobs\Reservers;
 
 use Qless\Exceptions\InvalidArgumentException;
-use Qless\Jobs\Job;
+use Qless\Jobs\BaseJob;
 use Qless\Queues\Queue;
 
 /**
@@ -40,12 +40,12 @@ class RoundRobinReserver extends AbstractReserver implements ReserverInterface
     /**
      * {@inheritdoc}
      *
-     * @return Job|null
+     * @return BaseJob|null
      */
-    final public function reserve(): ?Job
+    final public function reserve(): ?BaseJob
     {
         for ($i = 0; $i < $this->numQueues; ++$i) {
-            /** @var \Qless\Jobs\Job|null $job */
+            /** @var \Qless\Jobs\BaseJob|null $job */
             $job = $this->nextQueue()->pop($this->worker);
             if ($job !== null) {
                 return $job;

@@ -9,7 +9,7 @@ use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\QlessException;
 use Qless\Exceptions\RuntimeException;
 use Qless\Exceptions\UnknownPropertyException;
-use Qless\Jobs\Job;
+use Qless\Jobs\BaseJob;
 use Ramsey\Uuid\Uuid;
 
 /**
@@ -57,7 +57,7 @@ class Queue implements EventsManagerAwareInterface
      * @param  int|null      $delay     The specified delay to run job.
      * @param  int|null      $retries   Number of retries allowed.
      * @param  int|null      $priority  A greater priority will execute before jobs of lower priority.
-     * @param  string[]|null $tags      A list of the job tags.
+     * @param  string[]|null $tags      An array of tags to add to the job.
      * @param  string[]|null $depends   A list of JIDs this job must wait on before executing.
      * @return string The job identifier.
      *
@@ -75,7 +75,7 @@ class Queue implements EventsManagerAwareInterface
         ?array $depends = null
     ) {
         try {
-            $jid = $jid ?: Uuid::uuid4()->toString();
+            $jid = $jid ?: str_replace('-', '', Uuid::uuid4()->toString());
         } catch (\Exception $e) {
             throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
         }
@@ -122,7 +122,7 @@ class Queue implements EventsManagerAwareInterface
      * @param string|null $worker  Worker name popping the job.
      * @param int         $numJobs Number of jobs to pop off of the queue.
      *
-     * @return null|Job|Job[]
+     * @return BaseJob|BaseJob[]|null
      *
      * @throws QlessException
      */
@@ -133,7 +133,7 @@ class Queue implements EventsManagerAwareInterface
 
         $jobs = [];
         array_map(function (array $data) use (&$jobs) {
-            $job = new Job($this->client, $data);
+            $job = new BaseJob($this->client, $data);
             $job->setEventsManager($this->getEventsManager());
 
             $jobs[] = $job;
@@ -145,35 +145,31 @@ class Queue implements EventsManagerAwareInterface
     /**
      * Make a recurring job in this queue.
      *
-     * The `priority` argument should be negative to be run sooner rather than
-     * later, and positive if it's less important. The `tags` argument should be
-     * a JSON array of the tags associated with the instance.
+     * @param  string      $className The class with the job perform method.
+     * @param  array       $data      An array of parameters for job.
+     * @param  int|null    $interval  The recurring interval in seconds.
+     * @param  int|null    $offset    A delay before the first run in seconds.
+     * @param  string|null $jid       The specified job id, if not a specified, a jid will be generated.
+     * @param  int|null    $retries   Number of times the job can retry when it runs.
+     * @param  int|null    $priority  A negative priority will run sooner.
+     * @param  int|null    $backlog
+     * @param  array|null  $tags      An array of tags to add to the job.
      *
-     * @param string $klass     The class with the 'performMethod' specified in the data.
-     * @param string $jid       The specified job id, if false is specified, a jid will be generated.
-     * @param mixed  $data      An array of parameters for job.
-     * @param int    $interval  The recurring interval in seconds.
-     * @param int    $offset    A delay before the first run in seconds.
-     * @param int    $retries   Number of times the job can retry when it runs.
-     * @param int    $priority  A negative priority will run sooner.
-     * @param array  $resources An array of resource identifiers this job must acquire before being processed.
-     * @param array  $tags      An array of tags to add to the job.
-     *
-     * @return mixed
+     * @return string
      *
      * @throws QlessException
      * @throws RuntimeException
      */
     public function recur(
-        $klass,
-        $jid,
-        $data,
-        $interval = 0,
-        $offset = 0,
-        $retries = 5,
-        $priority = 0,
-        $resources = [],
-        $tags = []
+        string $className,
+        array $data,
+        ?int $interval = null,
+        ?int $offset = null,
+        ?string $jid = null,
+        ?int $retries = null,
+        ?int $priority = null,
+        ?int $backlog = null,
+        ?array $tags = null
     ) {
         try {
             $jid = $jid ?: Uuid::uuid4()->toString();
@@ -195,19 +191,19 @@ class Queue implements EventsManagerAwareInterface
         return $this->client->recur(
             $this->name,
             $jid,
-            $klass,
+            $className,
             $data,
             'interval',
-            $interval,
-            $offset,
+            is_null($interval) ? 60 : $interval,
+            is_null($offset) ? 0 : $offset,
             'priority',
-            $priority,
+            is_null($priority) ? 0 : $priority,
             'tags',
-            json_encode($tags, JSON_UNESCAPED_SLASHES),
+            json_encode($tags ?: [], JSON_UNESCAPED_SLASHES),
             'retries',
-            $retries,
-            'resources',
-            json_encode($resources, JSON_UNESCAPED_SLASHES)
+            is_null($retries) ? 5 : $retries,
+            'backlog',
+            is_null($backlog) ? 0 : $backlog
         );
     }
 

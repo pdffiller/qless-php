@@ -3,7 +3,7 @@
 namespace Qless\Tests\Stubs;
 
 use Qless\Events\UserEvent;
-use Qless\Jobs\Job;
+use Qless\Jobs\BaseJob;
 use Qless\Jobs\PerformAwareInterface;
 
 /**
@@ -22,7 +22,7 @@ class JobSubscriber
 
     /**
      * @param UserEvent $event
-     * @param Job|PerformAwareInterface $source
+     * @param BaseJob|PerformAwareInterface $source
      */
     public function beforePerform(UserEvent $event, $source): void
     {
@@ -36,7 +36,7 @@ class JobSubscriber
 
     /**
      * @param UserEvent $event
-     * @param Job|PerformAwareInterface $source
+     * @param BaseJob|PerformAwareInterface $source
      */
     public function afterPerform(UserEvent $event, $source): void
     {

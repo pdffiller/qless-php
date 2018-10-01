@@ -5,7 +5,7 @@ namespace Qless\Tests;
 use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\TestCase;
 use Qless\Client;
-use Qless\Jobs\Job;
+use Qless\Jobs\BaseJob;
 use Qless\Tests\Support\RedisAwareTrait;
 
 /**
@@ -68,6 +68,6 @@ abstract class QlessTestCase extends TestCase
      */
     public function assertIsJob($condition, string $message = '')
     {
-        $this->assertInstanceOf(Job::class, $condition, $message);
+        $this->assertInstanceOf(BaseJob::class, $condition, $message);
     }
 }

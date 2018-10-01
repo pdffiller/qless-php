@@ -10,6 +10,9 @@ use Qless\Exceptions\UnsupportedFeatureException;
 /**
  * Qless\Jobs\Collection
  *
+ * A class for interacting with jobs.
+ * Not meant to be instantiated directly, it's accessed through {@see Client::$jobs}.
+ *
  * @package Qless\Jobs
  */
 class Collection implements ArrayAccess
@@ -40,14 +43,15 @@ class Collection implements ArrayAccess
     }
 
     /**
-     * Return a {@see Job} instance for the specified job identifier or null if the job does not exist
+     * Return either a {@see BaseJob} or a {@see RecurringJob} instance for the
+     * specified job identifier. Otherwise return NULL if the job does not exist.
      *
      * @param  string $jid the job identifier to fetch
-     * @return Job|null
+     * @return BaseJob|RecurringJob|null
      *
      * @throws QlessException
      */
-    public function get(string $jid): ?Job
+    public function get(string $jid)
     {
         return $this->offsetGet($jid);
     }
@@ -56,7 +60,7 @@ class Collection implements ArrayAccess
      * Returns an array of jobs for the specified job identifiers, keyed by job identifier
      *
      * @param  string[] $jids
-     * @return Job[]
+     * @return BaseJob[]
      */
     public function multiget(array $jids): array
     {
@@ -74,7 +78,7 @@ class Collection implements ArrayAccess
 
         $ret = [];
         foreach ($jobs as $data) {
-            $job = new Job($this->client, $data);
+            $job = new BaseJob($this->client, $data);
             $job->setEventsManager($this->client->getEventsManager());
 
             $ret[$job->jid] = $job;
@@ -130,7 +134,7 @@ class Collection implements ArrayAccess
      * {@inheritdoc}
      *
      * @param  string $jid
-     * @return Job|null
+     * @return BaseJob|RecurringJob|null
      *
      * @throws QlessException
      */
@@ -138,14 +142,17 @@ class Collection implements ArrayAccess
     {
         $data = $this->client->get($jid);
 
-        if ($data === false) {
+        if (empty($data)) {
             $data = $this->client->call('recur.get', $jid);
-            if ($data === false) {
+            if (empty($data)) {
                 return null;
             }
+
+            $job = new RecurringJob($this->client, json_decode($data, true));
+        } else {
+            $job = new BaseJob($this->client, json_decode($data, true));
         }
 
-        $job = new Job($this->client, json_decode($data, true));
         $job->setEventsManager($this->client->getEventsManager());
 
         return $job;

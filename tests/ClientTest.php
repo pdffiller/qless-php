@@ -425,4 +425,14 @@ WRK;
 
         $this->assertEquals($expected3, json_decode($this->client->queues(), true));
     }
+
+    /**
+     * @test
+     * @expectedException \Qless\Exceptions\QlessException
+     * @expectedExceptionMessage Job foo does not exist
+     */
+    public function shouldThrowExceptionWhenTimeoutFail()
+    {
+        $this->client->timeout('foo');
+    }
 }
