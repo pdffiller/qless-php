@@ -43,7 +43,7 @@ class EventsDrivenJobHandler implements EventsManagerAwareInterface, PerformAwar
     /**
      * {@inheritdoc}
      *
-     * @param BaseJob|RecurringJob $job
+     * @param BaseJob $job
      * @return void
      */
     public function perform(BaseJob $job): void
