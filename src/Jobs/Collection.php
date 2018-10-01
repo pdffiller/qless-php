@@ -120,6 +120,24 @@ class Collection implements ArrayAccess
     }
 
     /**
+     * Fetches a list of tagged job ids associated with provided tag.
+     *
+     * @param  string $tag
+     * @param  int    $offset
+     * @param  int    $limit
+     * @return string[]
+     */
+    public function tagged(string $tag, int $offset = 0, int $limit = 25): array
+    {
+        $response = json_decode($this->client->call('tag', 'get', $tag, $offset, $limit), true);
+        if (empty($response['jobs'])) {
+            $response['jobs'] = [];
+        }
+
+        return $response['jobs'];
+    }
+
+    /**
      * {@inheritdoc}
      *
      * @param  string $jid
