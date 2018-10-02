@@ -12,11 +12,63 @@ use Qless\Tests\QlessTestCase;
  */
 class CollectionTest extends QlessTestCase
 {
-    public function testItReturnsNullForInvalidJobID()
+    /** @test */
+    public function shouldGetTaggedJobs()
     {
-        $j = $this->client->jobs['xxx'];
+        $this->assertEquals([], $this->client->jobs->tagged('foo'));
+        $this->assertEquals([], $this->client->jobs->tagged('bar'));
 
-        $this->assertNull($j);
+        $this->client->queues['test-queue']->put('Foo', [], 'jid-1', null, null, null, ['foo', 'bar']);
+        $this->client->queues['test-queue']->put('Foo', [], 'jid-2', null, null, null, ['bar', 'baz']);
+
+        $this->assertEquals(['jid-1', 'jid-2'], $this->client->jobs->tagged('bar'));
+
+        $this->client->queues['test-queue']->put('Foo', [], 'jid-3', null, null, null, ['foo']);
+        $this->client->queues['test-queue']->put('Foo', [], 'jid-4', null, null, null, ['foo']);
+        $this->client->queues['test-queue']->put('Foo', [], 'jid-5', null, null, null, ['foo']);
+
+        $this->assertEquals(['jid-3', 'jid-4'], $this->client->jobs->tagged('foo', 1, 2));
+    }
+
+    /** @test */
+    public function shouldReturnNullForInvalidJobID()
+    {
+        $this->assertNull($this->client->jobs['xxx']);
+        $this->assertNull($this->client->jobs->get('xxx'));
+
+        $this->client->queues['test-queue']->put('Foo', [], 'xxx');
+
+        $this->assertIsJob($this->client->jobs['xxx']);
+        $this->assertIsJob($this->client->jobs->get('xxx'));
+    }
+
+    /** @test */
+    public function shouldDetectIfJobExist()
+    {
+        $this->assertFalse($this->client->jobs->offsetExists('jid'));
+
+        $this->client->queues['test-queue']->put('Foo', [], 'jid');
+        $this->assertTrue($this->client->jobs->offsetExists('jid'));
+    }
+
+    /**
+     * @test
+     * @expectedException \Qless\Exceptions\UnsupportedFeatureException
+     * @expectedExceptionMessage Deleting a job is not supported using Jobs collection.
+     */
+    public function shouldThrowExceptionOnDeletingProperty()
+    {
+        unset($this->client->jobs['xxx']);
+    }
+
+    /**
+     * @test
+     * @expectedException \Qless\Exceptions\UnsupportedFeatureException
+     * @expectedExceptionMessage Setting a job is not supported using Jobs collection.
+     */
+    public function shouldThrowExceptionOnSettingProperty()
+    {
+        $this->client->jobs->offsetSet('foo', 'bar');
     }
 
     public function testItReturnsExistingJob()
@@ -28,12 +80,17 @@ class CollectionTest extends QlessTestCase
         $this->assertEquals('j-1', $j->jid);
     }
 
-    public function testItReturnsExistingJobsKeyedByJobIdentifier()
+    /** @test */
+    public function shouldReturnExistingJobsKeyedByJobIdentifier()
     {
+        $this->assertEquals([], $this->client->jobs->multiget([]));
+        $this->assertEquals([], $this->client->jobs->multiget(['non-existent-1', 'non-existent-2']));
+
         $this->put('j-1');
         $this->put('j-2');
 
         $j = $this->client->jobs->multiget(['j-1', 'j-2']);
+
         $this->assertCount(2, $j);
         $this->assertArrayHasKey('j-1', $j);
         $this->assertArrayHasKey('j-2', $j);

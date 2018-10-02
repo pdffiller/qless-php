@@ -70,11 +70,7 @@ class Collection implements ArrayAccess
 
 
         $results = call_user_func_array([$this->client, 'multiget'], $jids);
-        $jobs = json_decode($results, true);
-
-        if (!is_array($jobs)) {
-            return [];
-        }
+        $jobs = json_decode($results, true) ?: [];
 
         $ret = [];
         foreach ($jobs as $data) {
