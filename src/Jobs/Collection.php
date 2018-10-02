@@ -70,11 +70,7 @@ class Collection implements ArrayAccess
 
 
         $results = call_user_func_array([$this->client, 'multiget'], $jids);
-        $jobs = json_decode($results, true);
-
-        if (!is_array($jobs)) {
-            return [];
-        }
+        $jobs = json_decode($results, true) ?: [];
 
         $ret = [];
         foreach ($jobs as $data) {
@@ -117,6 +113,24 @@ class Collection implements ArrayAccess
         $results = json_decode($this->client->failed(), true);
 
         return is_array($results) ? $results : [];
+    }
+
+    /**
+     * Fetches a list of tagged job ids associated with provided tag.
+     *
+     * @param  string $tag
+     * @param  int    $offset
+     * @param  int    $limit
+     * @return string[]
+     */
+    public function tagged(string $tag, int $offset = 0, int $limit = 25): array
+    {
+        $response = json_decode($this->client->call('tag', 'get', $tag, $offset, $limit), true);
+        if (empty($response['jobs'])) {
+            $response['jobs'] = [];
+        }
+
+        return $response['jobs'];
     }
 
     /**

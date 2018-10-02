@@ -188,11 +188,11 @@ The job data must be serializable to JSON, and it is recommended that you use a 
 See below for a list of the supported job options.
 
 
-The argument returned by `queue->put()` is the job ID, or `jid`.
+The argument returned by `queue->put()` is the `jid` (Job ID).
 Every Qless job has a unique `jid`, and it provides a means to interact with an existing job:
 
 ```php
-// find an existing job by it's jid
+// find an existing job by it's JID
 $job = $client->jobs[$jid];
 
 // query it to find out details about it:
@@ -209,6 +209,7 @@ $job->tags;         // array of tags for this job
 $job->expires;      // when you must either check in with a heartbeat or turn it in as completed
 $job->remaining;    // the number of retries remaining for this job
 $job->retries;      // the number of retries originally requested
+$job->tracked;      // is job flagged as important
 
 // there is a way to get seconds remaining before this job will timeout:
 $job->ttl();
@@ -218,6 +219,8 @@ $job->requeue('some_other_queue'); // move it to a new queue
 $job->cancel();                    // cancel the job
 $job->tag('foo');                  // add a tag
 $job->untag('foo');                // remove a tag
+$job->track();                     // start tracking current job
+$job->untrack();                   // stop tracking current job
 ```
 
 ### Running A Worker
@@ -552,11 +555,55 @@ echo count($jobs), ' jobs got popped'; // 5 jobs got popped
 
 ### Configuration Options
 
-**`@todo`**
+You can get and set global (read: in the context of the same Redis instance) configuration to change the behavior for
+heartbeating, and so forth. There aren't a tremendous number of configuration options, but an important one is how
+long job data is kept around. Job data is expired after it has been completed for `jobs-history` seconds, but is limited
+to the last `jobs-history-count` completed jobs. These default to 50k jobs, and 30 days, but depending on volume,
+your needs may change. To only keep the last 500 jobs for up to 7 days:
+
+```php
+/** @var \Qless\Client $client */
+$client->config['jobs-history'] = 7 * 86400;
+$client->config['jobs-history-count'] = 500;
+```
 
 ### Tagging / Tracking
 
-**`@todo`**
+In qless, 'tracking' means flagging a job as important. Tracked jobs have a tab reserved for them in the web interface,
+and they also emit subscribable events as they make progress (more on that below). You can flag a job from the
+[web interface](#web-interface), or the corresponding code:
+
+```php
+/** @var \Qless\Client $client */
+$client->jobs['b1882e009a3d11e192d0b174d751779d']->track();
+```
+
+Jobs can be tagged with strings which are indexed for quick searches. For example, jobs might be associated with
+customer accounts, or some other key that makes sense for your project.
+
+```php
+/**  @var \Qless\Queues\Queue $queue */
+$queue->put(MyJobClass::class, ['tags' => 'aplenty'], null, null, null, null, ['12345', 'foo', 'bar']);
+```
+
+This makes them searchable in the web interface, or from code:
+
+```php
+/** @var \Qless\Client $client */
+$jids = $client->jobs->tagged('foo');
+```
+
+You can add or remove tags at will, too:
+
+```php
+/**
+ * @var \Qless\Client $client
+ * @var \Qless\Jobs\BaseJob $job
+ */
+$job = $client->jobs['b1882e009a3d11e192d0b174d751779d'];
+$job->tag('howdy', 'hello');
+$job->untag('foo', 'bar');
+```
 
 ### Notifications
 
