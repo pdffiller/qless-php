@@ -569,7 +569,41 @@ $client->config['jobs-history-count'] = 500;
 
 ### Tagging / Tracking
 
-**`@todo`**
+In qless, 'tracking' means flagging a job as important. Tracked jobs have a tab reserved for them in the web interface,
+and they also emit subscribable events as they make progress (more on that below). You can flag a job from the
+[web interface](#web-interface), or the corresponding code:
+
+```php
+/** @var \Qless\Client $client */
+$client->jobs['b1882e009a3d11e192d0b174d751779d']->track();
+```
+
+Jobs can be tagged with strings which are indexed for quick searches. For example, jobs might be associated with
+customer accounts, or some other key that makes sense for your project.
+
+```php
+/**  @var \Qless\Queues\Queue $queue */
+$queue->put(MyJobClass::class, ['tags' => 'aplenty'], null, null, null, null, ['12345', 'foo', 'bar']);
+```
+
+This makes them searchable in the web interface, or from code:
+
+```php
+/** @var \Qless\Client $client */
+$jids = $client->jobs->tagged('foo');
+```
+
+You can add or remove tags at will, too:
+
+```php
+/**
+ * @var \Qless\Client $client
+ * @var \Qless\Jobs\BaseJob $job
+ */
+$job = $client->jobs['b1882e009a3d11e192d0b174d751779d'];
+$job->tag('howdy', 'hello');
+$job->untag('foo', 'bar');
+```
 
 ### Notifications
 
