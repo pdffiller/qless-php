@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added ability to adjust a job's priority while it's still waiting in a queue
 - Added `Qless\Jobs\Collection::tagged` to fetches a list of tagged JIDs associated with provided tag
 - Added `Qless\Jobs\BaseJob::track` and `Qless\Jobs\BaseJob::untrack` to (un)flagging a job as important
+- Added `Qless\Queues\Collection::fromSpec` to fetch a queues list using regular expression
 
 ### Changed
 - PHP 5.x no longer supported. Minimal required version is 7.1
