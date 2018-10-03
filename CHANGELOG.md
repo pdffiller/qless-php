@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [2.0.0] - 2018-10-02
+
 ### Added
 - Introduced `Qless\Jobs\JobHandlerInterface` so that `Worker::registerJobPerformHandler` will require
   that its argument is implements the JobHandlerInterface interface
@@ -93,4 +95,5 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
  - Initial stable release
 
-[Unreleased]: https://github.com/pdffiller/qless-php/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/pdffiller/qless-php/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/pdffiller/qless-php/compare/v1.0.0...v2.0.0
