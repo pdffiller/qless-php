@@ -9,6 +9,8 @@ use Qless\Client;
 use Qless\Jobs\Reservers\OrderedReserver;
 use Qless\Queues\Queue;
 use Qless\Workers\ForkingWorker;
+use Qless\Queues\Collection;
+
 
 if (version_compare('7.1.0', PHP_VERSION, '>')) {
     fwrite(
@@ -28,7 +30,8 @@ if (version_compare('7.1.0', PHP_VERSION, '>')) {
 $options = [
     'dsn:' => 'The Redis backend. Can have simple "host:port" format or use a DSN-style format [default: 127.0.0.1]',
     'db:' => 'The Redis database index [default: 0]',
-    'queue:' => 'A list of queues to work',
+    'queue:' => 'The queue to work',
+    'queue-spec:' => 'The regular expression to fetch queues to work',
     'prepend:' => "A PHP file to include before Composer's autoloader" ,
     'log-name:' => 'Fallback logger name [default: QLESS]',
     'help' => 'Show this help message',
@@ -39,6 +42,7 @@ $defaults = [
     'dsn' => getenv('REDIS_BACKEND') ?: '127.0.0.1',
     'db' => getenv('REDIS_BACKEND_DB') ?: null,
     'queue' => getenv('QUEUE') ?: null,
+    'queue-spec' => null,
     'prepend' => getenv('APP_PREPEND') ?: null,
     'log-name' => getenv('LOG_NAME') ?: 'qless',
     'debug' => getenv('DEBUG') || getenv('VERBOSE') || getenv('VVERBOSE') || null,
@@ -67,8 +71,12 @@ HLP;
     exit(0);
 }
 
-if (empty($config['queue']) == true) {
-    die ('Set QUEUE env var containing the list of queues to work or use "--queue" option.' . PHP_EOL);
+if (empty($config['queue']) == true && empty($config['queue-spec']) == true) {
+    die (
+            'Set QUEUE env var containing the queue name to work.' . PHP_EOL .
+            'Otherwise you can specify a regular expression to fetch queues using "--queue-spec" option' . PHP_EOL .
+            'or use "--queue" to set queue to work.' . PHP_EOL
+    );
 }
 
 if (empty($config['prepend']) == false) {
@@ -140,14 +148,17 @@ $logger->info('Start initializing qlessd...');
 
 // Create a client
 $client = new Client($config['dsn'], empty($config['db']) ? null : (int)$config['db']);
+// Collection
 
-/**
- * Get the queues you use.
- * @var \Qless\Queues\Queue[] $queues
- */
-$queues = array_map(function (string $name) use ($client): Queue {
-    return $client->queues[trim($name)];
-}, explode(',', $config['queue']));
+// Get the queues you use.
+if (empty($config['queue']) == false) {
+    $queues = array_map(function (string $name) use ($client): Queue {
+        return $client->queues[trim($name)];
+    }, explode(',', $config['queue']));
+} else {
+    $collection = new Collection($client);
+    $queues = $collection->fromSpec($config['queue-spec']);
+}
 
 // Create a job reserver; different reservers use different
 // strategies for which order jobs are popped off of queues

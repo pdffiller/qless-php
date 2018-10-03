@@ -41,6 +41,31 @@ class Collection implements ArrayAccess
     }
 
     /**
+     * Gets a list of existent Queues matched by specification (regular expression).
+     *
+     * @param  string $regexp
+     * @return Queue[]
+     */
+    public function fromSpec(string $regexp): array
+    {
+        $response = [];
+
+        if (empty($regexp)) {
+            return $response;
+        }
+
+        $queues = json_decode($this->client->queues(), true) ?: [];
+
+        foreach ($queues as $queue) {
+            if (isset($queue['name']) && preg_match("/^$regexp$/", $queue['name'])) {
+                $response[] = new Queue($queue['name'], $this->client);
+            }
+        }
+
+        return $response;
+    }
+
+    /**
      * {@inheritdoc}
      *
      * @param  mixed $offset

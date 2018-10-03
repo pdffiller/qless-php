@@ -91,4 +91,33 @@ class CollectionTest extends QlessTestCase
         $collection = new Collection($this->client);
         $collection['foo'] = 'bar';
     }
+
+    /** @test */
+    public function shouldGetQueuesListBySpecification()
+    {
+        $pattern = 'eu-(west|east)-\d+';
+        $collection = new Collection($this->client);
+
+        $this->assertEquals([], $collection->fromSpec($pattern));
+
+        $this->client->put('w1', 'foo', 'j1', 'klass', '{}', 0);
+        $this->assertEquals([], $collection->fromSpec($pattern));
+
+        $this->client->put('w1', 'eu-west-2', 'j1', 'klass', '{}', 0);
+        $queues = $collection->fromSpec($pattern);
+
+        $this->assertTrue(is_array($queues));
+        $this->assertInstanceOf(Queue::class, $queues[0]);
+        $this->assertCount(1, $queues);
+        $this->assertEquals('eu-west-2', (string) $queues[0]);
+
+        $this->client->put('w1', 'eu-east-1', 'j1', 'klass', '{}', 0);
+        $queues = $collection->fromSpec($pattern);
+
+        $this->assertCount(2, $queues);
+        $this->assertEquals('eu-west-2', (string) $queues[0]);
+        $this->assertEquals('eu-east-1', (string) $queues[1]);
+
+        $this->assertEquals([], $collection->fromSpec(''));
+    }
 }
