@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [2.0.1] - 2018-10-05
+- Fixed `ForkingWorker::perform` by adding missed `declare(ticks=1)`
+
 ## [2.0.0] - 2018-10-02
 
 ### Added
@@ -88,12 +91,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Removed no longer supported by qless-core `Qless\Resource`, `Qless\Job::getResources` and `Qless\Job::getInterval`
 - The `Qless\Client::paused` no longer provided by qless-core (but we're saved `Qless\Queues\Queue::isPaused`)
 
-### Fixed
-- Fixed demo
-
 ## 1.0.0 - 2018-08-30
 ### Added
  - Initial stable release
 
-[Unreleased]: https://github.com/pdffiller/qless-php/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/pdffiller/qless-php/compare/v2.0.1...HEAD
+[2.0.1]: https://github.com/pdffiller/qless-php/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/pdffiller/qless-php/compare/v1.0.0...v2.0.0

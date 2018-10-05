@@ -79,6 +79,8 @@ final class ForkingWorker extends AbstractWorker
      */
     public function perform(): void
     {
+        declare(ticks=1);
+
         $this->who = 'master:' . $this->name;
         $this->logContext = ['type' => $this->who, 'job.identifier' => null];
         $this->logger->info('{type}: worker started', $this->logContext);
