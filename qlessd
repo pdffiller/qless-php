@@ -5,54 +5,33 @@ use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Monolog\Processor\PsrLogMessageProcessor;
+use Phalcon\Cop\Parser;
 use Qless\Client;
 use Qless\Jobs\Reservers\OrderedReserver;
+use Qless\Queues\Collection;
 use Qless\Queues\Queue;
 use Qless\Workers\ForkingWorker;
-use Qless\Queues\Collection;
-
 
 if (version_compare('7.1.0', PHP_VERSION, '>')) {
-    fwrite(
+    fprintf(
         STDERR,
-        sprintf(
-            'This version of Qless PHP is supported on PHP >= 7.1.' . PHP_EOL .
-            'You are using PHP %s (%s).' . PHP_EOL,
-            PHP_VERSION,
-            PHP_BINARY
-        )
+        'This version of Qless PHP is supported on PHP >= 7.1.' . PHP_EOL .
+        'You are using PHP %s (%s).' . PHP_EOL,
+        PHP_VERSION,
+        PHP_BINARY
     );
 
-    die(1);
+    exit(1);
 }
 
-// First off, read the arguments
-$options = [
-    'dsn:' => 'The Redis backend. Can have simple "host:port" format or use a DSN-style format [default: 127.0.0.1]',
-    'db:' => 'The Redis database index [default: 0]',
-    'queue:' => 'The queue to work',
-    'queue-spec:' => 'The regular expression to fetch queues to work',
-    'prepend:' => "A PHP file to include before Composer's autoloader" ,
-    'log-name:' => 'Fallback logger name [default: QLESS]',
-    'help' => 'Show this help message',
-    'debug' => 'Use verbose logging',
-];
-
-$defaults = [
-    'dsn' => getenv('REDIS_BACKEND') ?: '127.0.0.1',
-    'db' => getenv('REDIS_BACKEND_DB') ?: null,
-    'queue' => getenv('QUEUE') ?: null,
-    'queue-spec' => null,
-    'prepend' => getenv('APP_PREPEND') ?: null,
-    'log-name' => getenv('LOG_NAME') ?: 'qless',
-    'debug' => getenv('DEBUG') || getenv('VERBOSE') || getenv('VVERBOSE') || null,
-    'help' => null,
-];
-
-$config = array_merge($defaults, getopt('', array_keys($options)));
-
-if ($config['help'] !== null) {
-    $banner = <<<HLP
+/**
+ * Prints the help message.
+ *
+ * @return void
+ */
+function help(): void
+{
+    $help = <<<HLP
 Qless PHP
 
 Usage:
@@ -60,33 +39,19 @@ Usage:
  
 Options:
 
+  dsn               The Redis backend. Can have simple "host:port" format or use a DSN-style format [default: 127.0.0.1]
+  db                The Redis database index [default: 0]',
+  queue             The queue to work',
+  queue-spec        The regular expression to fetch queues to work
+  prepend           A PHP file to include before Composer's autoloader
+  log-name          Fallback logger name [default: QLESS]
+  help              Show this help message
+  debug             Use verbose logging
 HLP;
 
-    fprintf(STDOUT, $banner);
-    foreach (array_keys($config) as $param) {
-        $help = isset($options[$param]) ? $options[$param] : $options["{$param}:"];
-        $value = array_key_exists("{$param}:", $options) ? '=' . strtoupper($param) : '';
-        fprintf(STDOUT, "  --%-22s %s\n", $param . $value, $help);
-    }
+    fprintf(STDOUT, $help);
+
     exit(0);
-}
-
-if (empty($config['queue']) == true && empty($config['queue-spec']) == true) {
-    die (
-            'Set QUEUE env var containing the queue name to work.' . PHP_EOL .
-            'Otherwise you can specify a regular expression to fetch queues using "--queue-spec" option' . PHP_EOL .
-            'or use "--queue" to set queue to work.' . PHP_EOL
-    );
-}
-
-if (empty($config['prepend']) == false) {
-    foreach (explode(',', $config['prepend']) as $file) {
-        if (file_exists($file) == false) {
-            die ("prepend file ({$file}) does not exist." . PHP_EOL);
-        }
-
-        require_once $file;
-    }
 }
 
 // Find and initialize Composer
@@ -106,31 +71,52 @@ foreach ($autoload as $file) {
 }
 
 if (class_exists('Composer\Autoload\ClassLoader', false) == false) {
-    die (
+    fprintf(
+        STDERR,
         'You need to set up the project dependencies using the following commands:' . PHP_EOL .
         'curl -s http://getcomposer.org/installer | php' . PHP_EOL .
         'php composer.phar install' . PHP_EOL
     );
+
+    exit(1);
+}
+
+// Read the command line arguments
+$parser = new Parser();
+$params = $parser->parse($argv);
+
+if (isset($params['help'])) {
+    help();
+}
+
+$prepend = $params['prepend'] ?? (getenv('APP_PREPEND') ?: null);
+if (empty($prepend) == false) {
+    foreach (explode(',', $prepend) as $file) {
+        if (file_exists($file) == false) {
+            fprintf(STDERR, "Prepend file ({$file}) does not exist." . PHP_EOL);
+            exit(1);
+        }
+
+        require_once $file;
+    }
 }
 
 // See if the APP_PREPEND contains a logger object.
 // If none exists, fallback to internal logger.
+$logName = $params['log-name'] ?? (getenv('LOG_NAME') ?: 'qless');
 if (!isset($logger) || $logger instanceof Logger == false) {
-    $logger = new Logger(
-        $config['log-name'],
-        [],
-        [new PsrLogMessageProcessor()]
-    );
+    $logger = new Logger($logName, [], [new PsrLogMessageProcessor()]);
 }
 
-if ($config['debug'] === null) {
-    $logLevel = Logger::WARNING;
+$debug = false;
+if (isset($params['debug'])) {
+    $debug = true;
 } else {
-    $logLevel = Logger::DEBUG;
+    $debug = getenv('DEBUG') || getenv('VERBOSE') || getenv('VVERBOSE') || false;
 }
 
 if (count($logger->getHandlers()) == 0) {
-    $handler = new StreamHandler(STDOUT, $logLevel);
+    $handler = new StreamHandler(STDOUT, $debug ? Logger::WARNING : Logger::DEBUG);
 
     $handler->setFormatter(
         new LineFormatter(
@@ -145,19 +131,34 @@ if (count($logger->getHandlers()) == 0) {
 }
 
 $logger->info('Start initializing qlessd...');
+$database = $params['db'] ?? (getenv('REDIS_BACKEND_DB') ?: null);
 
 // Create a client
-$client = new Client($config['dsn'], empty($config['db']) ? null : (int)$config['db']);
-// Collection
+$client = new Client(
+    $params['dsn'] ?? getenv('REDIS_BACKEND') ?: '127.0.0.1',
+    empty($database) ? null : (int)$database
+);
+
+$queue = $params['queue'] ?? (getenv('QUEUE') ?: null);
+if (empty($queue) == true && empty($params['queue-spec']) == true) {
+    fprintf(
+        STDERR,
+        'Set QUEUE env var containing the queue name to work.' . PHP_EOL .
+        'Otherwise you can specify a regular expression to fetch queues using "--queue-spec" option' . PHP_EOL .
+        'or use "--queue" to set queue to work.' . PHP_EOL
+    );
+
+    exit(1);
+}
 
 // Get the queues you use.
-if (empty($config['queue']) == false) {
+if (empty($queue) == false) {
     $queues = array_map(function (string $name) use ($client): Queue {
         return $client->queues[trim($name)];
-    }, explode(',', $config['queue']));
+    }, explode(',', $queue));
 } else {
     $collection = new Collection($client);
-    $queues = $collection->fromSpec($config['queue-spec']);
+    $queues = $collection->fromSpec($params['queue-spec']);
 }
 
 // Create a job reserver; different reservers use different
