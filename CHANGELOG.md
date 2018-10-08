@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
+## [2.1.0] - 2018-10-08
 ### Added
 - Added Nginx example
 
@@ -13,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  Job Handler to Worker.
 
 ## [2.0.1] - 2018-10-05
+### Fixed
 - Fixed `ForkingWorker::perform` by adding missed `declare(ticks=1)`
 
 ## [2.0.0] - 2018-10-02
@@ -102,5 +105,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Initial stable release
 
 [Unreleased]: https://github.com/pdffiller/qless-php/compare/v2.0.1...HEAD
+[2.1.0]: https://github.com/pdffiller/qless-php/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/pdffiller/qless-php/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/pdffiller/qless-php/compare/v1.0.0...v2.0.0
