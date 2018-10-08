@@ -337,31 +337,28 @@ $worker->getEventsManager()->attach('worker', new MySubscriber10(), 50); // Less
 
 #### Custom Job Handler
 
-You can set custom Job Handler to process jobs. To set Job Handler `registerJobPerformHandler(PerformAwareInterface $jobHandler)` method is used. 
-Argument should implement `\Qless\Jobs\PerformAwareInterface`. 
-This approach is handy when Job Handler is complicated service and/or has dependencies.
-Example `Custom Job Handler created by external factory`: 
+There is an ability to set custom Job Handler to process jobs. To do this call 
+`\Qless\Workers\WorkerInterface::registerJobPerformHandler` method. Its argument should implement the
+`\Qless\Jobs\PerformAwareInterface` interface. This approach is handy when Job Handler is complicated service and/or
+has dependencies. Let's look at an example in which we need to get a custom Job Handler created by external factory: 
 
 ```php
 use Qless\Jobs\Reservers\OrderedReserver;
 use Qless\Workers\ForkingWorker;
 
 /** 
- *  @var string $queueName */
- *  @var \Qless\Client $qlessClient 
+ *  @var \Qless\Client $client 
  *  @var object $jobHandlerFactory is some complicated factory which knows how to create Job Handler   
  */
-
 $jobHandler = $jobHandlerFactory->createJobHandler();
 
-$reserver = new OrderedReserver([$qlessClient->queues[$queueName]]);
+$reserver = new OrderedReserver([$client->queues['my-queue']]);
 
-$worker = new ForkingWorker($reserver, $qlessClient);
+$worker = new ForkingWorker($reserver, $client);
 $worker->registerJobPerformHandler($jobHandler);
 
 $worker->run();
 ```
-
 
 ### Per-Job Events
 

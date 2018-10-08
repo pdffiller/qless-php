@@ -32,6 +32,7 @@
         "ext-redis": "*",
         "ext-sockets": "*",
         "monolog/monolog": "^1.23",
+        "phalcon/cli-options-parser": "1.1.*",
         "psr/log": "^1",
         "ramsey/uuid": "3.7.* || 3.8.*",
         "seld/signal-handler": "1.1.*"
