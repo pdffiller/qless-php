@@ -13,19 +13,18 @@ class PerformClassAwareWorker extends AbstractWorker
 {
     public function perform(): void
     {
-        $job = $this->reserve();
-
-        $handler = $this->performHandlerFactory->create(
-            $this->jobPerformClass,
-            $this->client->getEventsManager()
-        );
-
-        if (method_exists($handler, 'setUp')) {
-            $handler->setUp();
+        if (!$this->jobPerformHandler) {
+            throw new \RuntimeException('Job handler not set');
         }
 
-        $this->getEventsManager()->fire('job:beforePerform', $handler, [$job->jid]);
-        $handler->perform($job);
-        $this->getEventsManager()->fire('job:afterPerform', $handler, [$job->jid]);
+        $job = $this->reserve();
+
+        if (method_exists($this->jobPerformHandler, 'setUp')) {
+            $this->jobPerformHandler->setUp();
+        }
+
+        $this->getEventsManager()->fire('job:beforePerform', $this->jobPerformHandler, [$job->jid]);
+        $this->jobPerformHandler->perform($job);
+        $this->getEventsManager()->fire('job:afterPerform', $this->jobPerformHandler, [$job->jid]);
     }
 }

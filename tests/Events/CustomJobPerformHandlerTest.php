@@ -24,7 +24,8 @@ class CustomJobPerformHandlerTest extends QlessTestCase
 
         $worker = new PerformClassAwareWorker(new OrderedReserver([$queue]), $this->client);
 
-        $worker->registerJobPerformHandler(EventsDrivenJobHandler::class);
+        $eventsDrivenJobHandler = new EventsDrivenJobHandler();
+        $worker->registerJobPerformHandler($eventsDrivenJobHandler);
         $worker->run();
 
         $expected = [

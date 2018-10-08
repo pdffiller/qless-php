@@ -5,6 +5,7 @@ namespace Qless\Workers;
 use Psr\Log\LoggerInterface;
 use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\BaseJob;
+use Qless\Jobs\PerformAwareInterface;
 
 /**
  * Qless\Workers\WorkerInterface
@@ -47,12 +48,12 @@ interface WorkerInterface
     /**
      * Register the job perform handler.
      *
-     * @param  string $jobPerformClass The fully qualified class name.
+     * @param  PerformAwareInterface $jobHandler Instance of handler.
      * @return void
      *
      * @throws RuntimeException
      */
-    public function registerJobPerformHandler(string $jobPerformClass): void;
+    public function registerJobPerformHandler(PerformAwareInterface $jobHandler): void;
 
     /**
      * Reserve a job to perform work.

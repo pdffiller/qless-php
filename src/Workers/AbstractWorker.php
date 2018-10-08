@@ -7,11 +7,8 @@ use Psr\Log\NullLogger;
 use Qless\Client;
 use Qless\EventsManagerAwareInterface;
 use Qless\EventsManagerAwareTrait;
-use Qless\Exceptions\InvalidArgumentException;
-use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\BaseJob;
 use Qless\Jobs\PerformAwareInterface;
-use Qless\Jobs\PerformHandlerFactory;
 use Qless\Jobs\Reservers\ReserverInterface;
 
 /**
@@ -58,12 +55,8 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
      */
     protected $name;
 
-    /**
-     * The fully qualified class name of the job perform handler.
-     *
-     * @var ?string
-     */
-    protected $jobPerformClass;
+    /** @var PerformAwareInterface|null */
+    protected $jobPerformHandler;
 
     /**
      * Current job instance (if is set).
@@ -78,13 +71,6 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
      * @var bool
      */
     protected $paused = false;
-
-    /**
-     * Internal perform handler factory.
-     *
-     * @var PerformHandlerFactory
-     */
-    protected $performHandlerFactory;
 
     /**
      * Is the worker has been halted.
@@ -107,7 +93,6 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
         $this->name = array_values(array_slice(explode('\\', get_class($this)), -1))[0];
 
         $this->setEventsManager($client->getEventsManager());
-        $this->performHandlerFactory = new PerformHandlerFactory();
 
         $this->onConstruct();
     }
@@ -196,34 +181,15 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     }
 
     /**
-     * {@inheritdoc}
-     *
-     * @param  string $jobPerformClass The fully qualified class name.
+     * @param  PerformAwareInterface $jobHandler Instance of handler
      * @return void
-     *
-     * @throws RuntimeException
-     * @throws InvalidArgumentException
      */
-    final public function registerJobPerformHandler(string $jobPerformClass): void
+    final public function registerJobPerformHandler(PerformAwareInterface $jobHandler): void
     {
-        if (!class_exists($jobPerformClass)) {
-            throw new RuntimeException(
-                sprintf('Could not find job perform class %s.', $jobPerformClass)
-            );
+        $this->jobPerformHandler = $jobHandler;
+        if ($this->jobPerformHandler instanceof EventsManagerAwareInterface) {
+            $this->jobPerformHandler->setEventsManager($this->client->getEventsManager());
         }
-
-        $interfaces = class_implements($jobPerformClass);
-        if (in_array(PerformAwareInterface::class, $interfaces, true) == false) {
-            throw new InvalidArgumentException(
-                sprintf(
-                    'Provided Job class "%s" does not implement %s interface.',
-                    $jobPerformClass,
-                    PerformAwareInterface::class
-                )
-            );
-        }
-
-        $this->jobPerformClass = $jobPerformClass;
     }
 
     /**

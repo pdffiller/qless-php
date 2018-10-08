@@ -4,6 +4,7 @@ namespace Qless\Workers;
 
 use Psr\Log\LoggerInterface;
 use Qless\Events\QlessCoreEvent;
+use Qless\EventsManagerAwareInterface;
 use Qless\Exceptions\ErrorFormatter;
 use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\BaseJob;
@@ -369,22 +370,21 @@ final class ForkingWorker extends AbstractWorker
         $context = ['job' => $job->jid, 'type' => $this->who];
 
         try {
-            if ($this->jobPerformClass) {
-                $handler = $this->performHandlerFactory->create(
-                    $this->jobPerformClass,
-                    $this->client->getEventsManager()
-                );
-
-                if (method_exists($handler, 'setUp')) {
-                    $handler->setUp();
+            if ($this->jobPerformHandler) {
+                if ($this->jobPerformHandler instanceof EventsManagerAwareInterface) {
+                    $this->jobPerformHandler->setEventsManager($this->client->getEventsManager());
                 }
 
-                $this->getEventsManager()->fire('job:beforePerform', $handler, $context);
-                $handler->perform($job);
-                $this->getEventsManager()->fire('job:afterPerform', $handler, $context);
+                if (method_exists($this->jobPerformHandler, 'setUp')) {
+                    $this->jobPerformHandler->setUp();
+                }
 
-                if (method_exists($handler, 'tearDown')) {
-                    $handler->tearDown();
+                $this->getEventsManager()->fire('job:beforePerform', $this->jobPerformHandler, $context);
+                $this->jobPerformHandler->perform($job);
+                $this->getEventsManager()->fire('job:afterPerform', $this->jobPerformHandler, $context);
+
+                if (method_exists($this->jobPerformHandler, 'tearDown')) {
+                    $this->jobPerformHandler->tearDown();
                 }
             } else {
                 $job->perform();

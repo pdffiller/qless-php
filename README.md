@@ -28,6 +28,7 @@ Documentation is borrowed from [seomoz/qless](https://github.com/seomoz/qless).
   - [Enqueing Jobs](#enqueing-jobs)
   - [Running A Worker](#running-a-worker)
     - [Event System](#event-system)
+    - [Custom Job Handler](#custom-job-handler)
   - [Per-Job Events](https://github.com/seomoz/qless#per-job-events)
   - [List of Events](#list-of-events)
   - [Web Interface](#web-interface)
@@ -333,6 +334,34 @@ $worker->getEventsManager()->attach('worker', new MySubscriber1(), 150); // More
 $worker->getEventsManager()->attach('worker', new MySubscriber2(), 100); // Normal priority
 $worker->getEventsManager()->attach('worker', new MySubscriber10(), 50); // Less priority
 ```
+
+#### Custom Job Handler
+
+You can set custom Job Handler to process jobs. To set Job Handler `registerJobPerformHandler(PerformAwareInterface $jobHandler)` method is used. 
+Argument should implement `\Qless\Jobs\PerformAwareInterface`. 
+This approach is handy when Job Handler is complicated service and/or has dependencies.
+Example `Custom Job Handler created by external factory`: 
+
+```php
+use Qless\Jobs\Reservers\OrderedReserver;
+use Qless\Workers\ForkingWorker;
+
+/** 
+ *  @var string $queueName */
+ *  @var \Qless\Client $qlessClient 
+ *  @var object $jobHandlerFactory is some complicated factory which knows how to create Job Handler   
+ */
+
+$jobHandler = $jobHandlerFactory->createJobHandler();
+
+$reserver = new OrderedReserver([$qlessClient->queues[$queueName]]);
+
+$worker = new ForkingWorker($reserver, $qlessClient);
+$worker->registerJobPerformHandler($jobHandler);
+
+$worker->run();
+```
+
 
 ### Per-Job Events
 
