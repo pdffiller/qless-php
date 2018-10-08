@@ -8,7 +8,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Changed `\Qless\Workers\AbstractWorker::registerJobPerformHandler` method. Now this method is used to inject pre-existing
  Job Handler to Worker.
 
-
 ## [2.0.1] - 2018-10-05
 - Fixed `ForkingWorker::perform` by adding missed `declare(ticks=1)`
 
