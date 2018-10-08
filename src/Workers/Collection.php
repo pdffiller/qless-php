@@ -4,8 +4,8 @@ namespace  Qless\Workers;
 
 use ArrayAccess;
 use Qless\Client;
-use Qless\Exceptions\UnknownPropertyException;
 use Qless\Exceptions\UnsupportedFeatureException;
+use Qless\Support\PropertyAccessor;
 
 /**
  * Qless\Workers\Collection
@@ -18,6 +18,8 @@ use Qless\Exceptions\UnsupportedFeatureException;
  */
 class Collection implements ArrayAccess
 {
+    use PropertyAccessor;
+
     /** @var Client */
     private $client;
 
@@ -31,15 +33,14 @@ class Collection implements ArrayAccess
         $this->client = $client;
     }
 
-    public function __get(string $name)
+    /**
+     * What workers are workers, and how many jobs are they running.
+     *
+     * @return array
+     */
+    public function getCounts(): array
     {
-        switch ($name) {
-            // What workers are workers, and how many jobs are they running
-            case 'counts':
-                return json_decode($this->client->workers(), true) ?: [];
-            default:
-                throw new UnknownPropertyException('Getting unknown property: ' . self::class . '::' . $name);
-        }
+        return json_decode($this->client->workers(), true) ?: [];
     }
 
     /**

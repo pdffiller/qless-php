@@ -4,8 +4,8 @@ namespace Qless\Queues;
 
 use ArrayAccess;
 use Qless\Client;
-use Qless\Exceptions\UnknownPropertyException;
 use Qless\Exceptions\UnsupportedFeatureException;
+use Qless\Support\PropertyAccessor;
 
 /**
  * Qless\Queues\Collection
@@ -16,6 +16,8 @@ use Qless\Exceptions\UnsupportedFeatureException;
  */
 class Collection implements ArrayAccess
 {
+    use PropertyAccessor;
+
     /** @var Client */
     private $client;
 
@@ -29,15 +31,14 @@ class Collection implements ArrayAccess
         $this->client = $client;
     }
 
-    public function __get(string $name)
+    /**
+     * What queues are there, and how many jobs do they have running, waiting, scheduled, etc.
+     *
+     * @return array
+     */
+    public function getCounts(): array
     {
-        switch ($name) {
-            // What queues are there, and how many jobs do they have running, waiting, scheduled, etc.
-            case 'counts':
-                return json_decode($this->client->queues(), true) ?: [];
-            default:
-                throw new UnknownPropertyException('Getting unknown property: ' . self::class . '::' . $name);
-        }
+        return json_decode($this->client->queues(), true) ?: [];
     }
 
     /**

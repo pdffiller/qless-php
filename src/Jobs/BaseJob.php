@@ -7,7 +7,6 @@ use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\LostLockException;
 use Qless\Exceptions\QlessException;
 use Qless\Exceptions\RuntimeException;
-use Qless\Exceptions\UnknownPropertyException;
 
 /**
  * Qless\Jobs\BaseJob
@@ -97,42 +96,87 @@ class BaseJob extends AbstractJob implements \ArrayAccess
     }
 
     /**
-     * {@inheritdoc}
+     * Get the history of what has happened to the job so far.
      *
-     * Do not call this method directly as it is a PHP magic method that
-     * will be implicitly called when executing `$value = $job->property;`.
-     *
-     * @param  string $name
-     * @return mixed
-     *
-     * @throws UnknownPropertyException
+     * @return array
      */
-    public function __get(string $name)
+    public function getHistory(): array
     {
-        switch ($name) {
-            case 'history':
-                return $this->history;
-            case 'dependencies':
-                return $this->dependencies;
-            case 'dependents':
-                return $this->dependents;
-            case 'worker':
-                return $this->worker;
-            case 'expires':
-                return $this->expires;
-            case 'remaining':
-                return $this->remaining;
-            case 'tracked':
-                return $this->tracked;
-            case 'description':
-                return "{$this->klass} {$this->jid} / {$this->queue}";
-            default:
-                return parent::__get($name);
-        }
+        return $this->history;
     }
 
     /**
-     * {@inheritdoc}
+     * Get the jids of other jobs that must complete before this one.
+     *
+     * @return string[]
+     */
+    public function getDependencies(): array
+    {
+        return $this->dependencies;
+    }
+
+    /**
+     * Get the jids of other jobs that depend on this one.
+     *
+     * @return string[]
+     */
+    public function getDependents(): array
+    {
+        return $this->dependents;
+    }
+
+    /**
+     * Get the internal worker name (usually consumer identifier).
+     *
+     * @return string
+     */
+    public function getWorker(): string
+    {
+        return $this->worker;
+    }
+
+    /**
+     * Get when you must either check in with a heartbeat or turn it in as completed.
+     *
+     * @return float
+     */
+    public function getExpires(): float
+    {
+        return $this->expires;
+    }
+
+    /**
+     * Get the number of retries remaining for this job.
+     *
+     * @return int
+     */
+    public function getRemaining(): int
+    {
+        return $this->remaining;
+    }
+
+    /**
+     * Is current job tracked.
+     *
+     * @return bool
+     */
+    public function getTracked(): bool
+    {
+        return $this->tracked;
+    }
+
+    /**
+     * Gets Job's description.
+     *
+     * @return string
+     */
+    public function getDescription(): string
+    {
+        return sprintf('%s %s / %s', $this->getKlass(), $this->getJid(), $this->getQueue());
+    }
+
+    /**
+     * Sets Job's priority.
      *
      * @param  int $priority
      * @return void
@@ -140,10 +184,10 @@ class BaseJob extends AbstractJob implements \ArrayAccess
      * @throws QlessException
      * @throws RuntimeException
      */
-    protected function updatePriority(int $priority): void
+    public function setPriority(int $priority): void
     {
         if ($this->client->call('priority', $this->jid, $priority)) {
-            $this->setPriority($priority);
+            parent::setPriority($priority);
         }
     }
 

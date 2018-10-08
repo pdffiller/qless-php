@@ -5,9 +5,8 @@ namespace Qless\Jobs;
 use Qless\Client;
 use Qless\EventsManagerAwareInterface;
 use Qless\EventsManagerAwareTrait;
-use Qless\Exceptions\QlessException;
-use Qless\Exceptions\RuntimeException;
-use Qless\Exceptions\UnknownPropertyException;
+use Qless\Exceptions\InvalidArgumentException;
+use Qless\Support\PropertyAccessor;
 
 /**
  * Qless\Jobs\AbstractJob
@@ -26,7 +25,7 @@ use Qless\Exceptions\UnknownPropertyException;
  */
 abstract class AbstractJob implements EventsManagerAwareInterface
 {
-    use EventsManagerAwareTrait;
+    use EventsManagerAwareTrait, PropertyAccessor;
 
     /**
      * The job id.
@@ -113,70 +112,74 @@ abstract class AbstractJob implements EventsManagerAwareInterface
     }
 
     /**
-     * Gets the internal Job's properties.
+     * Gets Job's ID.
      *
-     * Do not call this method directly as it is a PHP magic method that
-     * will be implicitly called when executing `$value = $job->property;`.
-     *
-     * @param  string $name
-     * @return mixed
-     *
-     * @throws UnknownPropertyException
+     * @return string
      */
-    public function __get(string $name)
+    public function getJid(): string
     {
-        switch ($name) {
-            case 'jid':
-                return $this->jid;
-            case 'klass':
-                return $this->klass;
-            case 'queue':
-                return $this->queue;
-            case 'tags':
-                return $this->tags;
-            case 'priority':
-                return $this->priority;
-            case 'retries':
-                return $this->retries;
-            case 'data':
-                return $this->data;
-            default:
-                throw new UnknownPropertyException('Getting unknown property: ' . get_class($this) . '::' . $name);
-        }
+        return $this->jid;
     }
 
     /**
-     * The magic setter to update Job's properties.
+     * Gets Job's klass.
      *
-     * @param  string $name
-     * @param  mixed  $value
-     * @return void
-     *
-     * @throws QlessException
-     * @throws RuntimeException
-     * @throws UnknownPropertyException
+     * @return string
      */
-    public function __set(string $name, $value)
+    public function getKlass(): string
     {
-        switch ($name) {
-            case 'priority':
-                $this->updatePriority($value);
-                break;
-            default:
-                throw new UnknownPropertyException('Setting unknown property: ' . get_class($this) . '::' . $name);
-        }
+        return $this->klass;
     }
 
     /**
-     * Sets Job's priority.
+     * Gets Job's queue.
      *
-     * @param  int $priority
-     * @return void
-     *
-     * @throws QlessException
-     * @throws RuntimeException
+     * @return string
      */
-    abstract protected function updatePriority(int $priority): void;
+    public function getQueue(): string
+    {
+        return $this->queue;
+    }
+
+    /**
+     * Gets Job's tags.
+     *
+     * @return string[]
+     */
+    public function getTags(): array
+    {
+        return $this->tags;
+    }
+
+    /**
+     * Gets Job's priority.
+     *
+     * @return int
+     */
+    public function getPriority(): int
+    {
+        return $this->priority;
+    }
+
+    /**
+     * Gets Job's retries.
+     *
+     * @return int
+     */
+    public function getRetries(): int
+    {
+        return $this->retries;
+    }
+
+    /**
+     * Gets Job's data.
+     *
+     * @return JobData
+     */
+    public function getData(): JobData
+    {
+        return $this->data;
+    }
 
     /**
      * Add the specified tags to this job.
@@ -213,11 +216,29 @@ abstract class AbstractJob implements EventsManagerAwareInterface
     /**
      * Sets Job's data.
      *
-     * @param  JobData $data
+     * @param  JobData|array|string $data
      * @return void
+     *
+     * @throws InvalidArgumentException
      */
-    protected function setData(JobData $data): void
+    public function setData($data): void
     {
+        if (is_array($data) == false && is_string($data) == false && $data instanceof JobData == false) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    "Job's data must be either an array, or a JobData instance, or a JSON string, %s given.",
+                    gettype($data)
+                )
+            );
+        }
+
+        if (is_array($data) == true) {
+            $data =  new JobData($data);
+        } elseif (is_string($data) == true) {
+            // Assume this is JSON
+            $data =  new JobData(json_decode($data, true));
+        }
+
         $this->data = $data;
     }
 
@@ -227,7 +248,7 @@ abstract class AbstractJob implements EventsManagerAwareInterface
      * @param  int $priority
      * @return void
      */
-    protected function setPriority(int $priority): void
+    public function setPriority(int $priority): void
     {
         $this->priority = $priority;
     }
@@ -238,7 +259,7 @@ abstract class AbstractJob implements EventsManagerAwareInterface
      * @param  int $retries
      * @return void
      */
-    protected function setRetries(int $retries): void
+    public function setRetries(int $retries): void
     {
         $this->retries = $retries;
     }
@@ -249,7 +270,7 @@ abstract class AbstractJob implements EventsManagerAwareInterface
      * @param  string $className
      * @return void
      */
-    protected function setKlass(string $className): void
+    public function setKlass(string $className): void
     {
         $this->klass = $className;
     }
@@ -260,7 +281,7 @@ abstract class AbstractJob implements EventsManagerAwareInterface
      * @param  string $queue
      * @return void
      */
-    protected function setQueue(string $queue): void
+    public function setQueue(string $queue): void
     {
         $this->queue = $queue;
     }
@@ -271,7 +292,7 @@ abstract class AbstractJob implements EventsManagerAwareInterface
      * @param  array $tags
      * @return void
      */
-    protected function setTags(array $tags): void
+    public function setTags(array $tags): void
     {
         $this->tags = $tags;
     }

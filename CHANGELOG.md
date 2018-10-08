@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
+- All qless exception now implements `Qless\Exceptions\ExceptionInterface`
+- Added getters and setters for those classes that used `__get` and `__set` to access their properties
 
 ## [2.1.0] - 2018-10-08
 ### Added

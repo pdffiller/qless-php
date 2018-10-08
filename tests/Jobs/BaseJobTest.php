@@ -41,6 +41,7 @@ class BaseJobTest extends QlessTestCase
         $job->priority = 18;
 
         $job = $this->client->jobs['jid'];
+
         $this->assertEquals(18, $job->priority);
     }
 

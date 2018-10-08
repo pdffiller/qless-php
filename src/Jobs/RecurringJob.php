@@ -6,7 +6,6 @@ use Qless\Client;
 use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\QlessException;
 use Qless\Exceptions\RuntimeException;
-use Qless\Exceptions\UnknownPropertyException;
 
 /**
  * Qless\Jobs\RecurringJob
@@ -42,98 +41,84 @@ class RecurringJob extends AbstractJob
     {
         parent::__construct($client, $data['jid'], $data);
 
-        $this->interval = $data['interval'] ?? 60;
+        $this->interval = (int) $data['interval'] ?? 60;
         $this->count = (int) $data['count'] ?? 0;
         $this->backlog = (int) $data['backlog'] ?? 0;
     }
 
     /**
-     * {@inheritdoc}
+     * Gets Job's interval.
      *
-     * Do not call this method directly as it is a PHP magic method that
-     * will be implicitly called when executing `$value = $job->property;`.
-     *
-     * @param  string $name
-     * @return mixed
-     *
-     * @throws UnknownPropertyException
+     * @return int
      */
-    public function __get(string $name)
+    public function getInterval(): int
     {
-        switch ($name) {
-            case 'interval':
-                return $this->interval;
-            case 'count':
-                return $this->count;
-            case 'backlog':
-                return $this->backlog;
-            default:
-                return parent::__get($name);
-        }
+        return $this->interval;
     }
 
     /**
-     * The magic setter to update Job's properties.
+     * Gets Job's count.
      *
-     * @param  string $name
-     * @param  mixed  $value
-     * @return void
-     *
-     * @throws QlessException
-     * @throws RuntimeException
-     * @throws UnknownPropertyException
-     * @throws InvalidArgumentException
+     * @return int
      */
-    public function __set(string $name, $value)
+    public function getCount(): int
     {
-        switch ($name) {
-            case 'retries':
-                $this->updateRetries($value);
-                break;
-            case 'interval':
-                $this->updateInterval($value);
-                break;
-            case 'data':
-                $this->updateData($value);
-                break;
-            case 'klass':
-                $this->updateKlass($value);
-                break;
-            case 'backlog':
-                $this->updateBacklog($value);
-                break;
-            default:
-                parent::__set($name, $value);
-        }
+        return $this->count;
+    }
+
+    /**
+     * Gets Job's backlog.
+     *
+     * @return int
+     */
+    public function getBacklog(): int
+    {
+        return $this->backlog;
     }
 
     /**
      * {@inheritdoc}
      *
-     * @param  int $priority
+     * @param  int $retries
      * @return void
      *
      * @throws QlessException
      * @throws RuntimeException
      */
-    protected function updatePriority(int $priority): void
+    public function setRetries(int $retries): void
     {
-        if ($this->client->call('recur.update', $this->jid, 'priority', $priority)) {
-            $this->setPriority($priority);
+        if ($this->client->call('recur.update', $this->jid, 'retries', $retries)) {
+            parent::setRetries($retries);
         }
     }
 
     /**
-     * Sets Job's data.
+     * Sets Job's interval.
      *
-     * @param  string|array|JobData $data
+     * @param  int $interval
+     * @return void
+     *
+     * @throws QlessException
+     * @throws RuntimeException
+     */
+    public function setInterval(int $interval): void
+    {
+        if ($this->client->call('recur.update', $this->jid, 'interval', $interval)) {
+            $this->interval = $interval;
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @param  JobData|array|string $data
      * @return void
      *
      * @throws InvalidArgumentException
      * @throws QlessException
      * @throws RuntimeException
      */
-    protected function updateData($data): void
+    public function setData($data): void
     {
         if (is_array($data) || $data instanceof JobData) {
             $update = json_encode($data, JSON_UNESCAPED_SLASHES);
@@ -151,12 +136,28 @@ class RecurringJob extends AbstractJob
 
         if ($this->client->call('recur.update', $this->jid, 'data', $update)) {
             if ($data instanceof JobData) {
-                $this->setData($data);
+                parent::setData($data);
             } elseif (is_array($data)) {
-                $this->setData(new JobData($data));
+                parent::setData(new JobData($data));
             } else {
-                $this->setData(new JobData(json_decode($data, true) ?: []));
+                parent::setData(new JobData(json_decode($data, true) ?: []));
             }
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @param  string $className
+     * @return void
+     *
+     * @throws QlessException
+     * @throws RuntimeException
+     */
+    public function setKlass(string $className): void
+    {
+        if ($this->client->call('recur.update', $this->jid, 'klass', $className)) {
+            parent::setKlass($className);
         }
     }
 
@@ -169,7 +170,7 @@ class RecurringJob extends AbstractJob
      * @throws QlessException
      * @throws RuntimeException
      */
-    private function updateBacklog(int $backlog): void
+    public function setBacklog(int $backlog): void
     {
         if ($this->client->call('recur.update', $this->jid, 'backlog', $backlog)) {
             $this->backlog = $backlog;
@@ -177,50 +178,18 @@ class RecurringJob extends AbstractJob
     }
 
     /**
-     * Sets Job's klass.
+     * {@inheritdoc}
      *
-     * @param  string $className
+     * @param  int $priority
      * @return void
      *
      * @throws QlessException
      * @throws RuntimeException
      */
-    private function updateKlass(string $className): void
+    public function setPriority(int $priority): void
     {
-        if ($this->client->call('recur.update', $this->jid, 'klass', $className)) {
-            $this->setKlass($className);
-        }
-    }
-
-    /**
-     * Sets Job's retries.
-     *
-     * @param  int $retries
-     * @return void
-     *
-     * @throws QlessException
-     * @throws RuntimeException
-     */
-    private function updateRetries(int $retries): void
-    {
-        if ($this->client->call('recur.update', $this->jid, 'retries', $retries)) {
-            $this->setRetries($retries);
-        }
-    }
-
-    /**
-     * Sets Job's interval.
-     *
-     * @param  int $interval
-     * @return void
-     *
-     * @throws QlessException
-     * @throws RuntimeException
-     */
-    private function updateInterval(int $interval): void
-    {
-        if ($this->client->call('recur.update', $this->jid, 'interval', $interval)) {
-            $this->interval = $interval;
+        if ($this->client->call('recur.update', $this->jid, 'priority', $priority)) {
+            parent::setPriority($priority);
         }
     }
 

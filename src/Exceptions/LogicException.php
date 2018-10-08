@@ -7,6 +7,6 @@ namespace Qless\Exceptions;
  *
  * @package Qless\Exceptions
  */
-class LogicException extends \LogicException
+class LogicException extends \LogicException implements ExceptionInterface
 {
 }
