@@ -11,6 +11,7 @@ use Qless\Jobs\Reservers\OrderedReserver;
 use Qless\Queues\Collection;
 use Qless\Queues\Queue;
 use Qless\Workers\ForkingWorker;
+use Composer\Autoload\ClassLoader;
 
 if (version_compare('7.1.0', PHP_VERSION, '>')) {
     fprintf(
@@ -40,11 +41,11 @@ Usage:
 Options:
 
   dsn               The Redis backend. Can have simple "host:port" format or use a DSN-style format [default: 127.0.0.1]
-  db                The Redis database index [default: 0]',
-  queue             The queue to work',
+  db                The Redis database index [default: 0]
+  queue             The queue to work
   queue-spec        The regular expression to fetch queues to work
   prepend           A PHP file to include before Composer's autoloader
-  log-name          Fallback logger name [default: QLESS]
+  log-name          The fallback logger name [default: qless]
   help              Show this help message
   debug             Use verbose logging
 HLP;
@@ -61,7 +62,7 @@ $autoload = [
 ];
 
 foreach ($autoload as $file) {
-    if (class_exists('Composer\Autoload\ClassLoader', false) == true) {
+    if (class_exists(ClassLoader::class, false) == true) {
         break;
     }
 
@@ -70,7 +71,7 @@ foreach ($autoload as $file) {
     }
 }
 
-if (class_exists('Composer\Autoload\ClassLoader', false) == false) {
+if (class_exists(ClassLoader::class, false) == false) {
     fprintf(
         STDERR,
         'You need to set up the project dependencies using the following commands:' . PHP_EOL .
@@ -93,7 +94,7 @@ $prepend = $params['prepend'] ?? (getenv('APP_PREPEND') ?: null);
 if (empty($prepend) == false) {
     foreach (explode(',', $prepend) as $file) {
         if (file_exists($file) == false) {
-            fprintf(STDERR, "Prepend file ({$file}) does not exist." . PHP_EOL);
+            fprintf(STDERR, 'A prepend file "%s" does not exist.' . PHP_EOL, $file);
             exit(1);
         }
 
