@@ -7,6 +7,6 @@ namespace Qless\Exceptions;
  *
  * @package Qless\Exceptions
  */
-class BadMethodCallException extends \BadMethodCallException
+class BadMethodCallException extends \BadMethodCallException implements ExceptionInterface
 {
 }
