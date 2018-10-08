@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
+- Added Nginx example
+
+### Changed
 - Changed `\Qless\Workers\AbstractWorker::registerJobPerformHandler` method. Now this method is used to inject pre-existing
  Job Handler to Worker.
 
