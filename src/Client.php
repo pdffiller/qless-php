@@ -3,10 +3,10 @@
 namespace Qless;
 
 use Qless\Exceptions\QlessException;
-use Qless\Exceptions\UnknownPropertyException;
 use Qless\Jobs\Collection as JobsCollection;
 use Qless\Queues\Collection as QueuesCollection;
 use Qless\Subscribers\QlessCoreSubscriber;
+use Qless\Support\PropertyAccessor;
 use Qless\Workers\Collection as WorkersCollection;
 
 /**
@@ -47,7 +47,7 @@ use Qless\Workers\Collection as WorkersCollection;
  */
 class Client implements EventsManagerAwareInterface
 {
-    use EventsManagerAwareTrait;
+    use EventsManagerAwareTrait, PropertyAccessor;
 
     /** @var LuaScript */
     private $lua;
@@ -155,29 +155,53 @@ class Client implements EventsManagerAwareInterface
     }
 
     /**
-     * Gets the internal Client's properties.
+     * Gets the jobs collection.
      *
-     * @param  string $name
-     * @return mixed
-     *
-     * @throws \Qless\Exceptions\UnknownPropertyException
+     * @return JobsCollection
      */
-    public function __get(string $name)
+    public function getJobs(): JobsCollection
     {
-        switch ($name) {
-            case 'jobs':
-                return $this->jobs;
-            case 'workers':
-                return $this->workers;
-            case 'queues':
-                return $this->queues;
-            case 'config':
-                return $this->config;
-            case 'lua':
-                return $this->lua;
-            default:
-                throw new UnknownPropertyException('Getting unknown property: ' . self::class . '::' . $name);
-        }
+        return $this->jobs;
+    }
+
+    /**
+     * Gets the workers collection.
+     *
+     * @return WorkersCollection
+     */
+    public function getWorkers(): WorkersCollection
+    {
+        return $this->workers;
+    }
+
+    /**
+     * Gets the queues collection.
+     *
+     * @return QueuesCollection
+     */
+    public function getQueues(): QueuesCollection
+    {
+        return $this->queues;
+    }
+
+    /**
+     * Gets the qless config.
+     *
+     * @return Config
+     */
+    public function getConfig(): Config
+    {
+        return $this->config;
+    }
+
+    /**
+     * Gets the wrapper to load and execute Lua script for qless-core.
+     *
+     * @return LuaScript
+     */
+    public function getLua(): LuaScript
+    {
+        return $this->lua;
     }
 
     /**
