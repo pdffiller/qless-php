@@ -140,31 +140,16 @@ $client = new Client(
     empty($database) ? null : (int)$database
 );
 
-$queue = $params['queue'] ?? (getenv('QUEUE') ?: null);
-if (empty($queue) == true && empty($params['queue-spec']) == true) {
-    fprintf(
-        STDERR,
-        'Set QUEUE env var containing the queue name to work.' . PHP_EOL .
-        'Otherwise you can specify a regular expression to fetch queues using "--queue-spec" option' . PHP_EOL .
-        'or use "--queue" to set queue to work.' . PHP_EOL
-    );
-
-    exit(1);
-}
-
 // Get the queues you use.
-if (empty($queue) == false) {
-    $queues = array_map(function (string $name) use ($client): Queue {
-        return $client->queues[trim($name)];
-    }, explode(',', $queue));
-} else {
-    $collection = new Collection($client);
-    $queues = $collection->fromSpec($params['queue-spec']);
-}
+$queues = $params['queue'] ?? (getenv('QUEUE') ?: null);
 
 // Create a job reserver; different reservers use different
 // strategies for which order jobs are popped off of queues
-$reserver = new OrderedReserver($queues);
+$reserver = new OrderedReserver(
+    new Collection($client),
+    empty($queue) ? null : explode(',', $queues),
+    $params['queue-spec'] ?? null
+);
 
 $worker = new ForkingWorker($reserver, $client);
 $worker->setLogger($logger);

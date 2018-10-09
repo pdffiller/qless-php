@@ -2,6 +2,7 @@
 
 namespace Qless\Tests\Jobs\Reservers;
 
+use Psr\Log\NullLogger;
 use Qless\Jobs\BaseJob;
 use Qless\Jobs\Reservers\OrderedReserver;
 use Qless\Queues\Queue;
@@ -14,13 +15,14 @@ use Qless\Tests\QlessTestCase;
  */
 class OrderedReserverTest extends QlessTestCase
 {
-    /** @test */
-    public function shouldReturnNulForNoQueues()
+    /**
+     * @test
+     * @expectedException \Qless\Exceptions\InvalidArgumentException
+     * @expectedExceptionMessage A queues list or a specification to reserve queues are required.
+     */
+    public function shouldThrowExceptionForNoQueuesAndSpec()
     {
-        $reserver = new OrderedReserver([]);
-
-        $this->assertEquals([], $reserver->getQueues());
-        $this->assertNull($reserver->reserve());
+        new OrderedReserver($this->client->queues, []);
     }
 
     /** @test */
@@ -41,67 +43,74 @@ class OrderedReserverTest extends QlessTestCase
         $queue1->put(get_class($class), ['foo']);
         $queue2->put(get_class($class), ['bar']);
 
-        $reserver = new OrderedReserver([$queue2, $queue1]);
+        $reserver = new OrderedReserver($this->client->queues, ['queue-2', 'queue-1']);
         $job = $reserver->reserve();
 
         $this->assertIsJob($job);
         $this->assertTrue($job->perform());
-        $this->assertEquals('queue-2:bar', $_SERVER['performed']);
-    }
-
-    /**
-     * @test
-     * @expectedException \Qless\Exceptions\InvalidArgumentException
-     * @dataProvider queuesDataProvider
-     *
-     * @param string $expectedType
-     * @param array  $queues
-     */
-    public function shouldThrowExpectedExceptionOnInvalidQueueList(array $queues, string $expectedType)
-    {
-        $this->expectExceptionMessage(
-            sprintf(
-                'The "%s" resever should be initialized using an array of "%s" instances, the "%s" given.',
-                OrderedReserver::class,
-                Queue::class,
-                $expectedType
-            )
-        );
-
-        new OrderedReserver($queues);
-    }
-
-    public function queuesDataProvider(): array
-    {
-        return [
-            [[new \stdClass()], \stdClass::class],
-            [[null           ], 'NULL'],
-            [[[]             ], 'array'],
-            [['test-queue-1' ], 'string'],
-        ];
+        $this->assertEquals('queue-1:foo', $_SERVER['performed']);
     }
 
     /** @test */
-    public function shouldNormalConstructObjectWithQueuesStack()
+    public function shouldGetQueues()
     {
-        $queue1 = new Queue('queue-1', $this->client);
-        $queue2 = new Queue('queue-2', $this->client);
+        $reserver = new OrderedReserver($this->client->queues, ['queue-1', 'queue-2']);
 
-        $stack = [$queue1, $queue2];
-
-        $reserver = new OrderedReserver($stack);
-
-        $this->assertEquals($stack, $reserver->getQueues());
+        $this->assertEquals(
+            [new Queue('queue-1', $this->client), new Queue('queue-2', $this->client)],
+            $reserver->getQueues()
+        );
     }
 
     /** @test */
     public function shouldGetDescription()
     {
-        $queue1 = new Queue('queue-1', $this->client);
-        $queue2 = new Queue('queue-2', $this->client);
-
-        $reserver = new OrderedReserver([$queue1, $queue2]);
+        $reserver = new OrderedReserver($this->client->queues, ['queue-1', 'queue-2']);
 
         $this->assertEquals('queue-1, queue-2 (ordered)', $reserver->getDescription());
+    }
+
+    /** @test */
+    public function shouldGetNullOnEmptyQueue()
+    {
+        $reserver = new OrderedReserver($this->client->queues, ['queue-1', 'queue-2']);
+
+        $this->assertNull($reserver->reserve());
+    }
+
+    /** @test */
+    public function shouldSortQueues()
+    {
+        $reserver = new OrderedReserver($this->client->queues, ['queue-20', 'queue-0']);
+
+        $this->assertEquals('queue-20, queue-0 (ordered)', $reserver->getDescription());
+
+        $reserver->beforeWork();
+        $this->assertEquals('queue-0, queue-20 (ordered)', $reserver->getDescription());
+    }
+
+    /** @test */
+    public function shouldReserveQueuesBySpec()
+    {
+        $spec = 'eu-(west|east)-\d+';
+        $reserver = new OrderedReserver($this->client->queues, null, $spec);
+        $reserver->setLogger(new NullLogger());
+
+        $this->client->put('w1', 'foo', 'j1', 'klass', '{}', 0);
+        $this->assertNull($reserver->reserve());
+
+        $this->client->put('w1', 'eu-west-2', 'j1', 'klass', '{}', 0);
+
+        $job = $reserver->reserve();
+
+        $this->assertIsJob($job);
+        $this->assertEquals('j1', $job->jid);
+
+        $job->complete('eu-east-1');
+
+        $job = $reserver->reserve();
+
+        $this->assertIsJob($job);
+        $this->assertEquals('j1', $job->jid);
     }
 }

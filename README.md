@@ -259,17 +259,11 @@ use Qless\Workers\ForkingWorker;
 // Create a client
 $client = new Client();
 
-/**
- * Get the queues you use.
- * @var \Qless\Queues\Queue[] $queues
- */
-$queues = array_map(function (string $name) use ($client): Queue {
-    return $client->queues[$name];
-}, ['testing', 'testing-2', 'testing-3']);
-
+// Get the queues you use.
+//
 // Create a job reserver; different reservers use different
 // strategies for which order jobs are popped off of queues
-$reserver = new OrderedReserver($queues);
+$reserver = new OrderedReserver($client->queues, ['testing', 'testing-2', 'testing-3']);
 
 $worker = new ForkingWorker($reserver, $client);
 $worker->run();
@@ -352,7 +346,7 @@ use Qless\Workers\ForkingWorker;
  */
 $jobHandler = $jobHandlerFactory->createJobHandler();
 
-$reserver = new OrderedReserver([$client->queues['my-queue']]);
+$reserver = new OrderedReserver($client->queues, 'my-queue');
 
 $worker = new ForkingWorker($reserver, $client);
 $worker->registerJobPerformHandler($jobHandler);

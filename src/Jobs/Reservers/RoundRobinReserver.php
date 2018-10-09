@@ -4,6 +4,7 @@ namespace  Qless\Jobs\Reservers;
 
 use Qless\Exceptions\InvalidArgumentException;
 use Qless\Jobs\BaseJob;
+use Qless\Queues\Collection;
 use Qless\Queues\Queue;
 
 /**
@@ -19,19 +20,30 @@ class RoundRobinReserver extends AbstractReserver implements ReserverInterface
     /** @var int  */
     private $lastIndex = 0;
 
-    const TYPE_DESCRIPTION = 'round robin';
-
     /**
      * {@inheritdoc}
      *
-     * @param Queue[]     $queues
-     * @param string|null $worker
+     * @var string
+     */
+    const TYPE_DESCRIPTION = 'round robin';
+
+    /**
+     * Instantiate a new reserver, given a list of queues that it should be working on.
+     *
+     * @param  Collection  $collection
+     * @param  array|null  $queues
+     * @param  string|null $spec
+     * @param  string|null $worker
      *
      * @throws InvalidArgumentException
      */
-    public function __construct(array $queues, ?string $worker = null)
-    {
-        parent::__construct($queues, $worker);
+    public function __construct(
+        Collection $collection,
+        ?array $queues = null,
+        ?string $spec = null,
+        ?string $worker = null
+    ) {
+        parent::__construct($collection, $queues, $spec, $worker);
 
         $this->numQueues = count($this->queues);
         $this->lastIndex = $this->numQueues - 1;
@@ -44,6 +56,8 @@ class RoundRobinReserver extends AbstractReserver implements ReserverInterface
      */
     final public function reserve(): ?BaseJob
     {
+        $this->beforeWork();
+
         $this->logger->debug('Attempting to reserve a job using {reserver} reserver', [
             'reserver' => $this->getDescription(),
         ]);

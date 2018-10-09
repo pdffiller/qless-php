@@ -19,10 +19,12 @@ class CustomJobPerformHandlerTest extends QlessTestCase
     /** @test */
     public function shouldSubscribeOnEvents()
     {
-        $queue = new Queue('test-queue', $this->client);
-        $jid = $queue->put(JobHandler::class, []);
+        $jid = (new Queue('test-queue', $this->client))->put(JobHandler::class, []);
 
-        $worker = new PerformClassAwareWorker(new OrderedReserver([$queue]), $this->client);
+        $worker = new PerformClassAwareWorker(
+            new OrderedReserver($this->client->queues, ['test-queue']),
+            $this->client
+        );
 
         $eventsDrivenJobHandler = new EventsDrivenJobHandler();
         $worker->registerJobPerformHandler($eventsDrivenJobHandler);
