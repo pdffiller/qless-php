@@ -1,6 +1,7 @@
 #!/usr/bin/env php
 <?php
 
+use Composer\Autoload\ClassLoader;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
@@ -9,9 +10,8 @@ use Phalcon\Cop\Parser;
 use Qless\Client;
 use Qless\Jobs\Reservers\OrderedReserver;
 use Qless\Queues\Collection;
-use Qless\Queues\Queue;
 use Qless\Workers\ForkingWorker;
-use Composer\Autoload\ClassLoader;
+use Qless\Exceptions\RedisConnectionException;
 
 if (version_compare('7.1.0', PHP_VERSION, '>')) {
     fprintf(
@@ -48,6 +48,7 @@ Options:
   log-name          The fallback logger name [default: qless]
   help              Show this help message
   debug             Use verbose logging
+
 HLP;
 
     fprintf(STDOUT, $help);
@@ -83,10 +84,9 @@ if (class_exists(ClassLoader::class, false) == false) {
 }
 
 // Read the command line arguments
-$parser = new Parser();
-$params = $parser->parse($argv);
+$params = (new Parser())->parse($argv);
 
-if (isset($params['help'])) {
+if (isset($params['help']) || empty($params)) {
     help();
 }
 
@@ -133,25 +133,38 @@ if (count($logger->getHandlers()) == 0) {
 
 $logger->info('Start initializing qlessd...');
 $database = $params['db'] ?? (getenv('REDIS_BACKEND_DB') ?: null);
+$dsn = $params['dsn'] ?? (getenv('REDIS_BACKEND') ?: '127.0.0.1');
 
-// Create a client
-$client = new Client(
-    $params['dsn'] ?? getenv('REDIS_BACKEND') ?: '127.0.0.1',
-    empty($database) ? null : (int)$database
-);
+try {
+    // Create a client
+    $client = new Client($dsn, empty($database) ? null : (int)$database);
 
-// Get the queues you use.
-$queues = $params['queue'] ?? (getenv('QUEUE') ?: null);
+    // Get the queues you use.
+    $queues = $params['queue'] ?? (getenv('QUEUE') ?: null);
 
-// Create a job reserver; different reservers use different
-// strategies for which order jobs are popped off of queues
-$reserver = new OrderedReserver(
-    new Collection($client),
-    empty($queue) ? null : explode(',', $queues),
-    $params['queue-spec'] ?? null
-);
+    // Create a job reserver; different reservers use different
+    // strategies for which order jobs are popped off of queues
+    $reserver = new OrderedReserver(
+        new Collection($client),
+        empty($queue) ? null : explode(',', $queues),
+        $params['queue-spec'] ?? null
+    );
 
-$worker = new ForkingWorker($reserver, $client);
-$worker->setLogger($logger);
+    $worker = new ForkingWorker($reserver, $client);
+    $worker->setLogger($logger);
 
-$worker->run();
+    $worker->run();
+} catch (RedisConnectionException $e) {
+    fprintf(
+        STDERR,
+        "%s Used connection DSN: %s\n",
+        $e->getMessage(),
+        $dsn
+    );
+
+    exit($e->getCode() ?: 1);
+} catch (\Throwable $e) {
+    fprintf(STDERR, "%s\n", $e->getMessage());
+
+    exit($e->getCode() ?: 1);
+}

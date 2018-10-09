@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [2.2.1] - 2018-10-09
+### Fixed
+- Fixed command line arguments parsing for qlessd and improved error reporting
+
 ## [2.2.0] - 2018-10-09
 ### Added
 - All qless exception now implements `Qless\Exceptions\ExceptionInterface`

@@ -177,7 +177,7 @@ final class Redis
         }
 
         // Extract the port number as an integer.
-        $port = (int) $parts['port'] ?? self::DEFAULT_PORT;
+        $port = isset($parts['port']) ? (int) $parts['port'] : self::DEFAULT_PORT;
 
         // Get the database from the 'path' part of the URI.
         $database = null;
