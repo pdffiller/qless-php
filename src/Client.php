@@ -81,7 +81,7 @@ class Client implements EventsManagerAwareInterface
      */
     public function __construct(string $server, ?int $database = null)
     {
-        $this->workerName = gethostname() . '-' . getmypid();
+        $this->workerName = php_uname('n') . '-' . getmypid();
 
         $this->redis = new Redis($server, $database);
         $this->redis->connect();
