@@ -2,7 +2,7 @@
 
 namespace Qless\Workers;
 
-use Psr\Log\LoggerInterface;
+use Psr\Log\LoggerAwareInterface;
 use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\BaseJob;
 use Qless\Jobs\PerformAwareInterface;
@@ -12,7 +12,7 @@ use Qless\Jobs\PerformAwareInterface;
  *
  * @package Qless\Workers
  */
-interface WorkerInterface
+interface WorkerInterface extends LoggerAwareInterface
 {
     /**
      * Sets the interval for checking for new jobs.
@@ -21,14 +21,6 @@ interface WorkerInterface
      * @return void
      */
     public function setInterval(int $interval): void;
-
-    /**
-     * Sets the internal worker logger.
-     *
-     * @param  LoggerInterface $logger
-     * @return void
-     */
-    public function setLogger(LoggerInterface $logger): void;
 
     /**
      * Sets the internal worker name.

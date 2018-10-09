@@ -2,6 +2,7 @@
 
 namespace  Qless\Jobs\Reservers;
 
+use Psr\Log\LoggerAwareInterface;
 use Qless\Jobs\BaseJob;
 use Qless\Queues\Queue;
 
@@ -10,7 +11,7 @@ use Qless\Queues\Queue;
  *
  * @package Qless\Jobs\Reservers
  */
-interface ReserverInterface
+interface ReserverInterface extends LoggerAwareInterface
 {
     /**
      * Gets reserver's description.

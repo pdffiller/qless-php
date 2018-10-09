@@ -42,14 +42,14 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     protected $reserver;
 
     /**
-     * The internal logger.
+     * Logging object that implements the PSR-3 LoggerInterface.
      *
      * @var LoggerInterface
      */
     protected $logger;
 
     /**
-     * Internal worker name.
+     * String identifying this worker.
      *
      * @var string
      */
@@ -80,7 +80,8 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     private $shutdown = false;
 
     /**
-     * Worker constructor.
+     * Instantiate a new worker, given a list of queues that it should be working on.
+     *
      *
      * @param ReserverInterface $reserver
      * @param Client            $client
@@ -154,9 +155,10 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
      * @param  LoggerInterface $logger
      * @return void
      */
-    public function setLogger(LoggerInterface $logger): void
+    public function setLogger(LoggerInterface $logger)
     {
         $this->logger = $logger;
+        $this->reserver->setLogger($logger);
     }
 
     /**

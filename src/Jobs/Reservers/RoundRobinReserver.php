@@ -44,10 +44,17 @@ class RoundRobinReserver extends AbstractReserver implements ReserverInterface
      */
     final public function reserve(): ?BaseJob
     {
+        $this->logger->debug('Attempting to reserve a job using {reserver} reserver', [
+            'reserver' => $this->getDescription(),
+        ]);
+
         for ($i = 0; $i < $this->numQueues; ++$i) {
+            $queue = $this->nextQueue();
+
             /** @var \Qless\Jobs\BaseJob|null $job */
-            $job = $this->nextQueue()->pop($this->worker);
+            $job = $queue->pop($this->worker);
             if ($job !== null) {
+                $this->logger->info('Found a job on {queue}', ['queue' => (string) $queue]);
                 return $job;
             }
         }
