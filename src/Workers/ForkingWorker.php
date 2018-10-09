@@ -88,13 +88,10 @@ final class ForkingWorker extends AbstractWorker
         $this->who = 'master:' . $this->name;
         $this->logContext = ['type' => $this->who, 'job.identifier' => null];
         $this->logger->info('{type}: worker started', $this->logContext);
-        $this->logger->info(
-            '{type}: monitoring the following queues (in order): {queues}',
-            ['type' => $this->who, 'queues' => implode(', ', $this->reserver->getQueues())]
-        );
+
+        $this->reserver->beforeWork();
 
         $didWork = false;
-        $this->reserver->beforeWork();
 
         while (true) {
             // Don't wait on any processes if we're already in shutdown mode.

@@ -11,7 +11,25 @@ use Qless\Jobs\BaseJob;
  */
 class OrderedReserver extends AbstractReserver implements ReserverInterface
 {
+    /**
+     * {@inheritdoc}
+     *
+     * @var string
+     */
     const TYPE_DESCRIPTION = 'ordered';
+
+    /**
+     * {@inheritdoc}
+     *
+     * @return void
+     */
+    public function beforeWork(): void
+    {
+        parent::beforeWork();
+
+        sort($this->queues);
+        $this->resetDescription();
+    }
 
     /**
      * {@inheritdoc}
@@ -20,6 +38,8 @@ class OrderedReserver extends AbstractReserver implements ReserverInterface
      */
     final public function reserve(): ?BaseJob
     {
+        $this->beforeWork();
+
         $this->logger->debug('Attempting to reserve a job using {reserver} reserver', [
             'reserver' => $this->getDescription(),
         ]);

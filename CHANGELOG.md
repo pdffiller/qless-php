@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added getters and setters for those classes that used `__get` and `__set` to access their properties
 - Now the `WorkerInterface` and the `ReserverInterface` extends `Psr\Log\LoggerAwareInterface` so that
   we can transparently share logger between worker and reserver
+- If the reserver was created using the specification  (regexp), it will receive an up-to-date list of queues
+  each time the `ReserverInterface::reserve()` was called
+
+### Changed
+- Changed the reserver's constructor interface so that it became possible to create an instance using:
+  - An array of the queue names
+  - A string representing the queue name
+  - A queue search specification (regexp)
+
+### Fixed
+- `Qless\Jobs\Reservers\OrderedReserver` will receive a list of queues in sorted order
+  (previously in the order in which they were added)
 
 ## [2.1.0] - 2018-10-08
 ### Added

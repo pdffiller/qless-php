@@ -9,6 +9,11 @@ namespace  Qless\Jobs\Reservers;
  */
 class ShuffledRoundRobinReserver extends RoundRobinReserver
 {
+    /**
+     * {@inheritdoc}
+     *
+     * @var string
+     */
     const TYPE_DESCRIPTION = 'shuffled round robin';
 
     /**
@@ -18,6 +23,8 @@ class ShuffledRoundRobinReserver extends RoundRobinReserver
      */
     public function beforeWork(): void
     {
+        parent::beforeWork();
+
         shuffle($this->queues);
         $this->resetDescription();
     }

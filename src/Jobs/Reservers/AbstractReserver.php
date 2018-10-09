@@ -6,6 +6,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qless\Exceptions\InvalidArgumentException;
 use Qless\Queues\Queue;
+use Qless\Queues\Collection;
 
 /**
  * Qless\Jobs\Reservers\AbstractReserver
@@ -38,6 +39,27 @@ abstract class AbstractReserver implements ReserverInterface
     protected $logger;
 
     /**
+     * Whether the reserver should refresh the list of queues, or just go with the queues it has been given.
+     *
+     * @var bool
+     */
+    protected $refreshQueues = false;
+
+    /**
+     * A specification to reserve queues.
+     *
+     * @var string|null
+     */
+    protected $spec;
+
+    /**
+     * The queue collection.
+     *
+     * @var Collection
+     */
+    protected $collection;
+
+    /**
      * Current reserver type description.
      *
      * @var string
@@ -47,31 +69,38 @@ abstract class AbstractReserver implements ReserverInterface
     /**
      * Instantiate a new reserver, given a list of queues that it should be working on.
      *
-     * @param Queue[]     $queues
-     * @param string|null $worker
+     * @param  Collection  $collection
+     * @param  array|null  $queues
+     * @param  string|null $spec
+     * @param  string|null $worker
      *
      * @throws InvalidArgumentException
      */
-    public function __construct(array $queues, ?string $worker = null)
-    {
-        foreach ($queues as $queue) {
-            if ($queue instanceof Queue == false) {
-                $format = 'Failed to initialize the resever:  ' .
-                    'The "%s" resever should be initialized using an array of "%s" instances, the "%s" given.';
-
-                throw new InvalidArgumentException(
-                    sprintf(
-                        $format,
-                        static::class,
-                        Queue::class,
-                        is_object($queue) ? get_class($queue) : gettype($queue)
-                    )
-                );
-            }
-
-            $this->queues[] = $queue;
+    public function __construct(
+        Collection $collection,
+        $queues = null,
+        ?string $spec = null,
+        ?string $worker = null
+    ) {
+        if (empty($queues) == true && empty($spec) == true) {
+            throw new InvalidArgumentException(
+                'A queues list or a specification to reserve queues are required.'
+            );
         }
 
+        // Get the queues to reserve.
+        if (empty($queues) == false) {
+            $queues = is_array($queues) ? $queues : [$queues];
+            $this->queues = array_map(function (string $name) use ($collection): Queue {
+                return $collection[trim($name)];
+            }, $queues);
+        } else {
+            $this->spec = $spec;
+            $this->refreshQueues = true;
+            $this->queues = $collection->fromSpec($spec);
+        }
+
+        $this->collection = $collection;
         $this->worker = $worker;
         $this->logger = new NullLogger();
     }
@@ -90,13 +119,24 @@ abstract class AbstractReserver implements ReserverInterface
      * {@inheritdoc}
      *
      * @return void
-     * @codeCoverageIgnoreStart
      */
     public function beforeWork(): void
     {
-        // nothing to do
+        if ($this->refreshQueues && empty($this->spec) == false) {
+            $this->queues = $this->collection->fromSpec($this->spec);
+
+            if (empty($this->queues) == true) {
+                $this->logger->info('Refreshing queues dynamically, but there are no queues yet');
+            }
+        }
+
+        if (empty($this->queues) == false) {
+            $this->logger->info(
+                'Monitoring the following queues: {queues}',
+                ['queues' => implode(', ', $this->queues)]
+            );
+        }
     }
-    // @codeCoverageIgnoreEnd
 
     /**
      * {@inheritdoc}

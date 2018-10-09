@@ -12,13 +12,14 @@ use Qless\Queues\Queue;
  */
 class ShuffledRoundRobinReserverTest extends RoundRobinReserverTest
 {
-    /** @test */
-    public function shouldReturnNulForNoQueues()
+    /**
+     * @test
+     * @expectedException \Qless\Exceptions\InvalidArgumentException
+     * @expectedExceptionMessage A queues list or a specification to reserve queues are required.
+     */
+    public function shouldThrowExceptionForNoQueuesAndSpec()
     {
-        $reserver = new ShuffledRoundRobinReserver([]);
-
-        $this->assertEquals([], $reserver->getQueues());
-        $this->assertNull($reserver->reserve());
+        new ShuffledRoundRobinReserver($this->client->queues, []);
     }
 
     /** @test */
@@ -29,7 +30,7 @@ class ShuffledRoundRobinReserverTest extends RoundRobinReserverTest
 
         $stack = [$queue1, $queue2];
 
-        $reserver = new ShuffledRoundRobinReserver($stack);
+        $reserver = new ShuffledRoundRobinReserver($this->client->queues, ['queue-1', 'queue-2']);
 
         $this->assertEquals($stack, $reserver->getQueues());
     }
@@ -37,10 +38,7 @@ class ShuffledRoundRobinReserverTest extends RoundRobinReserverTest
     /** @test */
     public function shouldGetDescription()
     {
-        $queue1 = new Queue('queue-1', $this->client);
-        $queue2 = new Queue('queue-2', $this->client);
-
-        $reserver = new ShuffledRoundRobinReserver([$queue1, $queue2]);
+        $reserver = new ShuffledRoundRobinReserver($this->client->queues, ['queue-1', 'queue-2']);
 
         $this->assertEquals('queue-1, queue-2 (shuffled round robin)', $reserver->getDescription());
     }
@@ -49,13 +47,8 @@ class ShuffledRoundRobinReserverTest extends RoundRobinReserverTest
     public function shouldShuffleQueuesBeforeWork()
     {
         $reserver = new ShuffledRoundRobinReserver(
-            [
-                new Queue('queue-1', $this->client),
-                new Queue('queue-2', $this->client),
-                new Queue('queue-3', $this->client),
-                new Queue('queue-4', $this->client),
-                new Queue('queue-5', $this->client),
-            ]
+            $this->client->queues,
+            ['queue-1', 'queue-2', 'queue-3', 'queue-4', 'queue-5']
         );
 
         $reserver->beforework();
