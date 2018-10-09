@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - All qless exception now implements `Qless\Exceptions\ExceptionInterface`
 - Added getters and setters for those classes that used `__get` and `__set` to access their properties
+- Now the `WorkerInterface` and the `ReserverInterface` extends `Psr\Log\LoggerAwareInterface` so that
+  we can transparently share logger between worker and reserver
 
 ## [2.1.0] - 2018-10-08
 ### Added

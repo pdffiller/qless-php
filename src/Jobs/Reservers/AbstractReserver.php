@@ -2,6 +2,8 @@
 
 namespace  Qless\Jobs\Reservers;
 
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Qless\Exceptions\InvalidArgumentException;
 use Qless\Queues\Queue;
 
@@ -21,13 +23,29 @@ abstract class AbstractReserver implements ReserverInterface
     /** @var string|null */
     protected $worker;
 
-    /** @var string|null */
+    /**
+     * Current reserver type description.
+     *
+     * @var string|null
+     */
     protected $description;
 
+    /**
+     * Logging object that implements the PSR-3 LoggerInterface.
+     *
+     * @var LoggerInterface
+     */
+    protected $logger;
+
+    /**
+     * Current reserver type description.
+     *
+     * @var string
+     */
     protected const TYPE_DESCRIPTION = 'undefined';
 
     /**
-     * Resever constructor.
+     * Instantiate a new reserver, given a list of queues that it should be working on.
      *
      * @param Queue[]     $queues
      * @param string|null $worker
@@ -55,6 +73,7 @@ abstract class AbstractReserver implements ReserverInterface
         }
 
         $this->worker = $worker;
+        $this->logger = new NullLogger();
     }
 
     /**
@@ -91,6 +110,17 @@ abstract class AbstractReserver implements ReserverInterface
         }
 
         return $this->description;
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @param  LoggerInterface $logger
+     * @return void
+     */
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
     }
 
     protected function initializeDescription(array $queues): string

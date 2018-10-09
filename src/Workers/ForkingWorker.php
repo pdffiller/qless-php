@@ -28,7 +28,10 @@ final class ForkingWorker extends AbstractWorker
     /** @var int */
     private $processType = self::PROCESS_TYPE_MASTER;
 
-    /** @var ?int */
+    /**
+     * Process ID of child worker processes.
+     * @var ?int
+     */
     private $childPID = null;
 
     /** @var ?int */
