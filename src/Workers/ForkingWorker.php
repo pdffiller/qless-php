@@ -2,6 +2,7 @@
 
 namespace Qless\Workers;
 
+use Closure;
 use Psr\Log\LoggerInterface;
 use Qless\Events\QlessCoreEvent;
 use Qless\EventsManagerAwareInterface;
@@ -197,7 +198,7 @@ final class ForkingWorker extends AbstractWorker
      *
      * @throws RuntimeException
      */
-    private function fork(&$socket)
+    private function fork(&$socket): int
     {
         $pair = [];
 
@@ -236,21 +237,52 @@ final class ForkingWorker extends AbstractWorker
         $socket = $pair[1];
         socket_close($pair[0]);
 
-        $reserved = str_repeat('x', 20240);
+        register_shutdown_function($this->handleChildErrors($socket));
 
-        register_shutdown_function(function () use (&$reserved, $socket) {
-            // shutting down
-            if (null === $error = error_get_last()) {
+        return $pid;
+    }
+
+    /**
+     * A shutdown function for the forked process.
+     *
+     * NOTE: Shutdown functions will not be executed if the process is killed with a SIGTERM or SIGKILL signal.
+     *
+     * @param  resource $socket
+     * @return Closure
+     */
+    private function handleChildErrors(&$socket): Closure
+    {
+        // This storage is freed on error (case of allowed memory exhausted).
+        $reserved = str_repeat('*', 32 * 1024);
+
+        return function () use (&$reserved, &$socket): void {
+            unset($reserved);
+
+            $error = error_get_last();
+
+            if ($error === null) {
+                unset($reserved);
                 return;
             }
-            unset($reserved);
 
             $handler = new ErrorFormatter();
             if ($handler->constant($error['type']) === null) {
+                $this->logger->warning(
+                    '{type}: Unable to recognize error type. Skip sending error to master: {message}',
+                    $this->logContext + ['message' => $error['message']]
+                );
                 return;
             }
 
-            $this->logger->debug('Sending error to master', $this->logContext);
+            if (is_resource($socket) == false) {
+                $this->logger->warning(
+                    '{type}: supplied resource is not a valid socket resource. Skip sending error to master: {message}',
+                    $this->logContext + ['message' => $error['message']]
+                );
+                return;
+            }
+
+            $this->logger->debug('{type}: sending error to master', $this->logContext);
             $data = serialize($error);
 
             do {
@@ -260,10 +292,8 @@ final class ForkingWorker extends AbstractWorker
                 }
 
                 $data = substr($data, $len);
-            } while (is_numeric($len) && $len > 0);
-        });
-
-        return $pid;
+            } while (is_numeric($len) && $len > 0 && is_resource($socket));
+        };
     }
 
     /**
@@ -334,6 +364,7 @@ final class ForkingWorker extends AbstractWorker
 
         $socket = null;
         $this->childPID = $this->fork($socket);
+
         if ($this->childPID !== 0) {
             $this->sockets[$this->childPID] = $socket;
             return;
