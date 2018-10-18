@@ -3,6 +3,7 @@
 namespace Qless\Jobs;
 
 use Qless\Client;
+use Qless\Events\User\Job as JobEvent;
 use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\LostLockException;
 use Qless\Exceptions\QlessException;
@@ -369,10 +370,10 @@ class BaseJob extends AbstractJob implements \ArrayAccess
                 $instance->setUp();
             }
 
-            $this->getEventsManager()->fire('job:beforePerform', $this);
+            $this->getEventsManager()->fire(new JobEvent\BeforePerform($this, $this));
             $performMethod = $this->getPerformMethod();
             $instance->$performMethod($this);
-            $this->getEventsManager()->fire('job:afterPerform', $this);
+            $this->getEventsManager()->fire(new JobEvent\AfterPerform($this, $this));
 
             if (method_exists($instance, 'tearDown')) {
                 $instance->tearDown();
@@ -401,7 +402,7 @@ class BaseJob extends AbstractJob implements \ArrayAccess
     {
         $jsonData = json_encode($this->data, JSON_UNESCAPED_SLASHES) ?: '{}';
 
-        $this->getEventsManager()->fire('job:onFailure', $this, compact('group', 'message'));
+        $this->getEventsManager()->fire(new JobEvent\OnFailure($this, $this, $group, $message));
 
         return $this->client->fail($this->jid, $this->worker, $group, $message, $jsonData);
     }

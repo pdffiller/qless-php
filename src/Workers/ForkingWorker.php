@@ -5,6 +5,8 @@ namespace Qless\Workers;
 use Closure;
 use Psr\Log\LoggerInterface;
 use Qless\Events\QlessCoreEvent;
+use Qless\Events\User\Job as JobEvent;
+use Qless\Events\User\Worker as WorkerEvent;
 use Qless\EventsManagerAwareInterface;
 use Qless\Exceptions\ErrorFormatter;
 use Qless\Exceptions\RuntimeException;
@@ -61,7 +63,7 @@ final class ForkingWorker extends AbstractWorker
     public function onConstruct(): void
     {
         $this->signalsSubscriber = new SignalsAwareSubscriber($this->logger);
-        $this->getEventsManager()->attach('worker', $this->signalsSubscriber);
+        $this->getEventsManager()->attach(WorkerEvent\AbstractWorkerEvent::getEntityName(), $this->signalsSubscriber);
     }
 
     /**
@@ -360,7 +362,7 @@ final class ForkingWorker extends AbstractWorker
 
     private function childStart(): void
     {
-        $this->getEventsManager()->fire('worker:beforeFork', $this);
+        $this->getEventsManager()->fire(new WorkerEvent\AfterFork($this));
 
         $socket = null;
         $this->childPID = $this->fork($socket);
@@ -374,7 +376,7 @@ final class ForkingWorker extends AbstractWorker
             return;
         }
 
-        $this->getEventsManager()->fire('worker:afterFork', $this);
+        $this->getEventsManager()->fire(new WorkerEvent\AfterFork($this));
 
         $this->processType = self::PROCESS_TYPE_JOB;
 
@@ -398,7 +400,7 @@ final class ForkingWorker extends AbstractWorker
      */
     public function childPerform(BaseJob $job): void
     {
-        $context = ['job' => $job->jid, 'type' => $this->who];
+        $loggerContext = ['job' => $job->jid, 'type' => $this->who];
 
         try {
             if ($this->jobPerformHandler) {
@@ -410,9 +412,9 @@ final class ForkingWorker extends AbstractWorker
                     $this->jobPerformHandler->setUp();
                 }
 
-                $this->getEventsManager()->fire('job:beforePerform', $this->jobPerformHandler, $context);
+                $this->getEventsManager()->fire(new JobEvent\BeforePerform($this->jobPerformHandler, $job));
                 $this->jobPerformHandler->perform($job);
-                $this->getEventsManager()->fire('job:afterPerform', $this->jobPerformHandler, $context);
+                $this->getEventsManager()->fire(new JobEvent\AfterPerform($this->jobPerformHandler, $job));
 
                 if (method_exists($this->jobPerformHandler, 'tearDown')) {
                     $this->jobPerformHandler->tearDown();
@@ -421,10 +423,10 @@ final class ForkingWorker extends AbstractWorker
                 $job->perform();
             }
 
-            $this->logger->notice('{type}: job {job} has finished', $context);
+            $this->logger->notice('{type}: job {job} has finished', $loggerContext);
         } catch (\Throwable $e) {
-            $context['stack'] = $e->getMessage();
-            $this->logger->critical('{type}: job {job} has failed {stack}', $context);
+            $loggerContext['stack'] = $e->getMessage();
+            $this->logger->critical('{type}: job {job} has failed {stack}', $loggerContext);
 
             $job->fail(
                 'system:fatal',
@@ -498,7 +500,7 @@ final class ForkingWorker extends AbstractWorker
 
     private function watchdogStart(QlessCoreSubscriber $subscriber): void
     {
-        $this->getEventsManager()->fire('worker:beforeFork', $this);
+        $this->getEventsManager()->fire(new WorkerEvent\BeforeFork($this));
 
         $socket = null;
         $this->watchdogPID = $this->fork($socket);
@@ -511,7 +513,7 @@ final class ForkingWorker extends AbstractWorker
             return;
         }
 
-        $this->getEventsManager()->fire('worker:afterFork', $this);
+        $this->getEventsManager()->fire(new WorkerEvent\AfterFork($this));
 
         $this->processType = self::PROCESS_TYPE_WATCHDOG;
 

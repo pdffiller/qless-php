@@ -46,11 +46,11 @@ class JobEventsTest extends QlessTestCase
 
         $expected = [
             [
-                'event' => 'beforePerform',
+                'event' => 'job:beforePerform',
                 'jid'   => $job->jid,
             ],
             [
-                'event' => 'afterPerform',
+                'event' => 'job:afterPerform',
                 'jid'   => $job->jid,
             ]
         ];

@@ -5,6 +5,7 @@ namespace Qless\Workers;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qless\Client;
+use Qless\Events\User\Worker as WorkerEvent;
 use Qless\EventsManagerAwareInterface;
 use Qless\EventsManagerAwareTrait;
 use Qless\Jobs\BaseJob;
@@ -244,7 +245,7 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
      */
     final public function run(): void
     {
-        $this->getEventsManager()->fire('worker:beforeFirstFork', $this);
+        $this->getEventsManager()->fire(new WorkerEvent\BeforeFirstWork($this));
 
         $this->perform();
     }

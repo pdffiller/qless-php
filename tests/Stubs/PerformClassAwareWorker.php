@@ -2,6 +2,7 @@
 
 namespace Qless\Tests\Stubs;
 
+use Qless\Events\User\Job as JobEvent;
 use Qless\Workers\AbstractWorker;
 
 /**
@@ -23,8 +24,8 @@ class PerformClassAwareWorker extends AbstractWorker
             $this->jobPerformHandler->setUp();
         }
 
-        $this->getEventsManager()->fire('job:beforePerform', $this->jobPerformHandler, [$job->jid]);
+        $this->getEventsManager()->fire(new JobEvent\BeforePerform($this->jobPerformHandler, $job));
         $this->jobPerformHandler->perform($job);
-        $this->getEventsManager()->fire('job:afterPerform', $this->jobPerformHandler, [$job->jid]);
+        $this->getEventsManager()->fire(new JobEvent\AfterPerform($this->jobPerformHandler, $job));
     }
 }
