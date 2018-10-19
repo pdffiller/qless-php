@@ -70,9 +70,6 @@
     "support": {
         "issues": "https://github.com/pdffiller/qless-php/issues"
     },
-    "bin": [
-        "qlessd"
-    ],
     "extra": {
         "branch-alias": {
             "dev-master": "2.0-dev"

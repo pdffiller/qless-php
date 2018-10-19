@@ -3,6 +3,7 @@
 namespace Qless\Queues;
 
 use Qless\Client;
+use Qless\Events\User\Queue as QueueEvent;
 use Qless\EventsManagerAwareInterface;
 use Qless\EventsManagerAwareTrait;
 use Qless\Exceptions\InvalidArgumentException;
@@ -107,11 +108,7 @@ class Queue implements EventsManagerAwareInterface
             json_encode($depends ?: [], JSON_UNESCAPED_SLASHES)
         );
 
-        $this->getEventsManager()->fire(
-            'queue:afterEnqueue',
-            $this,
-            compact('jid', 'data', 'className')
-        );
+        $this->getEventsManager()->fire(new QueueEvent\AfterEnqueue($this, $jid, $data, $className));
 
         return $jid;
     }

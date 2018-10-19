@@ -2,12 +2,11 @@
 
 namespace Qless\Tests\Stubs;
 
+use Qless\Events\User\Job as JobEvent;
 use Qless\Jobs\BaseJob;
 use Qless\EventsManagerAwareInterface;
 use Qless\EventsManagerAwareTrait;
-use Qless\Events\UserEvent;
 use Qless\Jobs\PerformAwareInterface;
-use Qless\Jobs\RecurringJob;
 
 /**
  * Qless\Tests\Stubs\EventsDrivenJobHandler
@@ -26,16 +25,16 @@ class EventsDrivenJobHandler implements EventsManagerAwareInterface, PerformAwar
     public function setUp()
     {
         $this->getEventsManager()->attach(
-            'job:beforePerform',
-            function (UserEvent $event, EventsDrivenJobHandler $source) {
-                $_SERVER['caller']['stack'][] = $event->getData()[0] . ':' . $event->getType();
+            JobEvent\BeforePerform::getName(),
+            function (JobEvent\AbstractJobEvent $event) {
+                $_SERVER['caller']['stack'][] = $event->getJob()->jid . ':' . $event->getName();
             }
         );
 
         $this->getEventsManager()->attach(
-            'job:afterPerform',
-            function (UserEvent $event, EventsDrivenJobHandler $source) {
-                $_SERVER['caller']['stack'][] = $event->getData()[0] . ':' . $event->getType();
+            JobEvent\AfterPerform::getName(),
+            function (JobEvent\AbstractJobEvent $event) {
+                $_SERVER['caller']['stack'][] = $event->getJob()->jid. ':' . $event->getName();
             }
         );
     }
@@ -48,7 +47,7 @@ class EventsDrivenJobHandler implements EventsManagerAwareInterface, PerformAwar
      */
     public function perform(BaseJob $job): void
     {
-        $_SERVER['caller']['stack'][] = "{$job->jid}:perform";
+        $_SERVER['caller']['stack'][] = "{$job->jid}:job:perform";
 
         $job->complete();
     }

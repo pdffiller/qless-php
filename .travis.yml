@@ -56,10 +56,8 @@ before_script:
   - php -v
   - php -m | grep -e 'json\|pcntl\|posix\|redis\|sockets\|pcre'
   - composer diagnose || true
-  - chmod +x ./qlessd
 
 script:
-  - ./qlessd --help
   - ./vendor/bin/phpunit --disallow-test-output
 
 after_success:

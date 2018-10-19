@@ -3,7 +3,7 @@
 namespace Qless\Subscribers;
 
 use Psr\Log\LoggerInterface;
-use Qless\Events\UserEvent;
+use Qless\Events\User\Worker as WorkerEvent;
 use Qless\Signals\SignalHandler;
 use Qless\Workers\WorkerInterface;
 
@@ -32,7 +32,7 @@ class SignalsAwareSubscriber
         $this->logger = $logger;
     }
 
-    public function beforeFirstFork(UserEvent $event, WorkerInterface $source): void
+    public function beforeFirstFork(WorkerEvent\BeforeFirstWork $event): void
     {
         /**
          * Do not use declare(ticks=1) instead use pcntl_async_signals(true)
@@ -42,10 +42,10 @@ class SignalsAwareSubscriber
          */
         pcntl_async_signals(true);
 
-        $this->registerSignalHandler($source);
+        $this->registerSignalHandler($event->getSource());
     }
 
-    public function afterFork(UserEvent $event, WorkerInterface $source): void
+    public function afterFork(WorkerEvent\AfterFork $event): void
     {
         $this->clearSignalHandler();
     }

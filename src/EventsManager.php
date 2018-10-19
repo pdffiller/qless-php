@@ -4,7 +4,7 @@ namespace Qless;
 
 use SplPriorityQueue;
 use Qless\Exceptions\InvalidArgumentException;
-use Qless\Events\UserEvent;
+use Qless\Events\User\AbstractEvent as AbstractUserEvent;
 
 /**
  * Qless\EventsManager
@@ -19,14 +19,14 @@ final class EventsManager
     /**
      * Attach a listener to the events manager.
      *
-     * @param  string          $event
+     * @param  string          $eventName
      * @param  object|callable $handler
      * @param  int             $priority
      * @return void
      *
      * @throws InvalidArgumentException
      */
-    public function attach(string $event, $handler, int $priority = 100): void
+    public function attach(string $eventName, $handler, int $priority = 100): void
     {
         if (is_object($handler) == false && is_callable($handler) == false) {
             throw new InvalidArgumentException(
@@ -34,23 +34,23 @@ final class EventsManager
             );
         }
 
-        $priorityQueue = $this->fetchQueue($event);
+        $priorityQueue = $this->fetchQueue($eventName);
         $priorityQueue->insert($handler, $priority);
     }
 
     /**
      * Fetches a priority events queue by event type.
      *
-     * @param  string $event
+     * @param  string $eventName
      * @return SplPriorityQueue
      */
-    protected function fetchQueue(string $event): SplPriorityQueue
+    protected function fetchQueue(string $eventName): SplPriorityQueue
     {
-        if (isset($this->events[$event]) == false) {
-            $this->events[$event] = $this->createQueue();
+        if (isset($this->events[$eventName]) == false) {
+            $this->events[$eventName] = $this->createQueue();
         }
 
-        return $this->events[$event];
+        return $this->events[$eventName];
     }
 
     /**
@@ -69,13 +69,13 @@ final class EventsManager
     /**
      * Detach the listener from the events manager.
      *
-     * @param  string          $event
+     * @param  string          $eventName
      * @param  object|callable $handler
      * @return void
      *
      * @throws InvalidArgumentException
      */
-    public function detach(string $event, $handler): void
+    public function detach(string $eventName, $handler): void
     {
         if (is_object($handler) == false && is_callable($handler) == false) {
             throw new InvalidArgumentException(
@@ -83,11 +83,11 @@ final class EventsManager
             );
         }
 
-        if (isset($this->events[$event]) == false) {
+        if (isset($this->events[$eventName]) == false) {
             return;
         }
 
-        $priorityQueue = $this->events[$event];
+        $priorityQueue = $this->events[$eventName];
         $priorityQueue->setExtractFlags(SplPriorityQueue::EXTR_BOTH);
         $priorityQueue->top();
 
@@ -102,55 +102,28 @@ final class EventsManager
             }
         }
 
-        $this->events[$event] = $newPriorityQueue;
+        $this->events[$eventName] = $newPriorityQueue;
     }
 
     /**
      * Fires an event in the events manager causing the active listeners to be notified about it.
      *
-     * @param  string $eventName
-     * @param  object $source
-     * @param  array  $data
+     * @param AbstractUserEvent $event
      * @return mixed|null
-     *
-     * @throws InvalidArgumentException
      */
-    public function fire(string $eventName, $source, array $data = [])
+    public function fire(AbstractUserEvent $event)
     {
-        if (is_object($source) == false) {
-            throw new InvalidArgumentException(
-                sprintf('Event provider must be an object %s given.', gettype($source))
-            );
-        }
-
-        if (strpos($eventName, ':') == false) {
-            throw new InvalidArgumentException(
-                sprintf('Invalid event name "%s". Valid form is "<group>:<name>".', $eventName)
-            );
-        }
-
-        $parts = explode(':', $eventName);
-
-        $type = $parts[0];
-        $name = $parts[1];
-
         $status = null;
-        $event = null;
 
+        $type = $event::getEntityName();
         if (isset($this->events[$type])) {
             $queue = $this->events[$type];
-
-            $event = new UserEvent($name, $source, $data);
             $status = $this->fireQueue($queue, $event);
         }
 
+        $eventName = $event->getName();
         if (isset($this->events[$eventName])) {
             $queue = $this->events[$eventName];
-
-            if ($event === null) {
-                $event = new UserEvent($name, $source, $data);
-            }
-
             $status = $this->fireQueue($queue, $event);
         }
 
@@ -161,14 +134,12 @@ final class EventsManager
      * Internal handler to call a queue of events.
      *
      * @param  SplPriorityQueue $queue
-     * @param  UserEvent $event
+     * @param  AbstractUserEvent $event
      * @return mixed|null
      */
-    private function fireQueue(SplPriorityQueue $queue, UserEvent $event)
+    private function fireQueue(SplPriorityQueue $queue, AbstractUserEvent $event)
     {
-        $eventName = $event->getType();
-        $source = $event->getSource();
-        $data = $event->getData();
+        $eventHappening = $event::getHappening();
 
         $iterator = clone $queue;
         $iterator->top();
@@ -182,11 +153,11 @@ final class EventsManager
 
             if (is_object($handler)) {
                 if ($handler instanceof \Closure) {
-                    $arguments = $arguments ?: [$event, $source, $data];
+                    $arguments = $arguments ?: [$event];
                     $status = call_user_func_array($handler, $arguments);
                 } else {
-                    if (method_exists($handler, $eventName)) {
-                        $status = $handler->{$eventName}($event, $source, $data);
+                    if (method_exists($handler, $eventHappening)) {
+                        $status = $handler->{$eventHappening}($event);
                     }
                 }
             }

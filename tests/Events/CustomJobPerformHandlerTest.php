@@ -31,9 +31,9 @@ class CustomJobPerformHandlerTest extends QlessTestCase
         $worker->run();
 
         $expected = [
-            "{$jid}:beforePerform",
-            "{$jid}:perform",
-            "{$jid}:afterPerform"
+            "{$jid}:job:beforePerform",
+            "{$jid}:job:perform",
+            "{$jid}:job:afterPerform"
         ];
 
         $this->assertEquals($expected, $_SERVER['caller']['stack']);

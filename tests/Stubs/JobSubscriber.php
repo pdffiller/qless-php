@@ -2,7 +2,7 @@
 
 namespace Qless\Tests\Stubs;
 
-use Qless\Events\UserEvent;
+use Qless\Events\User\Job\AbstractJobEvent;
 use Qless\Jobs\BaseJob;
 use Qless\Jobs\PerformAwareInterface;
 
@@ -21,30 +21,29 @@ class JobSubscriber
     }
 
     /**
-     * @param UserEvent $event
-     * @param BaseJob|PerformAwareInterface $source
+     * @param AbstractJobEvent $event
      */
-    public function beforePerform(UserEvent $event, $source): void
+    public function beforePerform(AbstractJobEvent $event): void
     {
-        $source->data['stack'][] = __METHOD__;
+        $event->getSource()->data['stack'][] = __METHOD__;
 
         $this->status->triggered[] = [
-            'event' => $event->getType(),
-            'jid'   => $source->jid,
+            'event' => $event::getName(),
+            'jid'   => $event->getSource()->jid,
         ];
     }
 
     /**
-     * @param UserEvent $event
+     * @param AbstractJobEvent $event
      * @param BaseJob|PerformAwareInterface $source
      */
-    public function afterPerform(UserEvent $event, $source): void
+    public function afterPerform(AbstractJobEvent $event): void
     {
-        $source->data['stack'][] = __METHOD__;
+        $event->getSource()->data['stack'][] = __METHOD__;
 
         $this->status->triggered[] = [
-            'event' => $event->getType(),
-            'jid'   => $source->jid,
+            'event' => $event::getName(),
+            'jid'   => $event->getSource()->jid,
         ];
     }
 }
