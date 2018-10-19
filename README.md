@@ -27,10 +27,7 @@ Documentation is borrowed from [seomoz/qless](https://github.com/seomoz/qless).
 - [Usage](#usage)
   - [Enqueing Jobs](#enqueing-jobs)
   - [Running A Worker](#running-a-worker)
-    - [Event System](#event-system)
     - [Custom Job Handler](#custom-job-handler)
-  - [Per-Job Events](https://github.com/seomoz/qless#per-job-events)
-  - [List of Events](#list-of-events)
   - [Web Interface](#web-interface)
   - [Job Dependencies](#job-dependencies)
   - [Priority](#priority)
@@ -38,7 +35,9 @@ Documentation is borrowed from [seomoz/qless](https://github.com/seomoz/qless).
   - [Recurring Jobs](#recurring-jobs)
   - [Configuration Options](#configuration-options)
   - [Tagging / Tracking](#tagging--tracking)
-  - [Notifications](#notifications)
+  - [Event System](#event-system)
+    - [Per-Job Events](#per-job-events)
+    - [List of Events](#list-of-events)
   - [Heartbeating](#heartbeating)
   - [Stats](#stats)
   - [Time](#time)
@@ -284,79 +283,6 @@ You should send these to the master process, not the child.
 
 The child process supports the `USR2` signal, which causes it to dump its current backtrace.
 
-#### Event System
-
-Qless also has a basic event system that can be used by your application to customize how some of the qless internals
-behave. Events can be used to inject logic before, after or around the processing of a single job in the child process.
-This can be useful, for example, when you need to re-establish a connection to your database for each job.
-
-Events has few main concepts - `entity`, `happening`, `source`.
-- `entity` is an object type with whom event is taking place, for example `entity` can be `job` or `worker`.
-- `happening` is an act that is taking place, for example it can be `beforeFork` or `beforePerform`
-- `source` is an object who fired an event
- 
-In code Event is represented by some class. All events classes are descendants of `\Qless\Events\User\AbstractEvent` class.
-You can get `entity` and `happening` of event by calling static methods `getEntityName()` and `getHappening()`,
-you can get full name of event (made of `entity` and `happening`) by calling static method `getName()` 
-`source` you can get with `getSource()`.
-
-Also, there are subscribers for events. Subscriber can be any class with methods named as event's `happening` (example: `beforeFork(AbstractEvent $event)`).
-Also subscriber can be a closure. Handling method of subscriber will receive only one parameter - event, you can get all data you need from that event. 
-
-You can attach subscriber to a specific event or events group (grouped bye events `entity`) 
-
-Example: Define a subscriber with an `beforeFork` method that will be called where you want the job to be processed:
-
-```php
-use Acme\Database\Connection;
-use Qless\Events\User\AbstractEvent;
-use Qless\Workers\ForkingWorker;
-
-class ReEstablishDBConnection
-{
-    private $connection;
-
-    public function __construct(Connection $connection)
-    {
-        $this->connection = $connection;
-    }
-
-    public function beforeFork(AbstractEvent $event): void
-    {
-        $this->connection->connect();
-    }
-}
-```
-
-Then, attach subscriber to the `worker` events group:
-
-```php
-use Qless\Events\User\Worker\AbstractWorkerEvent;
-
-/** @var \Qless\Workers\ForkingWorker $worker */
-$worker->getEventsManager()->attach(AbstractWorkerEvent::getEntityName(), new ReEstablishDBConnection());
-```
-
-To attach subscriber to a specific event you can do:
-
-```php
-use \Qless\Events\User\Worker\BeforeFork;
-
-/** @var \Qless\Workers\ForkingWorker $worker */
-$worker->getEventsManager()->attach(BeforeFork::getName(), new ReEstablishDBConnection());
-```
-
-You can attach subscribers as many as you want. Qless events system supports priories so you can change default priority:
-
-```php
-use Qless\Events\User\Worker\AbstractWorkerEvent;
-
-/** @var \Qless\Workers\ForkingWorker $worker */
-$worker->getEventsManager()->attach(AbstractWorkerEvent::getEntityName(), new MySubscriber1(), 150); // More priority
-$worker->getEventsManager()->attach(AbstractWorkerEvent::getEntityName(), new MySubscriber2(), 100); // Normal priority
-$worker->getEventsManager()->attach(AbstractWorkerEvent::getEntityName(), new MySubscriber10(), 50); // Less priority
-```
-
 #### Custom Job Handler
 
 There is an ability to set custom Job Handler to process jobs. To do this call 
@@ -381,82 +307,6 @@ $worker->registerJobPerformHandler($jobHandler);
 
 $worker->run();
 ```
-
-### Per-Job Events
-
-Qless also supports events on a per-job basis, when you have some orthogonal logic to run in the context of some
-(but not all) jobs. Every Job Event class is an descendant of `\Qless\Events\User\Job\AbstractJobEvent`.
-
-Per-job subscribes can defined the same as worker subscribers:
-
-```php
-use Qless\Events\User\Job\BeforePerform
-use Qless\Jobs\BaseJob;
-use Qless\Jobs\PerformAwareInterface;
-use My\Database\Connection;
-
-class ReEstablishDBConnection
-{
-    private $connection;
-
-    public function __construct(Connection $connection)
-    {
-        $this->connection = $connection;
-    }
-
-    /**
-     * @param BeforePerform $event
-     * @param BaseJob|PerformAwareInterface $source
-     */
-    public function beforePerform(BeforePerform $event, $source): void
-    {
-        $this->connection->connect();
-    }
-}
-```
-
-To add them to a job class, you first have to make your job class events-aware by subscribing on the required events
-group. To achieve this just implement `setUp` method and subscribe to the desired events:
-
-```php
-use Qless\Events\User\Job\AbstractJobEvent
-use Qless\Jobs\BaseJob;
-use Qless\EventsManagerAwareInterface;
-use Qless\EventsManagerAwareTrait;
-
-class EventsDrivenJobHandler implements EventsManagerAwareInterface
-{
-    use EventsManagerAwareTrait;
-
-    public function setUp()
-    {
-        $this->getEventsManager()->attach(AbstractJobEvent::getEntityName(), new ReEstablishDBConnection());
-    }
-
-    public function perform(BaseJob $job): void
-    {
-        // ...
-
-        $job->complete();
-    }
-}
-```
-
-**Note**: In this scenario your job class must implement `Qless\EventsManagerAwareInterface`.
-
-### List of Events
-                             
-The events available in Qless are:
-
-| Component   | Event                    | Class
-| ----------- | ------------------------ | ------------------------
-| **Job**     | `job:beforePerform`      | `\Qless\Events\User\Job\BeforePerform`
-| **Job**     | `job:afterPerform`       | `\Qless\Events\User\Job\AfterPerform`
-| **Job**     | `job:onFailure`          | `\Qless\Events\User\Job\OnFailure`
-| **Worker**  | `worker:beforeFirstWork` | `\Qless\Events\User\Worker\BeforeFirstWork`
-| **Worker**  | `worker:beforeFork`      | `\Qless\Events\User\Worker\BeforeFork`
-| **Worker**  | `worker:afterFork`       | `\Qless\Events\User\Worker\AfterFork`
-| **Queue**   | `queue:afterEnqueue`     | `\Qless\Events\User\Queue\AfterEnqueue`
 
 ### Web Interface
 
@@ -654,7 +504,157 @@ $job->tag('howdy', 'hello');
 $job->untag('foo', 'bar');
 ```
 
-### Notifications
+#### Event System
+
+Qless also has a basic event system that can be used by your application to customize how some of the qless internals
+behave. Events can be used to inject logic before, after or around the processing of a single job in the child process.
+This can be useful, for example, when you need to re-establish a connection to your database for each job.
+
+Events has few main concepts - `entity`, `happening`, `source`.
+- `entity` is an object type (component) with whom event is taking place, for example `entity` can be `job`, `worker`, `queue`.
+- `happening` is an act that is taking place, for example it can be `beforeFork` or `beforePerform`
+- `source` is an object who fired an event
+ 
+In code Event is represented by some class. All events classes are descendants of `\Qless\Events\User\AbstractEvent` class.
+You can get `entity` and `happening` of event by calling static methods `getEntityName()` and `getHappening()`,
+you can get full name of event (made of `entity` and `happening`) by calling static method `getName()` 
+`source` you can get with `getSource()`.
+
+Also, there are subscribers for events. Subscriber can be any class with methods named as event's `happening` (example: `beforeFork(AbstractEvent $event)`).
+Also subscriber can be a closure. Handling method of subscriber will receive only one parameter - event, you can get all data you need from that event. 
+
+You can attach subscriber to a specific event or events group (grouped bye events `entity`) 
+
+Example: Define a subscriber with an `beforeFork` method that will be called where you want the job to be processed:
+
+```php
+use Acme\Database\Connection;
+use Qless\Events\User\AbstractEvent;
+use Qless\Workers\ForkingWorker;
+
+class ReEstablishDBConnection
+{
+    private $connection;
+
+    public function __construct(Connection $connection)
+    {
+        $this->connection = $connection;
+    }
+
+    public function beforeFork(AbstractEvent $event): void
+    {
+        $this->connection->connect();
+    }
+}
+```
+
+Then, attach subscriber to the `worker` events group:
+
+```php
+use Qless\Events\User\Worker\AbstractWorkerEvent;
+
+/** @var \Qless\Workers\ForkingWorker $worker */
+$worker->getEventsManager()->attach(AbstractWorkerEvent::getEntityName(), new ReEstablishDBConnection());
+```
+
+To attach subscriber to a specific event you can do:
+
+```php
+use \Qless\Events\User\Worker\BeforeFork;
+
+/** @var \Qless\Workers\ForkingWorker $worker */
+$worker->getEventsManager()->attach(BeforeFork::getName(), new ReEstablishDBConnection());
+```
+
+You can attach subscribers as many as you want. Qless events system supports priories so you can change default priority:
+
+```php
+use Qless\Events\User\Worker\AbstractWorkerEvent;
+
+/** @var \Qless\Workers\ForkingWorker $worker */
+$worker->getEventsManager()->attach(AbstractWorkerEvent::getEntityName(), new MySubscriber1(), 150); // More priority
+$worker->getEventsManager()->attach(AbstractWorkerEvent::getEntityName(), new MySubscriber2(), 100); // Normal priority
+$worker->getEventsManager()->attach(AbstractWorkerEvent::getEntityName(), new MySubscriber10(), 50); // Less priority
+```
+
+#### Per-Job Events
+
+As it was mentioned above, Qless supports events on a per-entity basis. 
+So per-job events are available if you have some orthogonal logic to run in the context of some (but not all) jobs. 
+Every Job Event class is an descendant of `\Qless\Events\User\Job\AbstractJobEvent` and contains entity of `\Qless\Jobs\BaseJob`.
+To get the job from event you can use `$event->getJob()` method.
+
+Per-job subscribes can be defined the same way as worker's subscribers:
+
+```php
+use Qless\Events\User\Job\BeforePerform
+use Qless\Jobs\BaseJob;
+use Qless\Jobs\PerformAwareInterface;
+use My\Database\Connection;
+
+class ReEstablishDBConnection
+{
+    private $connection;
+
+    public function __construct(Connection $connection)
+    {
+        $this->connection = $connection;
+    }
+
+    /**
+     * @param BeforePerform $event
+     * @param BaseJob|PerformAwareInterface $source
+     */
+    public function beforePerform(BeforePerform $event, $source): void
+    {
+        $this->connection->connect();
+    }
+}
+```
+
+To add them to a job class, you first have to make your job class events-aware by subscribing on the required events
+group. To achieve this just implement `setUp` method and subscribe to the desired events:
+
+```php
+use Qless\Events\User\Job\AbstractJobEvent
+use Qless\Jobs\BaseJob;
+use Qless\EventsManagerAwareInterface;
+use Qless\EventsManagerAwareTrait;
+
+class EventsDrivenJobHandler implements EventsManagerAwareInterface
+{
+    use EventsManagerAwareTrait;
+
+    public function setUp()
+    {
+        $this->getEventsManager()->attach(AbstractJobEvent::getEntityName(), new ReEstablishDBConnection());
+    }
+
+    public function perform(BaseJob $job): void
+    {
+        // ...
+
+        $job->complete();
+    }
+}
+```
+
+**Note**: In this scenario your job class must implement `Qless\EventsManagerAwareInterface`.
+
+#### List of Events
+                             
+Full list of events available in Qless:
+
+| Entity      | Event                    | Class
+| ----------- | ------------------------ | ------------------------
+| **Job**     | `job:beforePerform`      | `\Qless\Events\User\Job\BeforePerform`
+| **Job**     | `job:afterPerform`       | `\Qless\Events\User\Job\AfterPerform`
+| **Job**     | `job:onFailure`          | `\Qless\Events\User\Job\OnFailure`
+| **Worker**  | `worker:beforeFirstWork` | `\Qless\Events\User\Worker\BeforeFirstWork`
+| **Worker**  | `worker:beforeFork`      | `\Qless\Events\User\Worker\BeforeFork`
+| **Worker**  | `worker:afterFork`       | `\Qless\Events\User\Worker\AfterFork`
+| **Queue**   | `queue:afterEnqueue`     | `\Qless\Events\User\Queue\AfterEnqueue`
+
 
 **`@todo`**
 

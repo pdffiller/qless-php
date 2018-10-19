@@ -6,10 +6,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-- Remastered Events Model (Breaking Changes)
+## [3.0.0] - 2018-10-19
+### Changed
+- Brand new Events Model:
+  - `Qless\Events\UserEvent` replaced with bundle of classes to represent all possible events.
+  - Event handlers started to receive only one argument - instance of corresponding event class.   
+
+### Removed
 - Removed qlessd script
 
-## Fixed
+### Fixed
 - `gethostname()` doesn't work properly (or at least always) on Amazon's EC2 thus it replaced by `php_uname('n')`
 
 ## [2.2.1] - 2018-10-09
@@ -133,7 +139,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
  - Initial stable release
 
-[Unreleased]: https://github.com/pdffiller/qless-php/compare/v2.2.1...HEAD
+[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/pdffiller/qless-php/compare/v3.0.0...2.2.1
 [2.2.1]: https://github.com/pdffiller/qless-php/compare/v2.2.0...v2.2.1
 [2.2.0]: https://github.com/pdffiller/qless-php/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/pdffiller/qless-php/compare/v2.0.1...v2.1.0
