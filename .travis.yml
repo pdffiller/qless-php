@@ -45,19 +45,29 @@ before_install:
 
 install:
   - composer install $DEFAULT_COMPOSER_FLAGS
+  - |
+      if [ ! -f $HOME/bin/infection ]; then
+        wget https://github.com/infection/infection/releases/download/0.10.3/infection.phar
+        wget https://github.com/infection/infection/releases/download/0.10.3/infection.phar.asc
+        chmod +x infection.phar
+        gpg --keyserver hkps.pool.sks-keyservers.net --recv-keys 493B4AA0
+        gpg --with-fingerprint --verify infection.phar.asc infection.phar
+        mkdir -p $HOME/bin && mv infection.phar $HOME/bin/infection
+      fi
 
 before_script:
   - composer diagnose || true
 
 script:
   - ./vendor/bin/phpunit --disallow-test-output
+  - $(phpenv which phpdbg) -qrr $HOME/bin/infection
 
 after_success:
   - if [[ ! -z "${CODECOV_TOKEN}" ]]; then (bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"); fi;
 
 after_failure:
   - $(phpenv which php) -v
-  - $(phpenv which php) -m | grep -e 'json\|pcntl\|posix\|redis\|sockets\|pcre'
+  - for m in `$(phpenv which php) -m | grep -e 'json\|pcntl\|posix\|redis\|sockets\|pcre'`; do php --ri $m; done
 
 notifications:
   email: false
@@ -76,23 +86,6 @@ jobs:
         - phpenv config-rm xdebug.ini || true
       script:
         - ./vendor/bin/phpcs
-    - stage: Mutation Testing
-      php: 7.2
-      install:
-        - composer install $DEFAULT_COMPOSER_FLAGS
-        - |
-            if [ ! -f $HOME/bin/infection ]; then
-              wget https://github.com/infection/infection/releases/download/0.10.3/infection.phar
-              wget https://github.com/infection/infection/releases/download/0.10.3/infection.phar.asc
-              chmod +x infection.phar
-              gpg --keyserver hkps.pool.sks-keyservers.net --recv-keys 493B4AA0
-              gpg --with-fingerprint --verify infection.phar.asc infection.phar
-              mkdir -p $HOME/bin && mv infection.phar $HOME/bin/infection
-            fi
-      before_script:
-        - phpenv config-rm xdebug.ini || true
-      script:
-        - $HOME/bin/infection --coverage=./build
     - stage: Benchmark
       php: 7.2
       before_script:
