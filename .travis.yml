@@ -77,7 +77,7 @@ jobs:
       php: 7.2
       script:
         - ./vendor/bin/phpunit --disallow-test-output
-        - $HOME/bin/infection
+        - $HOME/bin/infection --threads=4
     - stage: Static Code Analysis
       php: 7.2
       env: PHPStan
