@@ -4,6 +4,7 @@ namespace Qless;
 
 use Qless\Exceptions\InvalidArgumentException;
 use Qless\Exceptions\RedisConnectionException;
+use TYPO3\CMS\Reports\Status;
 
 /**
  * Qless\Redis
@@ -83,11 +84,12 @@ final class Redis
     public function connect(): void
     {
         try {
-            $this->driver->connect(
-                $this->host,
-                $this->port,
-                $this->timeout
-            );
+            // redis 3.x workaround
+            if (!@$this->driver->connect($this->host, $this->port, $this->timeout)) {
+                throw new RedisConnectionException(
+                    'Unable to connect to the Redis server: connection refused.'
+                );
+            }
         } catch (\RedisException $e) {
             throw new RedisConnectionException(
                 sprintf('Unable to connect to the Redis server: %s.', rtrim($e->getMessage(), '.')),

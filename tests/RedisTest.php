@@ -16,7 +16,7 @@ class RedisTest extends QlessTestCase
      */
     public function shouldThrowExceptionWhenConnectToBogusAddress()
     {
-        $redis = new Redis('redis://255.255.255.255:1234');
+        $redis = new Redis('redis://127.1.2.3:6360?timeout=0.01');
         $redis->connect();
     }
 
