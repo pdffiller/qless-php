@@ -60,7 +60,6 @@ before_script:
 
 script:
   - ./vendor/bin/phpunit --disallow-test-output
-  - $(phpenv which phpdbg) -qrr $HOME/bin/infection
 
 after_success:
   - if [[ ! -z "${CODECOV_TOKEN}" ]]; then (bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"); fi;
@@ -74,6 +73,11 @@ notifications:
 
 jobs:
   include:
+    - stage: Mutation Testing
+      php: 7.2
+      script:
+        - ./vendor/bin/phpunit --disallow-test-output
+        - $HOME/bin/infection --threads=4
     - stage: Static Code Analysis
       php: 7.2
       env: PHPStan

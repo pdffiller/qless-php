@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/pdffiller/qless-php.svg?branch=master)](https://travis-ci.org/pdffiller/qless-php)
 [![Code Coverage](https://codecov.io/gh/pdffiller/qless-php/branch/master/graph/badge.svg)](https://codecov.io/gh/pdffiller/qless-php)
+[![Infection MSI](https://badge.stryker-mutator.io/github.com/pdffiller/qless-php/master)](https://infection.github.io)
 
 PHP Bindings for qless.
 

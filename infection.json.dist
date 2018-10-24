@@ -7,6 +7,9 @@
   "timeout": 15,
   "logs": {
     "text": "infection-log.txt",
-    "json": "infection-log.json"
+    "json": "infection-log.json",
+    "badge": {
+      "branch": "master"
+    }
   }
 }
