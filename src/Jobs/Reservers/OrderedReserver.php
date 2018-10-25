@@ -25,7 +25,7 @@ class OrderedReserver extends AbstractReserver implements ReserverInterface
     {
         parent::beforeWork();
 
-        sort($this->queues);
+        sort($this->queues, SORT_NATURAL);
 
         $this->resetDescription();
 
