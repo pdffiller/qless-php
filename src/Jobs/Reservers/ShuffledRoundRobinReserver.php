@@ -1,6 +1,6 @@
 <?php
 
-namespace  Qless\Jobs\Reservers;
+namespace Qless\Jobs\Reservers;
 
 /**
  * Qless\Jobs\Reservers\ShuffledRoundRobinReserver
@@ -26,6 +26,12 @@ class ShuffledRoundRobinReserver extends RoundRobinReserver
         parent::beforeWork();
 
         shuffle($this->queues);
-        $this->resetDescription();
+
+        if (empty($this->queues) == false) {
+            $this->logger->info(
+                'Monitoring the following queues: {queues}',
+                ['queues' => implode(', ', $this->queues)]
+            );
+        }
     }
 }

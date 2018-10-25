@@ -1,8 +1,6 @@
 <?php
 
-namespace  Qless\Jobs\Reservers;
-
-use Qless\Jobs\BaseJob;
+namespace Qless\Jobs\Reservers;
 
 /**
  * Qless\Jobs\Reservers\OrderedReserver
@@ -28,31 +26,14 @@ class OrderedReserver extends AbstractReserver implements ReserverInterface
         parent::beforeWork();
 
         sort($this->queues);
+
         $this->resetDescription();
-    }
 
-    /**
-     * {@inheritdoc}
-     *
-     * @return BaseJob|null
-     */
-    final public function reserve(): ?BaseJob
-    {
-        $this->beforeWork();
-
-        $this->logger->debug('Attempting to reserve a job using {reserver} reserver', [
-            'reserver' => $this->getDescription(),
-        ]);
-
-        foreach ($this->queues as $queue) {
-            /** @var \Qless\Jobs\BaseJob|null $job */
-            $job = $queue->pop($this->worker);
-            if ($job !== null) {
-                $this->logger->info('Found a job on {queue}', ['queue' => (string) $queue]);
-                return $job;
-            }
+        if (empty($this->queues) == false) {
+            $this->logger->info(
+                'Monitoring the following queues: {queues}',
+                ['queues' => implode(', ', $this->queues)]
+            );
         }
-
-        return null;
     }
 }

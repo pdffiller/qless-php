@@ -1,6 +1,6 @@
 <?php
 
-namespace  Qless\Jobs;
+namespace Qless\Jobs;
 
 use ArrayAccess;
 use Qless\Client;
