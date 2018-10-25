@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Added
 - Added `DefaultReserver` which works just like `OrderedReserver` with one exception: it does not sort the queues
+- Added `BeforeEnqueue` event support
 
 ### Fixed
 - Fixed  `OrderedReserver` to sort queues using natural ordering like [`natsort()`](http://php.net/manual/en/function.natsort.php)

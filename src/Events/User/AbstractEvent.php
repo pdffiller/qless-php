@@ -12,17 +12,19 @@ abstract class AbstractEvent
     /** @var object */
     private $source;
 
-    abstract public static function getEntityName(): string;
-
-    abstract public static function getHappening(): string;
-
     /**
+     * AbstractEvent constructor.
+     *
      * @param object $source
      */
     public function __construct($source)
     {
         $this->source = $source;
     }
+
+    abstract public static function getEntityName(): string;
+
+    abstract public static function getHappening(): string;
 
     public static function getName(): string
     {

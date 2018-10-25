@@ -7,6 +7,7 @@ use Qless\Queues\Queue;
 use Qless\Tests\QlessTestCase;
 use Qless\Tests\Stubs\JobHandler;
 use Qless\Tests\Stubs\JobSubscriber;
+use Qless\Events\User\Queue\BeforeEnqueue;
 
 /**
  * Qless\Tests\Events\JobEventsTest
@@ -33,7 +34,7 @@ class JobEventsTest extends QlessTestCase
     public function shouldSubscribeToAroundPerformEvents()
     {
         $this->putJob();
-        $this->subscribeToEvent();
+        $this->subscribeToJobEvents();
 
         $job = $this->popJob();
 
@@ -68,20 +69,52 @@ class JobEventsTest extends QlessTestCase
         $this->assertEquals($expected, $job->data->toArray());
     }
 
+    /** @test */
+    public function shouldAppendJobDataViaEventSubscriber()
+    {
+        $this->subscribeToQueueEvents();
+        $this->putJob(['payload' => 'data']);
+
+        $job = $this->popJob();
+
+        $this->assertEquals(
+            [
+                'payload' => 'data',
+                'metadata' => [
+                    'user_id' => 123,
+                    'ip_address' => '127.0.0.1',
+                ],
+            ],
+            $job->data->toArray()
+        );
+    }
+
     private function popJob(): BaseJob
     {
         $queue = new Queue('testing', $this->client);
         return $queue->pop();
     }
 
-    private function subscribeToEvent()
+    private function subscribeToQueueEvents()
+    {
+        $this->client
+            ->getEventsManager()
+            ->attach('queue:beforeEnqueue', function (BeforeEnqueue $event) {
+                $event->getData()['metadata'] = [
+                    'user_id' => 123,
+                    'ip_address' => '127.0.0.1',
+                ];
+            });
+    }
+
+    private function subscribeToJobEvents()
     {
         $this->client->getEventsManager()->attach('job', new JobSubscriber($this->status));
     }
 
-    private function putJob(): void
+    private function putJob(array $data = []): void
     {
         $queue = new Queue('testing', $this->client);
-        $queue->put(JobHandler::class, []);
+        $queue->put(JobHandler::class, $data);
     }
 }
