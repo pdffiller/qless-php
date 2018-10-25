@@ -11,6 +11,7 @@ use Qless\Exceptions\QlessException;
 use Qless\Exceptions\RuntimeException;
 use Qless\Exceptions\UnknownPropertyException;
 use Qless\Jobs\BaseJob;
+use Qless\Jobs\JobData;
 use Ramsey\Uuid\Uuid;
 
 /**
@@ -81,6 +82,9 @@ class Queue implements EventsManagerAwareInterface
             throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
         }
 
+        $data = new JobData($data);
+        $this->getEventsManager()->fire(new QueueEvent\BeforeEnqueue($this, $jid, $data, $className));
+
         if (!$putData = json_encode($data, JSON_UNESCAPED_SLASHES)) {
             throw new RuntimeException(
                 sprintf(
@@ -108,7 +112,7 @@ class Queue implements EventsManagerAwareInterface
             json_encode($depends ?: [], JSON_UNESCAPED_SLASHES)
         );
 
-        $this->getEventsManager()->fire(new QueueEvent\AfterEnqueue($this, $jid, $data, $className));
+        $this->getEventsManager()->fire(new QueueEvent\AfterEnqueue($this, $jid, $data->toArray(), $className));
 
         return $jid;
     }

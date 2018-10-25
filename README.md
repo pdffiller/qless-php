@@ -642,6 +642,22 @@ class EventsDrivenJobHandler implements EventsManagerAwareInterface
 
 **Note**: In this scenario your job class must implement `Qless\EventsManagerAwareInterface`.
 
+Yet another example. Let's assume that job's payload should always contain additional data from the current context.
+You can easily amend it using the `BeforeEnqueue` subscriber:
+
+```
+use Qless\Events\User\Queue\BeforeEnqueue;
+
+/** @var \Qless\Client $client */
+$client
+    ->getEventsManager()
+    ->attach('queue:beforeEnqueue', function (BeforeEnqueue $event) {
+        $event->getData()['metadata'] = [
+            'server_address' => $_SERVER['SERVER_ADDR'],
+        ];
+    });
+```
+
 #### List of Events
                              
 Full list of events available in Qless:
@@ -654,10 +670,9 @@ Full list of events available in Qless:
 | **Worker**  | `worker:beforeFirstWork` | `\Qless\Events\User\Worker\BeforeFirstWork`
 | **Worker**  | `worker:beforeFork`      | `\Qless\Events\User\Worker\BeforeFork`
 | **Worker**  | `worker:afterFork`       | `\Qless\Events\User\Worker\AfterFork`
+| **Queue**   | `queue:beforeEnqueue`    | `\Qless\Events\User\Queue\BeforeEnqueue`
 | **Queue**   | `queue:afterEnqueue`     | `\Qless\Events\User\Queue\AfterEnqueue`
 
-
-**`@todo`**
 
 ### Heartbeating
 

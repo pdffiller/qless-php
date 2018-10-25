@@ -2,26 +2,28 @@
 
 namespace Qless\Events\User\Queue;
 
+use Qless\Jobs\JobData;
+
 /**
- * Qless\Events\User\Queue\AfterEnqueue
+ * Qless\Events\User\Queue\BeforeEnqueue
  *
  * @package Qless\Events\User\Queue
  */
-class AfterEnqueue extends AbstractQueueEvent
+class BeforeEnqueue extends AbstractQueueEvent
 {
     private $jid;
     private $data;
     private $className;
 
     /**
-     * AfterEnqueue constructor.
+     * BeforeEnqueue constructor.
      *
      * @param object $source
      * @param string $jid
-     * @param array  $data
+     * @param JobData  $data
      * @param string $className
      */
-    public function __construct($source, string $jid, array $data, string $className)
+    public function __construct($source, string $jid, JobData $data, string $className)
     {
         parent::__construct($source);
 
@@ -32,7 +34,7 @@ class AfterEnqueue extends AbstractQueueEvent
 
     public static function getHappening(): string
     {
-        return 'afterEnqueue';
+        return 'beforeEnqueue';
     }
 
     public function getJid(): string
@@ -40,7 +42,7 @@ class AfterEnqueue extends AbstractQueueEvent
         return $this->jid;
     }
 
-    public function getData(): array
+    public function getData(): JobData
     {
         return $this->data;
     }
