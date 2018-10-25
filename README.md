@@ -588,7 +588,7 @@ To get the job from event you can use `$event->getJob()` method.
 Per-job subscribes can be defined the same way as worker's subscribers:
 
 ```php
-use Qless\Events\User\Job\BeforePerform
+use Qless\Events\User\Job\BeforePerform;
 use Qless\Jobs\BaseJob;
 use Qless\Jobs\PerformAwareInterface;
 use My\Database\Connection;
@@ -617,7 +617,7 @@ To add them to a job class, you first have to make your job class events-aware b
 group. To achieve this just implement `setUp` method and subscribe to the desired events:
 
 ```php
-use Qless\Events\User\Job\AbstractJobEvent
+use Qless\Events\User\Job\AbstractJobEvent;
 use Qless\Jobs\BaseJob;
 use Qless\EventsManagerAwareInterface;
 use Qless\EventsManagerAwareTrait;
@@ -645,7 +645,7 @@ class EventsDrivenJobHandler implements EventsManagerAwareInterface
 Yet another example. Let's assume that job's payload should always contain additional data from the current context.
 You can easily amend it using the `BeforeEnqueue` subscriber:
 
-```
+```php
 use Qless\Events\User\Queue\BeforeEnqueue;
 
 /** @var \Qless\Client $client */
