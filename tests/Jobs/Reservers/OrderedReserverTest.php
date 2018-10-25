@@ -81,12 +81,12 @@ class OrderedReserverTest extends QlessTestCase
     /** @test */
     public function shouldSortQueues()
     {
-        $reserver = new OrderedReserver($this->client->queues, ['queue-20', 'queue-0']);
+        $reserver = new OrderedReserver($this->client->queues, ['queue-7', 'queue-20', 'queue-0']);
 
-        $this->assertEquals('queue-20, queue-0 (ordered)', $reserver->getDescription());
+        $this->assertEquals('queue-7, queue-20, queue-0 (ordered)', $reserver->getDescription());
 
         $reserver->beforeWork();
-        $this->assertEquals('queue-0, queue-20 (ordered)', $reserver->getDescription());
+        $this->assertEquals('queue-0, queue-7, queue-20 (ordered)', $reserver->getDescription());
     }
 
     /** @test */

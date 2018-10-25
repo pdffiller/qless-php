@@ -1,12 +1,13 @@
 <?php
 
-namespace  Qless\Jobs\Reservers;
+namespace Qless\Jobs\Reservers;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qless\Exceptions\InvalidArgumentException;
-use Qless\Queues\Queue;
+use Qless\Jobs\BaseJob;
 use Qless\Queues\Collection;
+use Qless\Queues\Queue;
 
 /**
  * Qless\Jobs\Reservers\AbstractReserver
@@ -129,13 +130,6 @@ abstract class AbstractReserver implements ReserverInterface
                 $this->logger->info('Refreshing queues dynamically, but there are no queues yet');
             }
         }
-
-        if (empty($this->queues) == false) {
-            $this->logger->info(
-                'Monitoring the following queues: {queues}',
-                ['queues' => implode(', ', $this->queues)]
-            );
-        }
     }
 
     /**
@@ -161,6 +155,31 @@ abstract class AbstractReserver implements ReserverInterface
     public function setLogger(LoggerInterface $logger)
     {
         $this->logger = $logger;
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @return BaseJob|null
+     */
+    public function reserve(): ?BaseJob
+    {
+        $this->beforeWork();
+
+        $this->logger->debug('Attempting to reserve a job using {reserver} reserver', [
+            'reserver' => $this->getDescription(),
+        ]);
+
+        foreach ($this->queues as $queue) {
+            /** @var \Qless\Jobs\BaseJob|null $job */
+            $job = $queue->pop($this->worker);
+            if ($job !== null) {
+                $this->logger->info('Found a job on {queue}', ['queue' => (string) $queue]);
+                return $job;
+            }
+        }
+
+        return null;
     }
 
     protected function initializeDescription(array $queues): string

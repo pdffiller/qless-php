@@ -1,6 +1,6 @@
 <?php
 
-namespace  Qless\Jobs\Reservers;
+namespace Qless\Jobs\Reservers;
 
 use Qless\Exceptions\InvalidArgumentException;
 use Qless\Jobs\BaseJob;

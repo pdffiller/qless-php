@@ -1,6 +1,6 @@
 <?php
 
-namespace  Qless\Jobs\Reservers;
+namespace Qless\Jobs\Reservers;
 
 use Psr\Log\LoggerAwareInterface;
 use Qless\Jobs\BaseJob;
