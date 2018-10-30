@@ -12,14 +12,13 @@ $redis->connect();
 
 sleep(2);
 
-
 function payload($event)
 {
     return json_encode([
         'jid' => 'jid-1',
         'worker' => 'test-worker',
         'event' => $event,
-        'queue' => 'test-queue'
+        'queue' => 'test-queue',
     ]);
 }
 

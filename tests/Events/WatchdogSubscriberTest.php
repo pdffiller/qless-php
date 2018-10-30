@@ -22,7 +22,7 @@ class WatchdogSubscriberTest extends QlessTestCase
         $system = $this->createMock(SystemFacade::class);
 
         $system
-            ->expects($this->exactly(2))
+            ->expects($this->atLeast(1))
             ->method('posixKill')
             ->with(1, SIGKILL)
             ->willReturn(true);

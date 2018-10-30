@@ -372,6 +372,11 @@ final class ForkingWorker extends AbstractWorker
         }
 
         if ($this->job instanceof BaseJob == false) {
+            /**
+             * @todo
+             * Something went strange.
+             * I definitely should sort out with this.
+             */
             return;
         }
 
@@ -514,7 +519,7 @@ final class ForkingWorker extends AbstractWorker
             /**
              * @todo
              * Something went strange.
-             * I definitely should should sort out with this.
+             * I definitely should sort out with this.
              */
             return;
         }

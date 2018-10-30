@@ -215,7 +215,7 @@ class Client implements EventsManagerAwareInterface
      */
     public function flush(): void
     {
-        $this->redis->flushDB();
+        $this->redis->flushdb();
     }
 
     /**

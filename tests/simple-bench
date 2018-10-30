@@ -1,6 +1,7 @@
 #!/usr/bin/env php
 <?php
 
+use Predis\Client as Redis;
 use Qless\Client;
 use Qless\Queues\Queue;
 
@@ -102,7 +103,6 @@ $defaults = [
     'host'     => '127.0.0.1',
     'port'     => 6379,
     'db'       => 0,
-    'timeout'  => 0.0,
     'no-flush' => null,
 ];
 
@@ -117,7 +117,6 @@ $parameters = [
 $options = [
     'parameters' => [
         'database' => $config['db'],
-        'timeout' => $config['timeout'],
     ]
 ];
 
@@ -125,8 +124,8 @@ $options = [
 $client = new Client($parameters, $options);
 
 // The redis client for internal usage
-$redis = new Redis();
-$redis->connect($config['host'], (int) $config['port']);
+$redis = new Redis("{$config['host']}:{$config['port']}");
+$redis->connect();
 
 // Alright, let's make a bunch of jobs
 $testing = new Queue('testing', $client);
@@ -140,7 +139,7 @@ if (count($redis->keys('*'))) {
 $client->config->set('heartbeat', 1);
 
 // This is how much CPU Redis had used /before/
-$cpuBefore = $redis->info()['used_cpu_user'] + $redis->info()['used_cpu_sys'];
+$cpuBefore = $redis->info()['CPU']['used_cpu_user'] + $redis->info()['CPU']['used_cpu_sys'];
 
 puttingJobs($testing);
 directPutToRedis($redis);
@@ -172,9 +171,9 @@ printf("\n\n");
 printf(str_repeat('=', 50));
 printf("\n\n");
 $info = $redis->info();
-printf(" Redis Mem: %s\n", $info['used_memory_human']);
-printf(" Redis Lua: %sM\n", $info['used_memory_lua'] / 1024 / 1024);
-printf(" Redis CPU: %fs\n", ($info['used_cpu_user'] + $info['used_cpu_sys'] - $cpuBefore));
+printf(" Redis Mem: %s\n", $info['Memory']['used_memory_human']);
+printf(" Redis Lua: %s\n", $info['Memory']['used_memory_lua_human']);
+printf(" Redis CPU: %fs\n", ($info['CPU']['used_cpu_user'] + $info['CPU']['used_cpu_sys'] - $cpuBefore));
 printf("\n");
 
 if ($config['no-flush'] === null) {
