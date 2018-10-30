@@ -2,7 +2,7 @@
 
 namespace Qless\Tests\Support;
 
-use Redis;
+use Predis\Client as Redis;
 
 /**
  * Qless\Tests\Support\RedisAwareTrait
@@ -25,8 +25,15 @@ trait RedisAwareTrait
         if ($this->instance instanceof Redis == false || $recreate === true) {
             $config = $this->getRedisConfig();
 
-            $this->instance = new Redis();
-            $this->instance->connect($config['host'], $config['port'], $config['timeout']);
+            $this->instance = new Redis(
+                [
+                    'scheme' => $config['scheme'],
+                    'host'   => $config['host'],
+                    'port'   => $config['port'],
+                ]
+            );
+
+            $this->instance->connect();
         }
 
         return $this->instance;
@@ -41,9 +48,9 @@ trait RedisAwareTrait
     protected function getRedisConfig(array $overrides = []): array
     {
         return array_merge([
-            'host'    => REDIS_HOST,
-            'port'    => REDIS_PORT,
-            'timeout' => REDIS_TIMEOUT,
+            'host'   => REDIS_HOST,
+            'port'   => REDIS_PORT,
+            'scheme' => 'tcp',
         ], $overrides);
     }
 }

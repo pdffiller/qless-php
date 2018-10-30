@@ -1,24 +1,31 @@
 <?php
 
-use Qless\Events\QlessCoreEvent;
+use Predis\Client as Redis;
 
-require_once 'bootstrap.php';
+require_once __DIR__ . '/bootstrap.php';
 
-$redisConfig = [
-    'host'    => REDIS_HOST,
-    'port'    => REDIS_PORT,
-    'timeout' => REDIS_TIMEOUT,
-];
-
-$redis = new Redis();
-$redis->connect($redisConfig['host'], $redisConfig['port'], $redisConfig['timeout']);
+$redis = new Redis([
+    'host' => REDIS_HOST,
+    'port' => REDIS_PORT,
+]);
+$redis->connect();
 
 sleep(2);
 
-$redis->publish('chan-1', json_encode(['event' => QlessCoreEvent::CANCELED]));
-$redis->publish('chan-1', json_encode(['event' => QlessCoreEvent::COMPLETED]));
-$redis->publish('chan-2', json_encode(['event' => QlessCoreEvent::FAILED]));
-$redis->publish('chan-2', json_encode(['event' => QlessCoreEvent::LOCK_LOST]));
-$redis->publish('chan-3', json_encode(['event' => QlessCoreEvent::PUT]));
-$redis->publish('chan-2', json_encode(['event' => QlessCoreEvent::CONFIG_SET]));
-$redis->publish('chan-4', json_encode(['event' => EvQlessCoreEventent::CONFIG_UNSET]));
+function payload($event)
+{
+    return json_encode([
+        'jid' => 'jid-1',
+        'worker' => 'test-worker',
+        'event' => $event,
+        'queue' => 'test-queue',
+    ]);
+}
+
+$redis->publish('test:chan-1', payload('canceled'));
+$redis->publish('test:chan-1', payload('completed'));
+$redis->publish('test:chan-2', payload('failed'));
+$redis->publish('test:chan-2', payload('lock_lost'));
+$redis->publish('test:chan-3', payload('put'));
+$redis->publish('test:chan-2', payload('another_event'));
+$redis->publish('test:chan-4', payload('foo'));

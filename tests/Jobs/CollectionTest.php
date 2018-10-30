@@ -45,10 +45,11 @@ class CollectionTest extends QlessTestCase
     /** @test */
     public function shouldDetectIfJobExist()
     {
-        $this->assertFalse($this->client->jobs->offsetExists('jid'));
+        $jid = substr(md5(uniqid(microtime(true), true)), 0, 16);
+        $this->assertFalse($this->client->jobs->offsetExists($jid));
 
-        $this->client->queues['test-queue']->put('Foo', [], 'jid');
-        $this->assertTrue($this->client->jobs->offsetExists('jid'));
+        $this->client->queues['test-queue']->put('Foo', [], $jid);
+        $this->assertTrue($this->client->jobs->offsetExists($jid));
     }
 
     /**

@@ -5,9 +5,10 @@ namespace Qless;
 use Qless\Exceptions\QlessException;
 use Qless\Jobs\Collection as JobsCollection;
 use Qless\Queues\Collection as QueuesCollection;
-use Qless\Subscribers\QlessCoreSubscriber;
+use Qless\Subscribers\WatchdogSubscriber;
 use Qless\Support\PropertyAccessor;
 use Qless\Workers\Collection as WorkersCollection;
+use Predis\Client as Redis;
 
 /**
  * Qless\Client
@@ -27,7 +28,7 @@ use Qless\Workers\Collection as WorkersCollection;
  * @method int unrecur(string $jid)
  * @method bool|string fail(string $jid, string $worker, string $group, string $message, ?string $data = null)
  * @method string[] jobs(string $state, int $offset = 0, int $count = 25)
- * @method false|string get(string $jid)
+ * @method null|string get(string $jid)
  * @method string multiget(string[] $jid)
  * @method string complete(string $jid, string $workerName, string $queueName, string $data, ...$args)
  * @method void timeout(string $jid)
@@ -73,22 +74,22 @@ class Client implements EventsManagerAwareInterface
     /**
      * Client constructor.
      *
-     * @param  string   $server   Host/port combination separated by a colon, DSN-formatted URI.
-     * @param  int|null $database Redis database (optional, default is 0).
+     * @param  mixed $parameters Connection parameters for one or more servers.
+     * @param  mixed $options    Options to configure some behaviours of the client.
      *
      * @throws \Qless\Exceptions\InvalidArgumentException
      * @throws \Qless\Exceptions\RedisConnectionException
      */
-    public function __construct(string $server, ?int $database = null)
+    public function __construct($parameters = null, $options = null)
     {
         $this->workerName = php_uname('n') . '-' . getmypid();
 
-        $this->redis = new Redis($server, $database);
+        $this->redis = new Redis($parameters, $options);
         $this->redis->connect();
 
         $this->setEventsManager(new EventsManager());
 
-        $this->lua = new LuaScript($this->redis->getDriver());
+        $this->lua = new LuaScript($this->redis);
         $this->config = new Config($this);
         $this->jobs = new JobsCollection($this);
         $this->workers = new WorkersCollection($this);
@@ -108,19 +109,22 @@ class Client implements EventsManagerAwareInterface
     /**
      * Factory method to create a new Subscriber instance.
      *
+     * NOTE: use separate connections for pub and sub.
+     * @link https://stackoverflow.com/questions/22668244/should-i-use-separate-connections-for-pub-and-sub-with-redis
+     *
      * @param  array $channels An array of channels to subscribe to.
-     * @return QlessCoreSubscriber
+     * @return WatchdogSubscriber
      *
      * @throws \Qless\Exceptions\RedisConnectionException
      */
-    public function createSubscriber(array $channels): QlessCoreSubscriber
+    public function createSubscriber(array $channels): WatchdogSubscriber
     {
         $redis = clone $this->redis;
 
-        $redis->getDriver()->close();
+        $redis->disconnect();
         $redis->connect();
 
-        return new QlessCoreSubscriber($redis->getDriver(), $channels);
+        return new WatchdogSubscriber($redis, $channels);
     }
 
     /**
@@ -211,19 +215,17 @@ class Client implements EventsManagerAwareInterface
      */
     public function flush(): void
     {
-        $this->redis->getDriver()->flushDB();
+        $this->redis->flushdb();
     }
 
     /**
      * Call to reconnect to Redis server.
      *
      * @return void
-     *
-     * @throws \Qless\Exceptions\RedisConnectionException
      */
     public function reconnect(): void
     {
-        $this->redis->getDriver()->close();
+        $this->redis->disconnect();
         $this->redis->connect();
     }
 }

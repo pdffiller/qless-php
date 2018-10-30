@@ -41,7 +41,6 @@ env:
 before_install:
   - if [[ ! -z "${GH_TOKEN}" ]]; then composer config github-oauth.github.com ${GH_TOKEN}; echo "Configured Github token"; fi;
   - ulimit -c unlimited -S || true
-  - echo "extension=redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
 
 install:
   - composer install $DEFAULT_COMPOSER_FLAGS
@@ -66,7 +65,7 @@ after_success:
 
 after_failure:
   - $(phpenv which php) -v
-  - for m in `$(phpenv which php) -m | grep -e 'json\|pcntl\|posix\|redis\|sockets\|pcre'`; do php --ri $m; done
+  - for m in `$(phpenv which php) -m | grep -e 'json\|pcntl\|posix\|sockets\|pcre'`; do php --ri $m; done
 
 notifications:
   email: false

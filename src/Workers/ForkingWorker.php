@@ -4,7 +4,6 @@ namespace Qless\Workers;
 
 use Closure;
 use Psr\Log\LoggerInterface;
-use Qless\Events\QlessCoreEvent;
 use Qless\Events\User\Job as JobEvent;
 use Qless\Events\User\Worker as WorkerEvent;
 use Qless\EventsManagerAwareInterface;
@@ -12,8 +11,8 @@ use Qless\Exceptions\ErrorFormatter;
 use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\BaseJob;
 use Qless\Signals\SignalHandler;
-use Qless\Subscribers\QlessCoreSubscriber;
 use Qless\Subscribers\SignalsAwareSubscriber;
+use Qless\Subscribers\WatchdogSubscriber;
 
 /**
  * Qless\Workers\ForkingWorker
@@ -373,6 +372,11 @@ final class ForkingWorker extends AbstractWorker
         }
 
         if ($this->job instanceof BaseJob == false) {
+            /**
+             * @todo
+             * Something went strange.
+             * I definitely should sort out with this.
+             */
             return;
         }
 
@@ -498,18 +502,25 @@ final class ForkingWorker extends AbstractWorker
         $this->childPID = null;
     }
 
-    private function watchdogStart(QlessCoreSubscriber $subscriber): void
+    private function watchdogStart(WatchdogSubscriber $subscriber): void
     {
         $this->getEventsManager()->fire(new WorkerEvent\BeforeFork($this));
 
         $socket = null;
         $this->watchdogPID = $this->fork($socket);
+
         if ($this->watchdogPID !== 0) {
+            // Mater process should get out of here
             $this->sockets[$this->watchdogPID] = $socket;
             return;
         }
 
         if ($this->job instanceof BaseJob == false) {
+            /**
+             * @todo
+             * Something went strange.
+             * I definitely should sort out with this.
+             */
             return;
         }
 
@@ -517,54 +528,11 @@ final class ForkingWorker extends AbstractWorker
 
         $this->processType = self::PROCESS_TYPE_WATCHDOG;
 
-        $jid = $this->job->jid;
         $this->who = 'watchdog:' . $this->name;
         $this->logContext = ['type' => $this->who];
 
-        $this->title(sprintf('Watching events for %s since %s', $jid, strftime('%F %T')));
-
-        // @todo Move to a separated class
-        ini_set('default_socket_timeout', -1);
-        $subscriber->messages(function (string $channel, QlessCoreEvent $event = null) use ($subscriber, $jid) {
-            if ($event === null) {
-                return;
-            }
-
-            if ($event->valid() == false || $event->getJid() !== $jid) {
-                return;
-            }
-
-            if ($this->childPID === null) {
-                return;
-            }
-
-            switch ($event->getType()) {
-                case QlessCoreEvent::LOCK_LOST:
-                    if ($event->getWorker() === $this->name) {
-                        $this->logger->info(
-                            "{type}: sending SIGKILL to child {$this->childPID}; job handed out to another worker",
-                            $this->logContext
-                        );
-                        posix_kill($this->childPID, SIGKILL);
-                        $subscriber->stop();
-                    }
-                    break;
-                case QlessCoreEvent::CANCELED:
-                    if ($event->getWorker() === $this->name) {
-                        $this->logger->info(
-                            "{type}: sending SIGKILL to child {$this->childPID}; job canceled",
-                            $this->logContext
-                        );
-                        posix_kill($this->childPID, SIGKILL);
-                        $subscriber->stop();
-                    }
-                    break;
-                case QlessCoreEvent::COMPLETED:
-                case QlessCoreEvent::FAILED:
-                    $subscriber->stop();
-                    break;
-            }
-        });
+        $this->title(sprintf('Watching events for %s since %s', $this->job->jid, strftime('%F %T')));
+        $subscriber->watchdog($this->job->jid, $this->name, $this->childPID);
 
         socket_close($socket);
         $this->logger->info("{type}: done", $this->logContext);
