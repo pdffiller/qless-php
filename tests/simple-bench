@@ -108,8 +108,21 @@ $defaults = [
 
 $config = array_merge($defaults, getopt('', array_keys($options)));
 
+$parameters = [
+    'scheme' => 'tcp',
+    'host'   => $config['host'],
+    'port'   => $config['port'],
+];
+
+$options = [
+    'parameters' => [
+        'database' => $config['db'],
+        'timeout' => $config['timeout'],
+    ]
+];
+
 // Our qless client
-$client = new Client("redis://{$config['host']}:{$config['port']}/{$config['db']}?timeout={$config['timeout']}");
+$client = new Client($parameters, $options);
 
 // The redis client for internal usage
 $redis = new Redis();
@@ -121,7 +134,7 @@ $testing = new Queue('testing', $client);
 // Make sure that the redis instance is empty first
 if (count($redis->keys('*'))) {
     fprintf(STDERR, 'Must begin on an empty Redis instance' . PHP_EOL);
-    // exit(1);
+    exit(1);
 }
 
 $client->config->set('heartbeat', 1);

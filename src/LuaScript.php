@@ -5,7 +5,7 @@ namespace Qless;
 use Qless\Exceptions\ExceptionFactory;
 use Qless\Exceptions\QlessException;
 use Qless\Exceptions\RuntimeException;
-use Redis;
+use Predis\Client as Redis;
 
 /**
  * Qless\LuaScript
@@ -54,18 +54,13 @@ class LuaScript
             $this->reload();
         }
 
-        $result = $this->redis->evalSha(
-            $this->sha,
-            $this->normalizeCommandArgs($command, $args)
-        );
+        $arguments = $this->normalizeCommandArgs($command, $args);
 
-        $error = $this->redis->getLastError();
-
-        if ($error !== null) {
-            $this->handleError($error);
+        try {
+            return call_user_func_array([$this->redis, 'evalSha'], $arguments);
+        } catch (\Exception $exception) {
+            throw ExceptionFactory::fromErrorMessage($exception->getMessage());
         }
-
-        return $result;
     }
 
     /**
@@ -77,22 +72,12 @@ class LuaScript
      */
     private function normalizeCommandArgs(string $command, array $args): array
     {
-        return array_merge([$command, microtime(true)], $args);
-    }
+        $arguments = array_merge([$command, microtime(true)], $args);
 
-    /**
-     * Parse a Lua error and throw human readable exception.
-     *
-     * @param  string $error
-     * @return void
-     *
-     * @throws QlessException
-     */
-    private function handleError(string $error): void
-    {
-        $this->redis->clearLastError();
+        array_unshift($arguments, 0);
+        array_unshift($arguments, $this->sha);
 
-        throw ExceptionFactory::fromErrorMessage($error);
+        return $arguments;
     }
 
     /**

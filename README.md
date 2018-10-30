@@ -126,8 +126,8 @@ The `adm` directory contains the configuration examples useful for system admini
 
 ### Enqueing Jobs
 
-First things first, create a Qless Client.
-The Client accepts all the same arguments that you'd use when constructing a Redis client.
+First things first, create a Qless Client. The Client accepts all the same arguments that you'd use when constructing
+a [Predis\Client](https://github.com/nrk/predis#connecting-to-redis) client.
 
 ```php
 use Qless\Client;

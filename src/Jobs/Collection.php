@@ -141,7 +141,7 @@ class Collection implements ArrayAccess
      */
     public function offsetExists($jid)
     {
-        return $this->client->get($jid) !== false;
+        return $this->client->get($jid) !== null;
     }
 
     /**

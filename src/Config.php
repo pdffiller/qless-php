@@ -37,7 +37,7 @@ class Config
     {
         $res = $this->client->call('config.get', $name);
 
-        return $res === false ? $default : $res;
+        return $res === null ? $default : $res;
     }
 
     /**

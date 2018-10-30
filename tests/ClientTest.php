@@ -6,7 +6,7 @@ use Qless\Config;
 use Qless\Jobs\Collection as JobsCollection;
 use Qless\LuaScript;
 use Qless\Queues\Queue;
-use Qless\Subscribers\QlessCoreSubscriber;
+use Qless\Subscribers\WatchdogSubscriber;
 use Qless\Tests\Support\RedisAwareTrait;
 use Qless\Workers\Collection as WorkersCollection;
 use Qless\Queues\Collection as QueuesCollection;
@@ -63,7 +63,7 @@ WRK;
     /** @test */
     public function shouldCreateASubscriber()
     {
-        $this->assertInstanceOf(QlessCoreSubscriber::class, $this->client->createSubscriber([]));
+        $this->assertInstanceOf(WatchdogSubscriber::class, $this->client->createSubscriber([]));
     }
 
     /**
@@ -171,32 +171,6 @@ WRK;
         ];
     }
 
-    /** @test */
-    public function shouldReconnect()
-    {
-        $rcClient = new \ReflectionObject($this->client);
-
-        $rcLua = $rcClient->getProperty('lua');
-        $rcLua->setAccessible(true);
-
-        $lua = $rcLua->getValue($this->client);
-
-        $rcLua = new \ReflectionObject($lua);
-
-        $rcRedis = $rcLua->getProperty('redis');
-        $rcRedis->setAccessible(true);
-
-        /** @var \Redis $redis */
-        $redis = $rcRedis->getValue($lua);
-
-        $this->assertSame('+PONG', $redis->ping());
-
-        $redis->close();
-        $this->client->reconnect();
-
-        $this->assertSame('+PONG', $redis->ping());
-    }
-
     protected function getExpectedJob(
         string $jName,
         string $cName,
@@ -295,7 +269,7 @@ WRK;
         $this->assertNotEmpty($actual);
         $this->assertJson($actual);
 
-        $this->assertFalse($this->client->get('job-43'));
+        $this->assertNull($this->client->get('job-43'));
     }
 
     /** @test */
