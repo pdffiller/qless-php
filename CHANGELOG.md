@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
+## [3.1.0] - 2018-11-06
 ### Added
 - Added the `DefaultReserver` which works just like `OrderedReserver` with one exception: it does not sort the queues
 - Added the `BeforeEnqueue` event support
@@ -156,10 +158,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
  - Initial stable release
 
-[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.0.0...HEAD
-[3.0.0]: https://github.com/pdffiller/qless-php/compare/v3.0.0...2.2.1
+[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.1.0...HEAD
+[3.1.0]: https://github.com/pdffiller/qless-php/compare/v3.0.0...v3.1.0
+[3.0.0]: https://github.com/pdffiller/qless-php/compare/v2.2.1...v3.0.0
 [2.2.1]: https://github.com/pdffiller/qless-php/compare/v2.2.0...v2.2.1
 [2.2.0]: https://github.com/pdffiller/qless-php/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/pdffiller/qless-php/compare/v2.0.1...v2.1.0
-[2.0.1]: https://github.com/pdffiller/qless-php/compare/v2.0.0...v2.0.1
-[2.0.0]: https://github.com/pdffiller/qless-php/compare/v1.0.0...v2.0.0
+[2.0.1]: https://github.com/pdffiller/qless-php/compare/2.0.0...v2.0.1
+[2.0.0]: https://github.com/pdffiller/qless-php/compare/v1.0.0...2.0.0
