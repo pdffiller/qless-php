@@ -269,6 +269,21 @@ $worker = new ForkingWorker($reserver, $client);
 $worker->run();
 ```
 
+There are different reservers.
+
+- `default` - without sorting
+
+- `ordered` - Order by queue name
+
+- `priority` - Order by priority
+ ```
+ $reserver = new PriorityReserver($client->queues, ['q1', 'q2', 'q3']);
+ $reserver->setPriorities(['q1' => 7, 'q2' => 10, 'q3' => 5]);
+ ```
+- `round robin` - Round-robin cycle
+- `shuffled round robin` - Random round-robin cycle
+ 
+
 The following POSIX-compliant signals are supported in the parent process:
 
 - `TERM`: Shutdown immediately, stop processing jobs
