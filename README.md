@@ -94,10 +94,9 @@ Prerequisite PHP extensions are:
 
 - [`json`](http://php.net/manual/en/book.json.php)
 - [`pcntl`](http://php.net/manual/en/book.pcntl.php)
-- [`posix`](http://php.net/manual/en/book.pcntl.php)
+- [`posix`](http://php.net/manual/en/book.posix.php)
 - [`pcre`](http://php.net/manual/en/book.pcre.php)
 - [`sockets`](http://php.net/manual/en/book.sockets.php)
-- [`redis`](https://github.com/phpredis/phpredis)
 
 Supported PHP versions are: **7.1**, **7.2** and **7.3**.
 
@@ -268,6 +267,14 @@ $reserver = new OrderedReserver($client->queues, ['testing', 'testing-2', 'testi
 $worker = new ForkingWorker($reserver, $client);
 $worker->run();
 ```
+
+There are different job reservers.
+
+* `DefaultReserver`: A default job reserver
+* `OrderedReserver`: Orders queues by its name
+* `PriorityReserver`: Orders queues by its priority
+* `RoundRobinReserver`: Round-robins through all the provided queues
+* `ShuffledRoundRobin`: Like RoundRobinReserver but shuffles the order of the queues
 
 The following POSIX-compliant signals are supported in the parent process:
 
