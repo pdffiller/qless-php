@@ -136,6 +136,39 @@ function Qless.track(now, command, jid)
   end
 end
 
+function Qless.subscription(now, queue, command, topic)
+  assert(command,
+    'Tag(): Arg "command" must be "add", "remove", "get", "exists"')
+
+  if command == 'get' then
+    return redis.call('hvals', 'ql:topics' .. queue)
+  elseif command == 'exists' then
+    local exists = redis.call('hexists', 'ql:topics' .. queue, topic)
+    return (exists == 1)
+  elseif command == 'remove' then
+    local deleted = redis.call('hdel', 'ql:topics' .. queue, topic)
+    return (deleted == 1)
+  elseif command == 'add' then
+    local topics = redis.call('hgetall', 'ql:topics' .. queue)
+    local _topics = {}
+    if topics then
+      local index = 0
+      for i,v in ipairs(topics) do _topics[v] = true end
+
+      if _topics[topic] == nil or _topics[topic] == false then
+        redis.call('hset', 'ql:topics' .. queue, topic, topic)
+      end
+    else
+      redis.call('hset', 'ql:topics' .. queue, topic, topic)
+      table.insert(topics, topic)
+    end
+
+    return redis.call('hvals', 'ql:topics' .. queue)
+  else
+    error('Tag(): First argument must be "add", "remove", "get" or "exists"')
+  end
+end
+
 function Qless.tag(now, command, ...)
   assert(command,
     'Tag(): Arg "command" must be "add", "remove", "get" or "top"')
@@ -1897,6 +1930,10 @@ end
 
 QlessAPI.tag = function(now, command, ...)
   return cjson.encode(Qless.tag(now, command, unpack(arg)))
+end
+
+QlessAPI.subscription = function(now, queue, command, topic)
+  return cjson.encode(Qless.subscription(now, queue, command, topic))
 end
 
 QlessAPI.stats = function(now, queue, date)
