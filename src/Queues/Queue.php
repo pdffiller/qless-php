@@ -385,6 +385,27 @@ class Queue implements EventsManagerAwareInterface
     }
 
     /**
+     * @param string $topicPattern
+     * @return bool
+     */
+    public function subscribe(string $topicPattern): bool
+    {
+        $subscriptions = $this->client->subscription($this->name, 'add', $topicPattern);
+        $subscriptions = json_decode($subscriptions, true);
+
+        return in_array($topicPattern, $subscriptions);
+    }
+
+    /**
+     * @param string $topicPattern
+     * @return bool
+     */
+    public function unSubscribe(string $topicPattern): bool
+    {
+        return $this->client->subscription($this->name, 'remove', $topicPattern) == 'true';
+    }
+
+    /**
      * Gets this queue name.
      *
      * @return string

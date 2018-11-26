@@ -67,6 +67,36 @@ class Collection implements ArrayAccess
     }
 
     /**
+     * Gets a list of existent Queues matched by topic.
+     *
+     * @param  string $topic
+     * @return Queue[]
+     */
+    public function fromSubscriptions(string $topic): array
+    {
+        $response = [];
+
+        if (empty($topic)) {
+            return $response;
+        }
+
+        $queues = json_decode($this->client->queues(), true) ?: [];
+
+        foreach ($queues as $queue) {
+            $subscriptions = $this->client->call('subscription', $queue['name'], 'get');
+            $subscriptions = json_decode($subscriptions, true) ?: [];
+            foreach ($subscriptions as $subscription) {
+                $topicPattern = str_replace(['.', '*', '#'], ['\.', '[a-zA-z0-9^.]{1,}', '.*'], $subscription);
+                if (preg_match("/^$topicPattern$/", $topic)) {
+                    $response[] = $queue['name'];
+                }
+            }
+        }
+
+        return $response;
+    }
+
+    /**
      * {@inheritdoc}
      *
      * @param  mixed $offset
