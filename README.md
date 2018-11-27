@@ -34,7 +34,7 @@ Documentation is borrowed from [seomoz/qless](https://github.com/seomoz/qless).
   - [Priority](#priority)
   - [Scheduled Jobs](#scheduled-jobs)
   - [Recurring Jobs](#recurring-jobs)
-  - [Topics] (#topics)
+  - [Topics](#topics)
   - [Configuration Options](#configuration-options)
   - [Tagging / Tracking](#tagging--tracking)
   - [Event System](#event-system)
