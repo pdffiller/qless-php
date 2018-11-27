@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+
+## [3.3.0] - 2018-11-27
+### Added
+- Added subscription to topics for queues. 
+
+## [3.2.0] - 2018-11-23
+### Added
+- Added `PriorityReserver` which orders queues by its priority.
+
 ## [3.1.0] - 2018-11-06
 ### Added
 - Added the `DefaultReserver` which works just like `OrderedReserver` with one exception: it does not sort the queues

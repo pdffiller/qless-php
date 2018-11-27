@@ -34,6 +34,7 @@ Documentation is borrowed from [seomoz/qless](https://github.com/seomoz/qless).
   - [Priority](#priority)
   - [Scheduled Jobs](#scheduled-jobs)
   - [Recurring Jobs](#recurring-jobs)
+  - [Topics] (#topics)
   - [Configuration Options](#configuration-options)
   - [Tagging / Tracking](#tagging--tracking)
   - [Event System](#event-system)
@@ -69,6 +70,7 @@ a job if the error is likely not a transient one; otherwise, that worker should 
   gives them to another worker.
 - **Tagging / Tracking** — Some jobs are more interesting than others. Track those jobs to get updates on their
   progress. Tag jobs with meaningful identifiers to find them quickly in [the UI](#web-interface).
+- **Topics** — Deliver a job to multiple queues.
 - **Job Dependencies** — One job might need to wait for another job to complete,
 - **Stats** — `qless` automatically keeps statistics about how long jobs wait to be processed and how long they take to
   be processed. Currently, we keep track of the count, mean, standard deviation, and a histogram of these times.
@@ -459,6 +461,39 @@ $queue->recur(MyJobClass::class, ['lots' => 'of jobs'], 60);
 $jobs = $queue->pop(null, 10);
 echo count($jobs), ' jobs got popped'; // 5 jobs got popped
 ```
+
+### Topics
+Topic help you to put job to different queues. 
+First, you must to create subscription. You can use pattern for name of topics. 
+Symbol `*` - one word, `#` - few words divided by point `.`. 
+Examples: `first.second.*`, `*.second.*`, `#.third`.
+
+```php
+/**
+ * Subscribe
+ *
+ * @var \Qless\Queues\Queue $queue
+ */
+$queue1->subscribe('*.*.apples');
+$queue2->subscribe('big.*.apples');
+$queue3->subscribe('#.apples');
+
+```
+
+Than you can put job to all subscribers.
+
+```php
+/**
+ * Put to few queues
+ *
+ * @var \Qless\Topics\Topic
+ */
+$topic = new Topic('big.green.apples', $client);
+$topic->put('ClassName', ['key' => 'value']); // Put to $queue1, $queue2 and $queue3
+
+```
+
+You can call all Queue's public methods for Topic.
 
 ### Configuration Options
 
