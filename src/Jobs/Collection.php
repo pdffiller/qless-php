@@ -33,13 +33,14 @@ class Collection implements ArrayAccess
     /**
      * Return a paginated list of JIDs which are in a completed state
      *
+     * @param string $queueName
      * @param  int $offset
      * @param  int $count
      * @return string[]
      */
-    public function completed(int $offset = 0, int $count = 25)
+    public function completed(string $queueName, int $offset = 0, int $count = 25)
     {
-        return $this->client->jobs('complete', $offset, $count);
+        return $this->client->jobs('complete', $queueName, $offset, $count);
     }
 
     /**

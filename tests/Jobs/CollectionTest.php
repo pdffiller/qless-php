@@ -102,7 +102,7 @@ class CollectionTest extends QlessTestCase
         $this->put('j-1');
         $this->put('j-2');
 
-        $j = $this->client->jobs->completed();
+        $j = $this->client->jobs->completed('q-1');
         $this->assertEmpty($j);
     }
 
@@ -117,7 +117,7 @@ class CollectionTest extends QlessTestCase
         $q->pop()->complete();
         $q->pop()->complete();
 
-        $j = $this->client->jobs->completed();
+        $j = $this->client->jobs->completed('q-1');
         sort($j);
 
         $this->assertEquals(['j-1', 'j-2'], $j);
