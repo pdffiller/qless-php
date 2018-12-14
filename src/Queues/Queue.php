@@ -353,6 +353,19 @@ class Queue implements EventsManagerAwareInterface
     }
 
     /**
+     * Return array of job ids
+     *
+     * @param string $state
+     * @param int $offset
+     * @param int $count
+     * @return string[]
+     */
+    public function jobs(string $state, int $offset = 0, int $count = 25): array
+    {
+        return $this->client->jobs($state, $this->name, $offset, $count);
+    }
+
+    /**
      * Pauses this queue so it will not process any more Jobs.
      *
      * @return void
