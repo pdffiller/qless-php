@@ -212,6 +212,7 @@ $job->expires;      // when you must either check in with a heartbeat or turn it
 $job->remaining;    // the number of retries remaining for this job
 $job->retries;      // the number of retries originally requested
 $job->tracked;      // is job flagged as important
+$job->failed;       // is job flagged as failed
 
 // there is a way to get seconds remaining before this job will timeout:
 $job->ttl();
@@ -750,7 +751,7 @@ qless-php is open-sourced software licensed under the MIT License.
 See the [`LICENSE.txt`](https://github.com/pdffiller/qless-php/blob/master/LICENSE.txt) file for more.
 
 
-© 2018 PDFfiller<br>
+© 2018-2019 PDFfiller<br>
 © 2013-2015 Ryver, Inc <br>
 
 All rights reserved.
