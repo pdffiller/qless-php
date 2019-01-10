@@ -46,6 +46,25 @@ class BaseJobTest extends QlessTestCase
     }
 
     /** @test */
+    public function shouldChangeFailedFlag()
+    {
+        $queue = $this->client->queues['test-queue'];
+        $queue->put('SampleHandler', [], 'jid');
+
+        $job = $this->client->jobs['jid'];
+        $this->assertEquals(false, $job->failed);
+
+        $job = $queue->pop();
+        $this->assertEquals(false, $job->failed);
+
+        $job->fail('test', 'current job is failed');
+        $this->assertEquals(true, $job->failed);
+
+        $job = $this->client->jobs['jid'];
+        $this->assertEquals(true, $job->failed);
+    }
+
+    /** @test */
     public function shouldRequeueJob()
     {
         $queue = $this->client->queues['test-queue'];

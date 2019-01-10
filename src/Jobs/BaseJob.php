@@ -22,9 +22,12 @@ use Qless\Exceptions\RuntimeException;
  * @property-read int $remaining
  * @property-read string $description
  * @property-read bool $tracked
+ * @property-read bool $failed
  */
 class BaseJob extends AbstractJob implements \ArrayAccess
 {
+    private const STATE_FAILED = 'failed';
+
     /**
      * The history of what has happened to the job so far.
      *
@@ -74,6 +77,13 @@ class BaseJob extends AbstractJob implements \ArrayAccess
      */
     private $tracked = false;
 
+    /**
+     * Is current job failed
+     *
+     * @var bool
+     */
+    private $failed = false;
+
     /** @var ?object */
     private $instance;
 
@@ -94,6 +104,7 @@ class BaseJob extends AbstractJob implements \ArrayAccess
         $this->expires = (float) ($data['expires'] ?? 0.0);
         $this->remaining = (int) $data['remaining'] ?? 0;
         $this->tracked = (bool) $data['tracked'] ?? false;
+        $this->failed = $data['state'] === self::STATE_FAILED;
     }
 
     /**
@@ -164,6 +175,16 @@ class BaseJob extends AbstractJob implements \ArrayAccess
     public function getTracked(): bool
     {
         return $this->tracked;
+    }
+
+    /**
+     * Is current job failed.
+     *
+     * @return bool
+     */
+    public function getFailed(): bool
+    {
+        return $this->failed;
     }
 
     /**
@@ -403,6 +424,8 @@ class BaseJob extends AbstractJob implements \ArrayAccess
         $jsonData = json_encode($this->data, JSON_UNESCAPED_SLASHES) ?: '{}';
 
         $this->getEventsManager()->fire(new JobEvent\OnFailure($this, $this, $group, $message));
+
+        $this->failed = true;
 
         return $this->client->fail($this->jid, $this->worker, $group, $message, $jsonData);
     }
