@@ -43,6 +43,7 @@ class Queue implements EventsManagerAwareInterface
         $this->name   = $name;
 
         $this->setEventsManager($this->client->getEventsManager());
+        $this->registerSyncCompleteEvent();
     }
 
     /**
@@ -141,6 +142,27 @@ class Queue implements EventsManagerAwareInterface
         }, $jids ?: []);
 
         return $numJobs === null ? array_shift($jobs) : $jobs;
+    }
+
+    /**
+     * Get job by JID from this queue.
+     *
+     * @param string $jid
+     * @param string|null $worker
+     * @return BaseJob|null
+     */
+    public function popByJid(string $jid, ?string $worker = null): ?BaseJob
+    {
+        $workerName = $worker ?: $this->client->getWorkerName();
+        $data = json_decode($this->client->popByJid($this->name, $jid, $workerName), true);
+        $jobData = array_reduce($data, 'array_merge', []); //unwrap nested array
+
+        if ($jobData['jid'] === $jid) {
+            $job = new BaseJob($this->client, $jobData);
+            $job->setEventsManager($this->getEventsManager());
+        }
+
+        return $job ?? null;
     }
 
     /**
@@ -403,6 +425,23 @@ class Queue implements EventsManagerAwareInterface
     public function unSubscribe(string $topicPattern): bool
     {
         return $this->client->subscription($this->name, 'remove', $topicPattern) == 'true';
+    }
+
+    /**
+     * Immediately handle job if sync mode enabled
+     */
+    private function registerSyncCompleteEvent(): void
+    {
+        $this->getEventsManager()
+            ->attach(QueueEvent\AfterEnqueue::getName(), function (QueueEvent\AfterEnqueue $event) {
+                if (!$this->client->config->get('sync-enabled')) {
+                    return;
+                }
+                $job = $this->popByJid($event->getJid());
+                if (!empty($job)) {
+                    $job->perform();
+                }
+            });
     }
 
     /**

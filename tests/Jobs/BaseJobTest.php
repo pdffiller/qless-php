@@ -568,4 +568,23 @@ class BaseJobTest extends QlessTestCase
         $this->client->cancel('jid-1');
         $job->requeue();
     }
+
+    public function testJobCanCompleteSync()
+    {
+        $queue = $this->client->queues['test-queue'];
+
+        $queue->put(JobHandler::class, []);
+
+        $this->client->config->set('sync-enabled', true);
+
+        $jid = $queue->put(JobHandler::class, []);
+
+        $job = $this->client->jobs[$jid];
+
+        $this->client->config->clear('sync-enabled');
+
+        $this->assertIsJob($job);
+        $this->assertArrayHasKey('stack', $job->data->toArray());
+        $this->assertFalse($job->getFailed());
+    }
 }

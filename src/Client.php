@@ -21,6 +21,7 @@ use Predis\Client as Redis;
  * @method string recur(string $queue, string $jid, string $klass, string $data, string $spec, ...$args)
  * @method string requeue(string $worker, string $queue, string $jid, string $klass, string $data, int $delay, ...$args)
  * @method string pop(string $queue, string $worker, int $count)
+ * @method string popByJid(string $queue, string $jid, string $worker)
  * @method int length(string $queue)
  * @method float heartbeat(...$args)
  * @method int retry(string $jid, string $queue, string $worker, int $delay, string $group, string $message)
