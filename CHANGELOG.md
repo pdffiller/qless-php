@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.5.0] - 2019-01-23
+### Added
+- Added possibility for synchronously job handle. 
+
 ## [3.4.0] - 2019-01-10
 ### Added
 - Added failed flag. 

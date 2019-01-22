@@ -43,6 +43,7 @@ class Queue implements EventsManagerAwareInterface
         $this->name   = $name;
 
         $this->setEventsManager($this->client->getEventsManager());
+        $this->registerSyncCompleteEvent();
     }
 
     /**
@@ -403,6 +404,22 @@ class Queue implements EventsManagerAwareInterface
     public function unSubscribe(string $topicPattern): bool
     {
         return $this->client->subscription($this->name, 'remove', $topicPattern) == 'true';
+    }
+
+    /**
+     * Immediately handle job if sync mode enabled
+     */
+    private function registerSyncCompleteEvent(): void
+    {
+        $this->getEventsManager()
+            ->attach(QueueEvent\AfterEnqueue::getName(), function (QueueEvent\AfterEnqueue $event) {
+                if (!$this->client->config->get('sync-enabled')) {
+                    return;
+                }
+
+                $job = $this->pop();
+                $job->perform();
+            });
     }
 
     /**
