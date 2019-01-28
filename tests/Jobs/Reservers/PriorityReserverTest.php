@@ -3,6 +3,7 @@
 namespace Qless\Tests\Jobs\Reservers;
 
 use Qless\Jobs\BaseJob;
+use Qless\Jobs\Reservers\Options\DefaultOptions;
 use Qless\Jobs\Reservers\PriorityReserver;
 use Qless\Queues\Queue;
 use Qless\Tests\QlessTestCase;
@@ -21,7 +22,8 @@ class PriorityReserverTest extends QlessTestCase
      */
     public function shouldThrowExceptionForNoQueuesAndSpec()
     {
-        new PriorityReserver($this->client->queues, []);
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        new PriorityReserver($reserverOptions);
     }
 
     /** @test */
@@ -46,11 +48,9 @@ class PriorityReserverTest extends QlessTestCase
         $queue2->put(get_class($class), []);
         $queue3->put(get_class($class), []);
         $queue4->put(get_class($class), []);
-
-        $reserver = new PriorityReserver(
-            $this->client->queues,
-            ['queue-3', 'queue-2-', 'queue-1-', 'queue-4-']
-        );
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        $reserverOptions->setQueues(['queue-3', 'queue-2-', 'queue-1-', 'queue-4-']);
+        $reserver = new PriorityReserver($reserverOptions);
 
         $reserver->setPriorities([
             'queue-2-' => 10,
@@ -74,8 +74,9 @@ class PriorityReserverTest extends QlessTestCase
         $queue2 = new Queue('queue-2', $this->client);
 
         $stack = [$queue1, $queue2];
-
-        $reserver = new PriorityReserver($this->client->queues, ['queue-1', 'queue-2']);
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        $reserverOptions->setQueues(['queue-1', 'queue-2']);
+        $reserver = new PriorityReserver($reserverOptions);
 
         $this->assertEquals($stack, $reserver->getQueues());
     }
@@ -83,7 +84,9 @@ class PriorityReserverTest extends QlessTestCase
     /** @test */
     public function shouldGetDescription()
     {
-        $reserver = new PriorityReserver($this->client->queues, ['queue-1', 'queue-2']);
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        $reserverOptions->setQueues(['queue-1', 'queue-2']);
+        $reserver = new PriorityReserver($reserverOptions);
 
         $this->assertEquals('queue-1, queue-2 (priority)', $reserver->getDescription());
     }
@@ -91,10 +94,9 @@ class PriorityReserverTest extends QlessTestCase
     /** @test */
     public function shouldOrderByPriorityQueuesBeforeWork()
     {
-        $reserver = new PriorityReserver(
-            $this->client->queues,
-            ['queue-1', 'queue-3', 'queue-2']
-        );
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        $reserverOptions->setQueues(['queue-1', 'queue-3', 'queue-2']);
+        $reserver = new PriorityReserver($reserverOptions);
 
         $reserver->setPriorities([
             'queue-1' => 1,

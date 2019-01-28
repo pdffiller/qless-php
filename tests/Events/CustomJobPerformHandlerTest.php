@@ -2,6 +2,7 @@
 
 namespace Qless\Tests\Events;
 
+use Qless\Jobs\Reservers\Options\DefaultOptions;
 use Qless\Jobs\Reservers\OrderedReserver;
 use Qless\Queues\Queue;
 use Qless\Tests\QlessTestCase;
@@ -20,9 +21,12 @@ class CustomJobPerformHandlerTest extends QlessTestCase
     public function shouldSubscribeOnEvents()
     {
         $jid = (new Queue('test-queue', $this->client))->put(JobHandler::class, []);
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        $reserverOptions->setQueues(['test-queue']);
+        $reserver = new OrderedReserver($reserverOptions);
 
         $worker = new PerformClassAwareWorker(
-            new OrderedReserver($this->client->queues, ['test-queue']),
+            $reserver,
             $this->client
         );
 

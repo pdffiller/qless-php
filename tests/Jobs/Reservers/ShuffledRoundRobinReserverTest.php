@@ -2,6 +2,7 @@
 
 namespace Qless\Tests\Jobs\Reservers;
 
+use Qless\Jobs\Reservers\Options\DefaultOptions;
 use Qless\Jobs\Reservers\ShuffledRoundRobinReserver;
 use Qless\Queues\Queue;
 
@@ -19,7 +20,9 @@ class ShuffledRoundRobinReserverTest extends RoundRobinReserverTest
      */
     public function shouldThrowExceptionForNoQueuesAndSpec()
     {
-        new ShuffledRoundRobinReserver($this->client->queues, []);
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        new ShuffledRoundRobinReserver($reserverOptions);
+
     }
 
     /** @test */
@@ -29,8 +32,9 @@ class ShuffledRoundRobinReserverTest extends RoundRobinReserverTest
         $queue2 = new Queue('queue-2', $this->client);
 
         $stack = [$queue1, $queue2];
-
-        $reserver = new ShuffledRoundRobinReserver($this->client->queues, ['queue-1', 'queue-2']);
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        $reserverOptions->setQueues(['queue-1', 'queue-2']);
+        $reserver = new ShuffledRoundRobinReserver($reserverOptions);
 
         $this->assertEquals($stack, $reserver->getQueues());
     }
@@ -38,7 +42,9 @@ class ShuffledRoundRobinReserverTest extends RoundRobinReserverTest
     /** @test */
     public function shouldGetDescription()
     {
-        $reserver = new ShuffledRoundRobinReserver($this->client->queues, ['queue-1', 'queue-2']);
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        $reserverOptions->setQueues(['queue-1', 'queue-2']);
+        $reserver = new ShuffledRoundRobinReserver($reserverOptions);
 
         $this->assertEquals('queue-1, queue-2 (shuffled round robin)', $reserver->getDescription());
     }
@@ -46,10 +52,9 @@ class ShuffledRoundRobinReserverTest extends RoundRobinReserverTest
     /** @test */
     public function shouldShuffleQueuesBeforeWork()
     {
-        $reserver = new ShuffledRoundRobinReserver(
-            $this->client->queues,
-            ['queue-1', 'queue-2', 'queue-3', 'queue-4', 'queue-5']
-        );
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        $reserverOptions->setQueues(['queue-1', 'queue-2', 'queue-3', 'queue-4', 'queue-5']);
+        $reserver = new ShuffledRoundRobinReserver($reserverOptions);
 
         $reserver->beforework();
 

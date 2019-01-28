@@ -4,6 +4,7 @@ namespace Qless\Tests\Jobs\Reservers;
 
 use Psr\Log\NullLogger;
 use Qless\Jobs\BaseJob;
+use Qless\Jobs\Reservers\Options\DefaultOptions;
 use Qless\Jobs\Reservers\OrderedReserver;
 use Qless\Queues\Queue;
 use Qless\Tests\QlessTestCase;
@@ -22,7 +23,8 @@ class OrderedReserverTest extends QlessTestCase
      */
     public function shouldThrowExceptionForNoQueuesAndSpec()
     {
-        new OrderedReserver($this->client->queues, []);
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        new OrderedReserver($reserverOptions);
     }
 
     /** @test */
@@ -43,7 +45,10 @@ class OrderedReserverTest extends QlessTestCase
         $queue1->put(get_class($class), ['foo']);
         $queue2->put(get_class($class), ['bar']);
 
-        $reserver = new OrderedReserver($this->client->queues, ['queue-2', 'queue-1']);
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        $reserverOptions->setQueues(['queue-2', 'queue-1']);
+        $reserver = new OrderedReserver($reserverOptions);
+
         $job = $reserver->reserve();
 
         $this->assertIsJob($job);
@@ -54,7 +59,9 @@ class OrderedReserverTest extends QlessTestCase
     /** @test */
     public function shouldGetQueues()
     {
-        $reserver = new OrderedReserver($this->client->queues, ['queue-1', 'queue-2']);
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        $reserverOptions->setQueues(['queue-1', 'queue-2']);
+        $reserver = new OrderedReserver($reserverOptions);
 
         $this->assertEquals(
             [new Queue('queue-1', $this->client), new Queue('queue-2', $this->client)],
@@ -65,7 +72,9 @@ class OrderedReserverTest extends QlessTestCase
     /** @test */
     public function shouldGetDescription()
     {
-        $reserver = new OrderedReserver($this->client->queues, ['queue-1', 'queue-2']);
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        $reserverOptions->setQueues(['queue-1', 'queue-2']);
+        $reserver = new OrderedReserver($reserverOptions);
 
         $this->assertEquals('queue-1, queue-2 (ordered)', $reserver->getDescription());
     }
@@ -73,7 +82,9 @@ class OrderedReserverTest extends QlessTestCase
     /** @test */
     public function shouldGetNullOnEmptyQueue()
     {
-        $reserver = new OrderedReserver($this->client->queues, ['queue-1', 'queue-2']);
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        $reserverOptions->setQueues(['queue-1', 'queue-2']);
+        $reserver = new OrderedReserver($reserverOptions);
 
         $this->assertNull($reserver->reserve());
     }
@@ -81,7 +92,9 @@ class OrderedReserverTest extends QlessTestCase
     /** @test */
     public function shouldSortQueues()
     {
-        $reserver = new OrderedReserver($this->client->queues, ['queue-7', 'queue-20', 'queue-0']);
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        $reserverOptions->setQueues(['queue-7', 'queue-20', 'queue-0']);
+        $reserver = new OrderedReserver($reserverOptions);
 
         $this->assertEquals('queue-7, queue-20, queue-0 (ordered)', $reserver->getDescription());
 
@@ -93,7 +106,9 @@ class OrderedReserverTest extends QlessTestCase
     public function shouldReserveQueuesBySpec()
     {
         $spec = 'eu-(west|east)-\d+';
-        $reserver = new OrderedReserver($this->client->queues, null, $spec);
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        $reserverOptions->setSpec($spec);
+        $reserver = new OrderedReserver($reserverOptions);
         $reserver->setLogger(new NullLogger());
 
         $this->client->put('w1', 'foo', 'j1', 'klass', '{}', 0);

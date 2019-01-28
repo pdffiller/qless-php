@@ -3,6 +3,7 @@
 namespace Qless\Tests\Jobs\Reservers;
 
 use Qless\Jobs\BaseJob;
+use Qless\Jobs\Reservers\Options\DefaultOptions;
 use Qless\Jobs\Reservers\RoundRobinReserver;
 use Qless\Queues\Queue;
 use Qless\Tests\QlessTestCase;
@@ -21,7 +22,8 @@ class RoundRobinReserverTest extends QlessTestCase
      */
     public function shouldThrowExceptionForNoQueuesAndSpec()
     {
-        new RoundRobinReserver($this->client->queues, []);
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        new RoundRobinReserver($reserverOptions);
     }
 
     /** @test */
@@ -44,10 +46,9 @@ class RoundRobinReserverTest extends QlessTestCase
         $queue2->put(get_class($class), ['bar-']);
         $queue3->put(get_class($class), ['foo-']);
 
-        $reserver = new RoundRobinReserver(
-            $this->client->queues,
-            ['queue-3', 'queue-2', 'queue-1']
-        );
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        $reserverOptions->setQueues(['queue-3', 'queue-2', 'queue-1']);
+        $reserver = new RoundRobinReserver($reserverOptions);
 
         $reserver->reserve()->perform();
         $reserver->reserve()->perform();
@@ -63,8 +64,9 @@ class RoundRobinReserverTest extends QlessTestCase
         $queue2 = new Queue('queue-2', $this->client);
 
         $stack = [$queue1, $queue2];
-
-        $reserver = new RoundRobinReserver($this->client->queues, ['queue-1', 'queue-2']);
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        $reserverOptions->setQueues(['queue-1', 'queue-2']);
+        $reserver = new RoundRobinReserver($reserverOptions);
 
         $this->assertEquals($stack, $reserver->getQueues());
     }
@@ -72,7 +74,9 @@ class RoundRobinReserverTest extends QlessTestCase
     /** @test */
     public function shouldGetDescription()
     {
-        $reserver = new RoundRobinReserver($this->client->queues, ['queue-1', 'queue-2']);
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        $reserverOptions->setQueues(['queue-1', 'queue-2']);
+        $reserver = new RoundRobinReserver($reserverOptions);
 
         $this->assertEquals('queue-1, queue-2 (round robin)', $reserver->getDescription());
     }
@@ -80,7 +84,9 @@ class RoundRobinReserverTest extends QlessTestCase
     /** @test */
     public function shouldGetNullOnEmptyQueue()
     {
-        $reserver = new RoundRobinReserver($this->client->queues, ['queue-1', 'queue-2']);
+        $reserverOptions = new DefaultOptions($this->client->queues);
+        $reserverOptions->setQueues(['queue-1', 'queue-2']);
+        $reserver = new RoundRobinReserver($reserverOptions);
 
         $this->assertNull($reserver->reserve());
     }

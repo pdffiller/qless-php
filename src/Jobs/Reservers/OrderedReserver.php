@@ -25,14 +25,14 @@ class OrderedReserver extends AbstractReserver implements ReserverInterface
     {
         parent::beforeWork();
 
-        sort($this->queues, SORT_NATURAL);
+        sort($this->options->getQueues(), SORT_NATURAL);
 
         $this->resetDescription();
 
-        if (empty($this->queues) == false) {
+        if (empty($this->options->getQueues()) == false) {
             $this->logger->info(
                 'Monitoring the following queues: {queues}',
-                ['queues' => implode(', ', $this->queues)]
+                ['queues' => implode(', ', $this->options->getQueues())]
             );
         }
     }

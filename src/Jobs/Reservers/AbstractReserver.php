@@ -6,6 +6,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qless\Exceptions\InvalidArgumentException;
 use Qless\Jobs\BaseJob;
+use Qless\Jobs\Reservers\Options\ReserverOptionsInterface;
 use Qless\Queues\Collection;
 use Qless\Queues\Queue;
 
@@ -21,9 +22,6 @@ abstract class AbstractReserver implements ReserverInterface
 {
     /** @var Queue[] */
     protected $queues = [];
-
-    /** @var string|null */
-    protected $worker;
 
     /**
      * Current reserver type description.
@@ -47,18 +45,9 @@ abstract class AbstractReserver implements ReserverInterface
     protected $refreshQueues = false;
 
     /**
-     * A specification to reserve queues.
-     *
-     * @var string|null
+     * @var ReserverOptionsInterface
      */
-    protected $spec;
-
-    /**
-     * The queue collection.
-     *
-     * @var Collection
-     */
-    protected $collection;
+    protected $options;
 
     /**
      * Current reserver type description.
@@ -70,20 +59,16 @@ abstract class AbstractReserver implements ReserverInterface
     /**
      * Instantiate a new reserver, given a list of queues that it should be working on.
      *
-     * @param  Collection  $collection
-     * @param  array|null  $queues
-     * @param  string|null $spec
-     * @param  string|null $worker
-     *
-     * @throws InvalidArgumentException
+     * @param ReserverOptionsInterface $options
      */
-    public function __construct(
-        Collection $collection,
-        $queues = null,
-        ?string $spec = null,
-        ?string $worker = null
-    ) {
-        if (empty($queues) == true && empty($spec) == true) {
+    public function __construct(ReserverOptionsInterface $options)
+    {
+        /** @var Collection $collection */
+        $collection = $options->getCollection();
+        $queues = $options->getQueues();
+        $this->options = $options;
+
+        if (empty($queues) == true && empty($this->options->getSpec()) == true) {
             throw new InvalidArgumentException(
                 'A queues list or a specification to reserve queues are required.'
             );
@@ -96,13 +81,10 @@ abstract class AbstractReserver implements ReserverInterface
                 return $collection[trim($name)];
             }, $queues);
         } else {
-            $this->spec = $spec;
             $this->refreshQueues = true;
-            $this->queues = $collection->fromSpec($spec);
+            $this->queues = $collection->fromSpec($this->options->getSpec());
         }
 
-        $this->collection = $collection;
-        $this->worker = $worker;
         $this->logger = new NullLogger();
     }
 
@@ -123,8 +105,11 @@ abstract class AbstractReserver implements ReserverInterface
      */
     public function beforeWork(): void
     {
-        if ($this->refreshQueues && empty($this->spec) == false) {
-            $this->queues = $this->collection->fromSpec($this->spec);
+        /** @var Collection $collection */
+        $collection = $this->options->getCollection();
+
+        if ($this->refreshQueues && empty($this->options->getSpec()) == false) {
+            $this->queues = $collection->fromSpec($this->options->getSpec());
 
             if (empty($this->queues) == true) {
                 $this->logger->info('Refreshing queues dynamically, but there are no queues yet');
@@ -172,7 +157,7 @@ abstract class AbstractReserver implements ReserverInterface
 
         foreach ($this->queues as $queue) {
             /** @var \Qless\Jobs\BaseJob|null $job */
-            $job = $queue->pop($this->worker);
+            $job = $queue->pop($this->options->getWorker());
             if ($job !== null) {
                 $this->logger->info('Found a job on {queue}', ['queue' => (string) $queue]);
                 return $job;
