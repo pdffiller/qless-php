@@ -182,6 +182,14 @@ abstract class AbstractJob implements EventsManagerAwareInterface
     }
 
     /**
+     * @return array
+     */
+    public function getFailure(): array
+    {
+        return $this->rawData['failure'] ?? [];
+    }
+
+    /**
      * Add the specified tags to this job.
      *
      * @param  string ...$tags A list of tags to to add to this job.
