@@ -80,20 +80,17 @@ class Collection implements ArrayAccess
             return $response;
         }
 
-        $queues = json_decode($this->client->queues(), true) ?: [];
+        $subscriptions = $this->client->call('subscription', 'default', 'all', $topic);
+        $subscriptions = json_decode($subscriptions, true) ?: [];
 
-        foreach ($queues as $queue) {
-            $subscriptions = $this->client->call('subscription', $queue['name'], 'get');
-            $subscriptions = json_decode($subscriptions, true) ?: [];
-            foreach ($subscriptions as $subscription) {
-                $topicPattern = str_replace(['.', '*', '#'], ['\.', '[a-zA-z0-9^.]{1,}', '.*'], $subscription);
-                if (preg_match("/^$topicPattern$/", $topic)) {
-                    $response[] = $queue['name'];
-                }
+        foreach ($subscriptions as $subscription => $queues) {
+            $topicPattern = str_replace(['.', '*', '#'], ['\.', '[a-zA-z0-9^.]{1,}', '.*'], $subscription);
+            if (preg_match("/^$topicPattern$/", $topic)) {
+                $response = array_merge($response, $queues);
             }
         }
 
-        return $response;
+        return array_unique($response);
     }
 
     /**

@@ -10,7 +10,7 @@ use Qless\Queues\Queue;
 /**
  * Class Topic
  * @package Qless\Topics
- * @method string put(string $class, array $data, ?string $jid = null, ...$args)
+ * @method array put(string $class, array $data, ?string $jid = null, ...$args)
  * @method BaseJob pop(?string $worker = null, int $numJobs = 0)
  */
 class Topic

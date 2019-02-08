@@ -18,8 +18,6 @@ class TopicTest extends QlessTestCase
         $queues = [];
         for ($i = 1; $i<=2; $i++) {
             $queues[$i] = new Queue('test-queue-' . $i, $this->client);
-            $queues[$i]->put('Zzz\Yyy', []);
-            $queues[$i]->pop();
         }
 
         $queues[1]->subscribe('big.*.*');
@@ -27,9 +25,12 @@ class TopicTest extends QlessTestCase
 
         $queuesCollection = new Collection($this->client);
 
-        $this->assertEquals(['test-queue-1', 'test-queue-2'], $queuesCollection->fromSubscriptions('big.green.apples'));
-        $this->assertEquals(['test-queue-1', 'test-queue-2'], $queuesCollection->fromSubscriptions('big.red.apples'));
+        $this->assertEquals(['test-queue-2', 'test-queue-1'], $queuesCollection->fromSubscriptions('big.green.apples'));
+        $this->assertEquals(['test-queue-2', 'test-queue-1'], $queuesCollection->fromSubscriptions('big.red.apples'));
         $this->assertEquals([], $queuesCollection->fromSubscriptions('*.*.oranges'));
+
+        $queues[1]->unsubscribe('big.*.*');
+        $queues[2]->unsubscribe('big.*.apples');
     }
 
     /** @test */
@@ -38,8 +39,6 @@ class TopicTest extends QlessTestCase
         $queues = [];
         for ($i = 1; $i<=5; $i++) {
             $queues[$i] = new Queue('test-queue-' . $i, $this->client);
-            $queues[$i]->put('Zzz\Yyy', []);
-            $queues[$i]->pop();
         }
 
         $queues[1]->subscribe('big.*.*');
@@ -61,7 +60,7 @@ class TopicTest extends QlessTestCase
         $this->assertEquals('Xxx\Yyy', $job1->getKlass());
         $this->assertEquals('Xxx\Yyy', $job2->getKlass());
         $this->assertEquals('Xxx\Yyy', $job3->getKlass());
-        $this->assertEquals(null, $job4);
+        $this->assertEmpty($job4);
         $this->assertEquals('Xxx\Yyy', $job5->getKlass());
     }
 
@@ -71,8 +70,6 @@ class TopicTest extends QlessTestCase
         $queues = [];
         for ($i = 1; $i<=3; $i++) {
             $queues[$i] = new Queue('test-queue-' . $i, $this->client);
-            $queues[$i]->put('Zzz\Yyy', []);
-            $queues[$i]->pop();
         }
 
         $queues[1]->subscribe('big.*.*');
@@ -91,7 +88,7 @@ class TopicTest extends QlessTestCase
         $job3 = $queues[3]->pop();
 
         $this->assertEquals('Xxx\Yyy', $job1->getKlass());
-        $this->assertEquals(null, $job2);
+        $this->assertEmpty($job2);
         $this->assertEquals('Xxx\Yyy', $job3->getKlass());
     }
 }
