@@ -1258,6 +1258,45 @@ function QlessQueue:pop(now, worker, count)
   return jids
 end
 
+function QlessQueue:popByJid(now ,jid, worker)
+  assert(jid, 'Pop(): Arg "jid" missing')
+  assert(worker, 'Pop(): Arg "worker" missing')
+
+  local expires = now + tonumber(
+          Qless.config.get(self.name .. '-heartbeat') or
+                  Qless.config.get('heartbeat', 60))
+
+  redis.call('zadd', 'ql:workers', now, worker)
+
+  local job = Qless.job(jid)
+
+  job:history(now, 'popped', {worker = worker})
+
+  local time = tonumber(
+          redis.call('hget', QlessJob.ns .. jid, 'time') or now)
+  local waiting = now - time
+  self:stat(now, 'wait', waiting)
+  redis.call('hset', QlessJob.ns .. jid,
+          'time', string.format("%.20f", now))
+
+  redis.call('zadd', 'ql:w:' .. worker .. ':jobs', expires, jid)
+
+  job:update({
+    worker  = worker,
+    expires = expires,
+    state   = 'running'
+  })
+
+  self.locks.add(expires, jid)
+
+  local tracked = redis.call('zscore', 'ql:tracked', jid) ~= false
+
+  if tracked then
+    Qless.publish('popped', jid)
+  end
+
+  return jid
+end
 function QlessQueue:stat(now, stat, val)
   local bin = now - (now % 86400)
   local key = 'ql:s:' .. stat .. ':' .. bin .. ':' .. self.name
@@ -1989,6 +2028,13 @@ QlessAPI.pop = function(now, queue, worker, count)
   for i, jid in ipairs(jids) do
     table.insert(response, Qless.job(jid):data())
   end
+  return cjson.encode(response)
+end
+
+QlessAPI.popByJid = function(now, queue, jid, worker)
+  local jid = Qless.queue(queue):popByJid(now, jid, worker)
+  local response = {}
+  table.insert(response, Qless.job(jid):data())
   return cjson.encode(response)
 end
 

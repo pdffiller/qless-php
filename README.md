@@ -40,6 +40,7 @@ Documentation is borrowed from [seomoz/qless](https://github.com/seomoz/qless).
   - [Event System](#event-system)
     - [Per-Job Events](#per-job-events)
     - [List of Events](#list-of-events)
+  - [Sync job processing](#sync-job-processing)
   - [Heartbeating](#heartbeating)
   - [Stats](#stats)
   - [Time](#time)
@@ -716,7 +717,16 @@ Full list of events available in Qless:
 | **Queue**   | `queue:beforeEnqueue`    | `\Qless\Events\User\Queue\BeforeEnqueue`
 | **Queue**   | `queue:afterEnqueue`     | `\Qless\Events\User\Queue\AfterEnqueue`
 
+### Sync job processing
 
+If you want your job to be processed without worker, you can set sync mode for qless client. In configuration of your project write code like this:
+```php
+/** @var \Qless\Client $client */
+$client->config->set('sync-enabled', true);
+``` 
+Now you all job will be process without worker, synchronously.
+
+**Note**: Use it feature for testing your job in development environment.
 ### Heartbeating
 
 **`@todo`**
