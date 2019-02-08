@@ -138,10 +138,27 @@ end
 
 function Qless.subscription(now, queue, command, topic)
   assert(command,
-    'Tag(): Arg "command" must be "add", "remove", "get", "exists"')
+    'Tag(): Arg "command" must be "add", "remove", "get", "all", "exists"')
 
   if command == 'get' then
-    return redis.call('hvals', 'ql:topics' .. queue)
+    return redis.call('keys', 'ql:topics' .. queue)
+  elseif command == 'all' then
+    local topics = {}
+    local _topics = redis.call('keys', 'ql:topics*')
+    local _value = {}
+    local _topic
+    local _return = {}
+    for i,v in ipairs(_topics) do
+      _value = redis.call('hvals', v)
+      _topic = redis.call('hkeys', v)
+      for index,topic_name in ipairs(_topic) do
+        if (_return[topic_name] == nil) then
+          _return[topic_name] = {}
+        end
+        _return[topic_name][index] = _value[index]
+      end
+    end
+    return _return
   elseif command == 'exists' then
     local exists = redis.call('hexists', 'ql:topics' .. queue, topic)
     return (exists == 1)
@@ -156,10 +173,10 @@ function Qless.subscription(now, queue, command, topic)
       for i,v in ipairs(topics) do _topics[v] = true end
 
       if _topics[topic] == nil or _topics[topic] == false then
-        redis.call('hset', 'ql:topics' .. queue, topic, topic)
+        redis.call('hset', 'ql:topics' .. queue, topic, queue)
       end
     else
-      redis.call('hset', 'ql:topics' .. queue, topic, topic)
+      redis.call('hset', 'ql:topics' .. queue, topic, queue)
       table.insert(topics, topic)
     end
 
