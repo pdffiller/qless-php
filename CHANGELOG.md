@@ -6,9 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-## [3.5.0] - 2019-01-25
+## [3.5.0] - 2019-02-08
 ### Added
-- Added possibility for synchronously job handle. 
+- Added possibility for synchronously job handle.
+- Added possibility for push to empty subscribers (queues).
+- Added failure getter to a job 
 
 ## [3.4.0] - 2019-01-10
 ### Added
