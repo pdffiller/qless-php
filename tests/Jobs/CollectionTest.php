@@ -179,6 +179,30 @@ class CollectionTest extends QlessTestCase
         $this->assertNotNull($j);
     }
 
+    public function testItReturnsWorkerJobs()
+    {
+        $this->client->put('w1', 'test-queue', 'job1', 'klass', '{}', 0);
+        $this->client->put('w1', 'test-queue', 'job2', 'klass', '{}', 0);
+
+        $this->client->pop('test-queue', 'w1', 2);
+
+        $jobs = $this->client->jobs->fromWorker('w1');
+        $this->assertIsArray($jobs);
+        $this->assertCount(2, $jobs);
+    }
+
+    public function testItReturnNoWorkerJobsOnEmptyWorker()
+    {
+        $this->put('j-1');
+
+        $q  = new Queue('q-1', $this->client);
+        $q->pop();
+
+        $jobs = $this->client->jobs->fromWorker('');
+        $this->assertIsArray($jobs);
+        $this->assertCount(0, $jobs);
+    }
+
     private function put($jid, $opts = [])
     {
         $opts = array_merge([

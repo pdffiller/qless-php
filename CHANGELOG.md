@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+- Added possibility to get jobs in worker.
 
 ## [3.5.0] - 2019-02-08
 ### Added

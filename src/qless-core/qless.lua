@@ -1988,7 +1988,7 @@ QlessAPI.workers = function(now, worker)
   return cjson.encode(QlessWorker.counts(now, worker))
 end
 
-QlessAPI.worker_jobs = function(now, worker)
+QlessAPI.workerJobs = function(now, worker)
   return cjson.encode(QlessWorker.jobs(worker))
 end
 

@@ -141,7 +141,7 @@ class Collection implements ArrayAccess
      */
     public function fromWorker(string $worker): array
     {
-        $jids = json_decode($this->client->worker_jobs($worker), true) ?: [];
+        $jids = json_decode($this->client->workerJobs($worker), true) ?: [];
 
         return $this->multiget($jids);
     }
