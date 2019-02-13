@@ -1910,6 +1910,14 @@ function QlessWorker.counts(now, worker)
     return response
   end
 end
+
+function QlessWorker.jobs(worker)
+  if worker then
+    return redis.call('zrange', 'ql:w:' .. worker .. ':jobs', 0, -1)
+  end
+  return nil
+end
+
 local QlessAPI = {}
 
 function QlessAPI.get(now, jid)
@@ -1978,6 +1986,10 @@ end
 
 QlessAPI.workers = function(now, worker)
   return cjson.encode(QlessWorker.counts(now, worker))
+end
+
+QlessAPI.workerJobs = function(now, worker)
+  return cjson.encode(QlessWorker.jobs(worker))
 end
 
 QlessAPI.track = function(now, command, jid)

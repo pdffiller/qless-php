@@ -134,6 +134,19 @@ class Collection implements ArrayAccess
     }
 
     /**
+     * Reads jobs in a worker.
+     *
+     * @param string $worker
+     * @return array  BaseJob[]
+     */
+    public function fromWorker(string $worker): array
+    {
+        $jids = json_decode($this->client->workerJobs($worker), true) ?: [];
+
+        return $this->multiget($jids);
+    }
+
+    /**
      * {@inheritdoc}
      *
      * @param  string $jid
