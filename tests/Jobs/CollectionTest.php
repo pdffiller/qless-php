@@ -191,7 +191,7 @@ class CollectionTest extends QlessTestCase
         $this->assertCount(2, $jobs);
     }
 
-    public function testItReturnNoWorkerJobsOnEmptyWorker()
+    public function testItReturnsNoWorkerJobsOnEmptyWorker()
     {
         $this->put('j-1');
 
@@ -202,6 +202,31 @@ class CollectionTest extends QlessTestCase
         $this->assertIsArray($jobs);
         $this->assertCount(0, $jobs);
     }
+
+    public function testItReturnsWorkerJobsByTimeFilter()
+    {
+        $this->client->put('w1', 'test-queue', 'job1', 'klass', '{}', 0);
+
+        $this->client->pop('test-queue', 'w1', 1);
+
+        $jobs = $this->client->jobs->fromWorker('w1', '1 hour');
+        $this->assertIsArray($jobs);
+        $this->assertCount(1, $jobs);
+    }
+
+    public function testItReturnsAllWorkerJobsByInvalidTimeFilter()
+    {
+        $this->client->put('w1', 'test-queue', 'job1', 'klass', '{}', 0);
+        $this->client->put('w1', 'test-queue', 'job2', 'klass', '{}', 0);
+        $this->client->put('w1', 'test-queue', 'job3', 'klass', '{}', 0);
+
+        $this->client->pop('test-queue', 'w1', 3);
+
+        $jobs = $this->client->jobs->fromWorker('w1', '<whoops!VERY_bad_Time#>');
+        $this->assertIsArray($jobs);
+        $this->assertCount(3, $jobs);
+    }
+
 
     private function put($jid, $opts = [])
     {

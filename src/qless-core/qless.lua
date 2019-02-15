@@ -1911,11 +1911,16 @@ function QlessWorker.counts(now, worker)
   end
 end
 
-function QlessWorker.jobs(worker)
-  if worker then
-    return redis.call('zrange', 'ql:w:' .. worker .. ':jobs', 0, -1)
+function QlessWorker.jobs(worker, minScore)
+  minScore = minScore or 0
+  if worker == nil then
+    return nil
   end
-  return nil
+  if minScore == nil or minScore == 0 then
+    return redis.call('zrange', 'ql:w:' .. worker .. ':jobs', 0, -1)
+  else
+    return redis.call('zrangebyscore', 'ql:w:' .. worker .. ':jobs', minScore, '+inf')
+  end
 end
 
 local QlessAPI = {}
@@ -1988,8 +1993,8 @@ QlessAPI.workers = function(now, worker)
   return cjson.encode(QlessWorker.counts(now, worker))
 end
 
-QlessAPI.workerJobs = function(now, worker)
-  return cjson.encode(QlessWorker.jobs(worker))
+QlessAPI.workerJobs = function(now, worker, minScore)
+  return cjson.encode(QlessWorker.jobs(worker, minScore))
 end
 
 QlessAPI.track = function(now, command, jid)
