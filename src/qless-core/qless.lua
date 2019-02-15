@@ -1916,7 +1916,7 @@ function QlessWorker.jobs(worker, minScore)
   if worker == nil then
     return nil
   end
-  if minScore == nil or minScore == 0 then
+  if minScore == 0 then
     return redis.call('zrange', 'ql:w:' .. worker .. ':jobs', 0, -1)
   else
     return redis.call('zrangebyscore', 'ql:w:' .. worker .. ':jobs', minScore, '+inf')
