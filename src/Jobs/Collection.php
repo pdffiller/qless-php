@@ -137,11 +137,24 @@ class Collection implements ArrayAccess
      * Reads jobs in a worker.
      *
      * @param string $worker
+     * @param string $subTimeInterval  specify last time interval, i.e. '2 hours', '15 mins' and etc; all jobs on empty
      * @return array  BaseJob[]
      */
-    public function fromWorker(string $worker): array
+    public function fromWorker(string $worker, string $subTimeInterval = ''): array
     {
-        $jids = json_decode($this->client->workerJobs($worker), true) ?: [];
+        try {
+            $now = new \DateTime();
+            $interval = date_interval_create_from_date_string($subTimeInterval);
+            $timestamp = $now->sub($interval)->getTimestamp();
+        } catch (\Exception $e) {
+            $timestamp = -1;
+        }
+
+        if ($subTimeInterval === '' || $timestamp === -1) {
+            $jids = json_decode($this->client->workerJobs($worker), true) ?: [];
+        } else {
+            $jids = json_decode($this->client->workerJobs($worker, $timestamp), true) ?: [];
+        }
 
         return $this->multiget($jids);
     }
