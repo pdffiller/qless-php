@@ -727,9 +727,50 @@ $client->config->set('sync-enabled', true);
 Now you all job will be process without worker, synchronously.
 
 **Note**: Use it feature for testing your job in development environment.
+
 ### Heartbeating
 
-**`@todo`**
+When a worker is given a job, it is given an exclusive lock to that job. That means
+that job won't be given to any other worker, so long as the worker checks in with
+progress on the job. By default, jobs have to either report back progress every 60
+seconds, or complete it, but that's a configurable option. For longer jobs, this
+may not make sense.
+
+``` php
+$job = $queue->pop();
+// How long until I have to check in?
+$job->ttl(); // 59
+
+    // ...
+
+    public function perform(BaseJob $job): void
+    {
+        // some code
+        
+        // if job need more time
+        $job->heartbeat();
+        
+        // some code
+        
+        $job->complete();
+    }
+    
+    // ...    
+
+```
+
+If you want to set the heartbeat in all queues,
+
+``` php
+// Set 10 minutes
+$client->config->set('heartbeat', 600);
+```
+
+Also, you can set heartbeat for a separate queue
+
+``` php
+$client->queues['test-queue']->heartbeat = 120;
+```
 
 ### Stats
 
