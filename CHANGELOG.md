@@ -5,7 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
 - Added possibility to get jobs in worker (all jobs or by time filter).
+### Changed
+- Check current job status before change it in Redis
 
 ## [3.5.0] - 2019-02-08
 ### Added
