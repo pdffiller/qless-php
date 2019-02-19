@@ -5,6 +5,7 @@ namespace Qless\Jobs;
 use Qless\Client;
 use Qless\Events\User\Job as JobEvent;
 use Qless\Exceptions\InvalidArgumentException;
+use Qless\Exceptions\JobAlreadyFinishedException;
 use Qless\Exceptions\LostLockException;
 use Qless\Exceptions\QlessException;
 use Qless\Exceptions\RuntimeException;
@@ -23,10 +24,13 @@ use Qless\Exceptions\RuntimeException;
  * @property-read string $description
  * @property-read bool $tracked
  * @property-read bool $failed
+ * @property-read bool $completed
  */
 class BaseJob extends AbstractJob implements \ArrayAccess
 {
     private const STATE_FAILED = 'failed';
+
+    private const STATE_COMPLETED = 'completed';
 
     /**
      * The history of what has happened to the job so far.
@@ -82,7 +86,14 @@ class BaseJob extends AbstractJob implements \ArrayAccess
      *
      * @var bool
      */
-    private $failed = false;
+    private $failed;
+
+    /**
+     * Is current job completed
+     *
+     * @var bool
+     */
+    private $completed;
 
     /** @var ?object */
     private $instance;
@@ -105,6 +116,7 @@ class BaseJob extends AbstractJob implements \ArrayAccess
         $this->remaining = (int) $data['remaining'] ?? 0;
         $this->tracked = (bool) $data['tracked'] ?? false;
         $this->failed = $data['state'] === self::STATE_FAILED;
+        $this->completed = $data['state'] === self::STATE_COMPLETED;
     }
 
     /**
@@ -188,6 +200,16 @@ class BaseJob extends AbstractJob implements \ArrayAccess
     }
 
     /**
+     * Is current job completed.
+     *
+     * @return bool
+     */
+    public function getCompleted(): bool
+    {
+        return $this->completed;
+    }
+
+    /**
      * Gets Job's description.
      *
      * @return string
@@ -259,6 +281,10 @@ class BaseJob extends AbstractJob implements \ArrayAccess
      */
     public function complete(?string $nextq = null, int $delay = 0, array $depends = []): string
     {
+        if ($this->completed || $this->failed) {
+            throw new JobAlreadyFinishedException();
+        }
+
         $params = [
             $this->jid,
             $this->worker,
@@ -270,6 +296,8 @@ class BaseJob extends AbstractJob implements \ArrayAccess
             $next = ['next', $nextq, 'delay', $delay, 'depends', json_encode($depends, JSON_UNESCAPED_SLASHES)];
             $params = array_merge($params, $next);
         }
+
+        $this->completed = true;
 
         return call_user_func_array(
             [$this->client, 'complete'],
@@ -421,6 +449,10 @@ class BaseJob extends AbstractJob implements \ArrayAccess
      */
     public function fail(string $group, string $message)
     {
+        if ($this->completed || $this->failed) {
+            throw new JobAlreadyFinishedException();
+        }
+
         $jsonData = json_encode($this->data, JSON_UNESCAPED_SLASHES) ?: '{}';
 
         $this->getEventsManager()->fire(new JobEvent\OnFailure($this, $this, $group, $message));

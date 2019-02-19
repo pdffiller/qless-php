@@ -2,6 +2,7 @@
 
 namespace Qless\Tests\Jobs;
 
+use Qless\Exceptions\JobAlreadyFinishedException;
 use Qless\Jobs\BaseJob;
 use Qless\Tests\QlessTestCase;
 use Qless\Tests\Stubs\JobHandler;
@@ -586,5 +587,93 @@ class BaseJobTest extends QlessTestCase
         $this->assertIsJob($job);
         $this->assertArrayHasKey('stack', $job->data->toArray());
         $this->assertFalse($job->getFailed());
+    }
+
+    public function testJobCantChangeFailToComplete()
+    {
+        $queue = $this->client->queues['test-queue'];
+
+        $jid = $queue->put(JobHandler::class, []);
+
+        $job = $queue->popByJid($jid);
+
+        $this->assertIsJob($job);
+
+        $job->fail($job->getQueue(), 'Test Fail');
+
+        // Fail to complete
+        try {
+            $job->complete();
+            $exception = null;
+        } catch (\Throwable $exception) {
+        }
+
+        $this->assertInstanceOf(JobAlreadyFinishedException::class, $exception);
+    }
+
+    public function testJobCantChangeCompleteToFail()
+    {
+        $queue = $this->client->queues['test-queue'];
+
+        $jid = $queue->put(JobHandler::class, []);
+
+        $job = $queue->popByJid($jid);
+
+        $this->assertIsJob($job);
+
+        $job->complete();
+
+        // Complete to fail
+        try {
+            $job->fail($job->getQueue(), 'Test Fail');
+            $exception = null;
+        } catch (\Throwable $exception) {
+        }
+
+        $this->assertInstanceOf(JobAlreadyFinishedException::class, $exception);
+    }
+
+    public function testJobCantCompleteTwice()
+    {
+        $queue = $this->client->queues['test-queue'];
+
+        $jid = $queue->put(JobHandler::class, []);
+
+        $job = $queue->popByJid($jid);
+
+        $this->assertIsJob($job);
+
+        $job->complete();
+
+        // Cant complete twice
+        try {
+            $job->complete();
+            $exception = null;
+        } catch (\Throwable $exception) {
+        }
+
+        $this->assertInstanceOf(JobAlreadyFinishedException::class, $exception);
+    }
+
+    public function testJobCantFailedTwice()
+    {
+        $queue = $this->client->queues['test-queue'];
+
+        $jid = $queue->put(JobHandler::class, []);
+
+        $job = $queue->popByJid($jid);
+
+        $this->assertIsJob($job);
+
+        $job->fail($job->getQueue(), 'Test Fail');
+
+        // Cant fail twice
+        try {
+            $job->fail($job->getQueue(), 'Test Fail');
+            $exception = null;
+        } catch (\Throwable $exception) {
+        }
+
+        $this->assertInstanceOf(JobAlreadyFinishedException::class, $exception);
     }
 }
