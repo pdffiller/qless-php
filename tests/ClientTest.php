@@ -409,4 +409,16 @@ WRK;
     {
         $this->client->timeout('foo');
     }
+
+    /** @test */
+    public function shouldGetWaitingList()
+    {
+        $queueName = uniqid('waiting_test_', false);
+        $jobId = uniqid('job-', false);
+
+        (new Queue($queueName, $this->client))->put('Xxx\Yyy', ['test' => 'some-data'], $jobId);
+        $jobIds = $this->client->jobs('waiting', $queueName);
+
+        $this->assertEquals($jobId, array_pop($jobIds));
+    }
 }

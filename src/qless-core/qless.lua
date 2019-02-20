@@ -99,6 +99,8 @@ function Qless.jobs(now, state, ...)
       return queue.depends.peek(now, offset, count)
     elseif state == 'recurring' then
       return queue.recurring.peek('+inf', offset, count)
+    elseif state == 'waiting' then
+      return queue.work.peek(offset, count)
     else
       error('Jobs(): Unknown type "' .. state .. '"')
     end
@@ -995,13 +997,16 @@ function Qless.queue(name)
   queue.name = name
 
   queue.work = {
-    peek = function(count)
+    peek = function(offset, count)
       if count == 0 then
         return {}
       end
+      if offset == nil then
+        offset = 0
+      end
       local jids = {}
       for index, jid in ipairs(redis.call(
-        'zrevrange', queue:prefix('work'), 0, count - 1)) do
+        'zrevrange', queue:prefix('work'), offset, count - 1)) do
         table.insert(jids, jid)
       end
       return jids
@@ -1173,7 +1178,7 @@ function QlessQueue:peek(now, count)
 
   self:check_scheduled(now, count - #jids)
 
-  table.extend(jids, self.work.peek(count - #jids))
+  table.extend(jids, self.work.peek(0, count - #jids))
 
   return jids
 end
@@ -1222,7 +1227,7 @@ function QlessQueue:pop(now, worker, count)
 
   self:check_scheduled(now, count - #jids)
 
-  table.extend(jids, self.work.peek(count - #jids))
+  table.extend(jids, self.work.peek(0, count - #jids))
 
   local state
   for index, jid in ipairs(jids) do

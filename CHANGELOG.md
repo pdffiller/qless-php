@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Added
 - Added possibility to get jobs in worker (all jobs or by time filter).
+- Added possibility to get jobs in status waiting
 ### Changed
 - Check current job status before change it in Redis
 
