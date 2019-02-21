@@ -421,4 +421,23 @@ WRK;
 
         $this->assertEquals($jobId, array_pop($jobIds));
     }
+
+    /** @test */
+    public function shouldGetCompletedList()
+    {
+        $queueName = uniqid('completed_test_', false);
+        $jobId = uniqid('job-', false);
+
+        $queue = new Queue($queueName, $this->client);
+
+        $queue->put('Xxx\Yyy', ['test' => 'some-data'], $jobId);
+
+        $job = $queue->popByJid($jobId);
+
+        $job->complete();
+
+        $jobIds = $this->client->jobs('complete', $queueName);
+
+        $this->assertEquals($jobId, array_pop($jobIds));
+    }
 }

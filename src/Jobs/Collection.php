@@ -39,7 +39,7 @@ class Collection implements ArrayAccess
      */
     public function completed(int $offset = 0, int $count = 25)
     {
-        return $this->client->jobs('complete', $offset, $count);
+        return $this->client->jobs('complete', null, $offset, $count);
     }
 
     /**
