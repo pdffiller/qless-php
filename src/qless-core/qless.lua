@@ -73,37 +73,40 @@ end
 
 function Qless.jobs(now, state, ...)
   assert(state, 'Jobs(): Arg "state" missing')
+
+  local offset = assert(tonumber(arg[2] or 0),
+    'Jobs(): Arg "offset" not a number: ' .. tostring(arg[2]))
+  local count  = assert(tonumber(arg[3] or 25),
+    'Jobs(): Arg "count" not a number: ' .. tostring(arg[3]))
+
   if state == 'complete' then
-    local offset = assert(tonumber(arg[1] or 0),
-      'Jobs(): Arg "offset" not a number: ' .. tostring(arg[1]))
-    local count  = assert(tonumber(arg[2] or 25),
-      'Jobs(): Arg "count" not a number: ' .. tostring(arg[2]))
-    return redis.call('zrevrange', 'ql:completed', offset,
-      offset + count - 1)
-  else
-    local name  = assert(arg[1], 'Jobs(): Arg "queue" missing')
-    local offset = assert(tonumber(arg[2] or 0),
-      'Jobs(): Arg "offset" not a number: ' .. tostring(arg[2]))
-    local count  = assert(tonumber(arg[3] or 25),
-      'Jobs(): Arg "count" not a number: ' .. tostring(arg[3]))
+    local name  = arg[1];
+
+    if (name == '') then
+      return redis.call('zrevrange', 'ql:completed', offset, offset + count - 1)
+    end
 
     local queue = Qless.queue(name)
-    if state == 'running' then
-      return queue.locks.peek(now, offset, count)
-    elseif state == 'stalled' then
-      return queue.locks.expired(now, offset, count)
-    elseif state == 'scheduled' then
-      queue:check_scheduled(now, queue.scheduled.length())
-      return queue.scheduled.peek(now, offset, count)
-    elseif state == 'depends' then
-      return queue.depends.peek(now, offset, count)
-    elseif state == 'recurring' then
-      return queue.recurring.peek('+inf', offset, count)
-    elseif state == 'waiting' then
-      return queue.work.peek(offset, count)
-    else
-      error('Jobs(): Unknown type "' .. state .. '"')
-    end
+    return queue.completed.peek(offset, count)
+  end
+
+  local name  = assert(arg[1], 'Jobs(): Arg "queue" missing')
+  local queue = Qless.queue(name)
+  if state == 'running' then
+    return queue.locks.peek(now, offset, count)
+  elseif state == 'stalled' then
+    return queue.locks.expired(now, offset, count)
+  elseif state == 'scheduled' then
+    queue:check_scheduled(now, queue.scheduled.length())
+    return queue.scheduled.peek(now, offset, count)
+  elseif state == 'depends' then
+    return queue.depends.peek(now, offset, count)
+  elseif state == 'recurring' then
+    return queue.recurring.peek('+inf', offset, count)
+  elseif state == 'waiting' then
+    return queue.work.peek(offset, count)
+  else
+    error('Jobs(): Unknown type "' .. state .. '"')
   end
 end
 
@@ -479,6 +482,7 @@ function QlessJob:complete(now, worker, queue, raw_data, ...)
   queue_obj.work.remove(self.jid)
   queue_obj.locks.remove(self.jid)
   queue_obj.scheduled.remove(self.jid)
+  queue_obj.completed.add(now, self.jid)
 
   local time = tonumber(
     redis.call('hget', QlessJob.ns .. self.jid, 'time') or now)
@@ -996,6 +1000,34 @@ function Qless.queue(name)
   setmetatable(queue, QlessQueue)
   queue.name = name
 
+  queue.completed = {
+    peek = function(offset, count)
+      if count == 0 then
+        return {}
+      end
+      if offset == nil then
+        offset = 0
+      end
+      local jids = {}
+      for index, jid in ipairs(redis.call(
+        'zrevrange', queue:prefix('completed'), offset, count - 1)) do
+        table.insert(jids, jid)
+      end
+      return jids
+    end, remove = function(...)
+      if #arg > 0 then
+        return redis.call('zrem', queue:prefix('completed'), unpack(arg))
+      end
+    end, add = function(now, jid)
+      return redis.call('zadd',
+        queue:prefix('completed'), now, jid)
+    end, score = function(jid)
+      return redis.call('zscore', queue:prefix('completed'), jid)
+    end, length = function()
+      return redis.call('zcard', queue:prefix('completed'))
+    end
+  }
+
   queue.work = {
     peek = function(offset, count)
       if count == 0 then
@@ -1268,8 +1300,8 @@ function QlessQueue:popByJid(now ,jid, worker)
   assert(worker, 'Pop(): Arg "worker" missing')
 
   local expires = now + tonumber(
-          Qless.config.get(self.name .. '-heartbeat') or
-                  Qless.config.get('heartbeat', 60))
+    Qless.config.get(self.name .. '-heartbeat') or
+      Qless.config.get('heartbeat', 60))
 
   redis.call('zadd', 'ql:workers', now, worker)
 
@@ -1278,11 +1310,11 @@ function QlessQueue:popByJid(now ,jid, worker)
   job:history(now, 'popped', {worker = worker})
 
   local time = tonumber(
-          redis.call('hget', QlessJob.ns .. jid, 'time') or now)
+    redis.call('hget', QlessJob.ns .. jid, 'time') or now)
   local waiting = now - time
   self:stat(now, 'wait', waiting)
   redis.call('hset', QlessJob.ns .. jid,
-          'time', string.format("%.20f", now))
+    'time', string.format("%.20f", now))
 
   redis.call('zadd', 'ql:w:' .. worker .. ':jobs', expires, jid)
 

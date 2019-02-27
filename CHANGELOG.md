@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Added
 - Added possibility to get jobs in worker (all jobs or by time filter).
-- Added possibility to get jobs in status waiting
+- Added possibility to get jobs in status waiting.
+- Added possibility to get jobs in status completed by queue.
 ### Changed
 - Check current job status before change it in Redis
+### Fixed
+- Fixed bug on parameters order in 'job' method.
 
 ## [3.5.0] - 2019-02-08
 ### Added
@@ -181,7 +184,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
  - Initial stable release
 
-[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.4.0...HEAD
+[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.5.0...HEAD
+[3.5.0]: https://github.com/pdffiller/qless-php/compare/v3.4.0...v3.5.0
 [3.4.0]: https://github.com/pdffiller/qless-php/compare/v3.3.0...v3.4.0
 [3.3.0]: https://github.com/pdffiller/qless-php/compare/v3.2.0...v3.3.0
 [3.2.0]: https://github.com/pdffiller/qless-php/compare/v3.1.0...v3.2.0
