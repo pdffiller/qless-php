@@ -774,23 +774,68 @@ $client->queues['test-queue']->heartbeat = 120;
 
 ### Stats
 
-**`@todo`**
+One nice feature of `qless` is that you can get statistics about usage. Stats are aggregated by day, 
+so when you want stats about a queue, you need to say what queue and what day you're talking about. 
+By default, you just get the stats for today. These stats include information about the mean job wait time, 
+standard deviation, and histogram. This same data is also provided for job completion:
+
+``` php
+// Today stat
+$client->stats('queue_name', time());
+// {"run":{"std":0.027175949738075,"histogram":[...],"mean":0.011884652651273,"count":26},"failures":0,"retries":0,"failed":0,"wait":{"std":56188.180755369,"histogram":[...],"mean":32870.757469205,"count":26}}
+```
 
 ### Time
 
-**`@todo`**
+Redis doesn't allow access to the system time if you're going to be making any manipulations to data. 
+But Qless have heartbeating. When the client making most requests, it actually send the current time. 
+So, all workers must be synchronized.
 
 ### Ensuring Job Uniqueness
 
-**`@todo`**
+Qless generate Job Id automatically, but you can set it manually.
+
+``` php
+// automatically
+$queue->put($className, $data);
+
+// manually
+$queue->put($className, $data, 'abcdef123456');
+```
+
+For example, Job Id can be based on className and payload. It'll guaranteed that Qless won't have 
+multiple jobs with the same class and data.
+Also, it helps for debugging on dev environment. 
 
 ### Setting Default Job Options
 
-**`@todo`**
+* jid
+* delay
+* priority
+* tags
+* retries
+* depends
+
+All of this options have default value. Also, you can define default job 
+options directly on the job class:
+
+``` php
+$queue->put(
+    Job::class,             // Class - require 
+    ['key1' => 'value1'],   // Payload - require 
+    'custom-job-id',        // Manually id
+    10,                     // Delay 10 seconds
+    3,                      // Three retries
+    7,                      // Priority
+    ['important', 'media'], // Tags
+    [$jidFirst, $jidSecond] // Depends jobs
+);
+```
 
 ### Testing Jobs
 
-**`@todo`**
+You can use [syncronize](#sync-job-processing) to handle jobs for testing.
+In this regime, all jobs will be running immediately.
 
 ## Contributing and Developing
 
