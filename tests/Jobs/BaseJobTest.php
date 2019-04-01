@@ -589,6 +589,21 @@ class BaseJobTest extends QlessTestCase
         $this->assertFalse($job->getFailed());
     }
 
+    public function testPopByIdOnce()
+    {
+        $queue = $this->client->queues['test-queue'];
+
+        $jid = $queue->put(JobHandler::class, []);
+
+        $job = $queue->popByJid($jid);
+
+        $this->assertIsJob($job);
+
+        $job2 = $queue->popByJid($jid);
+
+        $this->assertNull($job2);
+    }
+
     public function testJobCantChangeFailToComplete()
     {
         $queue = $this->client->queues['test-queue'];
