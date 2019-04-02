@@ -25,8 +25,16 @@ class TopicTest extends QlessTestCase
 
         $queuesCollection = new Collection($this->client);
 
-        $this->assertEquals(['test-queue-2', 'test-queue-1'], $queuesCollection->fromSubscriptions('big.green.apples'));
-        $this->assertEquals(['test-queue-2', 'test-queue-1'], $queuesCollection->fromSubscriptions('big.red.apples'));
+        $queuesExpected = ['test-queue-1', 'test-queue-2'];
+
+        $queuesGreenApples = $queuesCollection->fromSubscriptions('big.green.apples');
+        sort($queuesGreenApples);
+
+        $queuesRedApples = $queuesCollection->fromSubscriptions('big.red.apples');
+        sort($queuesRedApples);
+
+        $this->assertEquals($queuesExpected, $queuesGreenApples);
+        $this->assertEquals($queuesExpected, $queuesRedApples);
         $this->assertEquals([], $queuesCollection->fromSubscriptions('*.*.oranges'));
 
         $queues[1]->unsubscribe('big.*.*');

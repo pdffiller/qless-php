@@ -1300,21 +1300,33 @@ function QlessQueue:popByJid(now ,jid, worker)
   assert(worker, 'Pop(): Arg "worker" missing')
 
   local expires = now + tonumber(
-    Qless.config.get(self.name .. '-heartbeat') or
-      Qless.config.get('heartbeat', 60))
+          Qless.config.get(self.name .. '-heartbeat') or
+                  Qless.config.get('heartbeat', 60))
 
-  redis.call('zadd', 'ql:workers', now, worker)
+  if self:paused() then
+    return {}
+  end
+
+  jid = self:invalidate_lock_jid(now, jid)
 
   local job = Qless.job(jid)
+
+  local state = unpack(job:data('state'))
+
+  if (state ~= 'waiting') then
+    return {}
+  end
+
+  redis.call('zadd', 'ql:workers', now, worker)
 
   job:history(now, 'popped', {worker = worker})
 
   local time = tonumber(
-    redis.call('hget', QlessJob.ns .. jid, 'time') or now)
+          redis.call('hget', QlessJob.ns .. jid, 'time') or now)
   local waiting = now - time
   self:stat(now, 'wait', waiting)
   redis.call('hset', QlessJob.ns .. jid,
-    'time', string.format("%.20f", now))
+          'time', string.format("%.20f", now))
 
   redis.call('zadd', 'ql:w:' .. worker .. ':jobs', expires, jid)
 
@@ -1332,8 +1344,11 @@ function QlessQueue:popByJid(now ,jid, worker)
     Qless.publish('popped', jid)
   end
 
-  return jid
+  self.work.remove(jid)
+
+  return Qless.job(jid):data()
 end
+
 function QlessQueue:stat(now, stat, val)
   local bin = now - (now % 86400)
   local key = 'ql:s:' .. stat .. ':' .. bin .. ':' .. self.name
@@ -1679,11 +1694,72 @@ function QlessQueue:check_scheduled(now, count)
   end
 end
 
+
+function QlessQueue:invalidate_lock_jid(now, jid)
+  local worker, failure = unpack(
+          redis.call('hmget', QlessJob.ns .. jid, 'worker', 'failure'))
+
+  if worker == nil then
+    worker = '';
+  end
+
+  redis.call('zrem', 'ql:w:' .. worker .. ':jobs', jid)
+
+  local grace_period = tonumber(Qless.config.get('grace-period'))
+
+  local courtesy_sent = tonumber(
+          redis.call('hget', QlessJob.ns .. jid, 'grace') or 0)
+
+  local send_message = (courtesy_sent ~= 1)
+  local invalidate   = not send_message
+
+  if grace_period <= 0 then
+    send_message = true
+    invalidate   = true
+  end
+
+  if send_message then
+    if redis.call('zscore', 'ql:tracked', jid) ~= false then
+      Qless.publish('stalled', jid)
+    end
+    Qless.job(jid):history(now, 'timed-out')
+    redis.call('hset', QlessJob.ns .. jid, 'grace', 1)
+
+    local encoded = cjson.encode({
+      jid    = jid,
+      event  = 'lock_lost',
+      worker = worker
+    })
+    Qless.publish('w:' .. worker, encoded)
+    Qless.publish('log', encoded)
+    self.locks.add(now + grace_period, jid)
+
+    local bin = now - (now % 86400)
+    redis.call('hincrby',
+            'ql:s:stats:' .. bin .. ':' .. self.name, 'retries', 1)
+  end
+
+  if invalidate then
+    redis.call('hdel', QlessJob.ns .. jid, 'grace', 0)
+
+    local remaining = tonumber(redis.call(
+            'hincrby', QlessJob.ns .. jid, 'remaining', -1))
+  end
+
+  return jid
+end
+
+
 function QlessQueue:invalidate_locks(now, count)
   local jids = {}
   for index, jid in ipairs(self.locks.expired(now, 0, count)) do
     local worker, failure = unpack(
       redis.call('hmget', QlessJob.ns .. jid, 'worker', 'failure'))
+
+    if worker == nil then
+      worker = '';
+    end
+
     redis.call('zrem', 'ql:w:' .. worker .. ':jobs', jid)
 
     local grace_period = tonumber(Qless.config.get('grace-period'))
@@ -2086,9 +2162,9 @@ QlessAPI.pop = function(now, queue, worker, count)
 end
 
 QlessAPI.popByJid = function(now, queue, jid, worker)
-  local jid = Qless.queue(queue):popByJid(now, jid, worker)
+  local job = Qless.queue(queue):popByJid(now, jid, worker)
   local response = {}
-  table.insert(response, Qless.job(jid):data())
+  table.insert(response, job)
   return cjson.encode(response)
 end
 

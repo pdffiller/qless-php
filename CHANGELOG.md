@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Check current job status before change it in Redis
 ### Fixed
 - Fixed bug on parameters order in 'job' method.
+- Removed possibility to get a job by id twice
 
 ## [3.5.0] - 2019-02-08
 ### Added

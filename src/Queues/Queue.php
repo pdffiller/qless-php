@@ -157,6 +157,10 @@ class Queue implements EventsManagerAwareInterface
         $data = json_decode($this->client->popByJid($this->name, $jid, $workerName), true);
         $jobData = array_reduce($data, 'array_merge', []); //unwrap nested array
 
+        if (isset($jobData['jid']) === false) {
+            return null;
+        }
+
         if ($jobData['jid'] === $jid) {
             $job = new BaseJob($this->client, $jobData);
             $job->setEventsManager($this->getEventsManager());
