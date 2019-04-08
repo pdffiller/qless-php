@@ -148,9 +148,8 @@ function Qless.subscription(now, queue, command, topic)
   if command == 'get' then
     return redis.call('keys', 'ql:topics' .. queue)
   elseif command == 'all' then
-    local topics = {}
     local _topics = redis.call('keys', 'ql:topics*')
-    local _value = {}
+    local _value
     local _topic
     local _return = {}
     for i,v in ipairs(_topics) do
@@ -160,7 +159,7 @@ function Qless.subscription(now, queue, command, topic)
         if (_return[topic_name] == nil) then
           _return[topic_name] = {}
         end
-        _return[topic_name][index] = _value[index]
+        _return[topic_name][i .. index] = _value[index]
       end
     end
     return _return
