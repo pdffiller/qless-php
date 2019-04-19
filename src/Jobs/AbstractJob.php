@@ -190,6 +190,14 @@ abstract class AbstractJob implements EventsManagerAwareInterface
     }
 
     /**
+     * @return string
+     */
+    public function getState(): string
+    {
+        return $this->rawData['state'] ?? '';
+    }
+
+    /**
      * Add the specified tags to this job.
      *
      * @param  string ...$tags A list of tags to to add to this job.
