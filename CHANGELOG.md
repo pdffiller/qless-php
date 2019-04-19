@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+- Added state getter to a job 
 
 ## [3.6.1] - 2019-04-09
 ### Fixed
