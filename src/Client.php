@@ -34,6 +34,7 @@ use Predis\Client as Redis;
  * @method string complete(string $jid, string $workerName, string $queueName, string $data, ...$args)
  * @method void timeout(string $jid)
  * @method string failed(string|bool $group = false, int $start = 0, int $limit = 25)
+ * @method string tracked()
  * @method string[] tag(string $op, $tags)
  * @method string stats(string $queueName, int $date)
  * @method void pause(string $queueName, ...$args)
