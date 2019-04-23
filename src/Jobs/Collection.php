@@ -140,7 +140,7 @@ class Collection implements ArrayAccess
      */
     public function tracked(): array
     {
-        $tracked = $this->client->call('tracked') ?? [];
+        $tracked = $this->client->call('tracked') ?? '[]';
 
         return json_decode($tracked, true);
     }
