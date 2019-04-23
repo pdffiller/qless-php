@@ -83,4 +83,19 @@ class CollectionTest extends QlessTestCase
         $collection = new Collection($this->client);
         $collection['foo'] = 'bar';
     }
+
+    /** @test */
+    public function shouldRemoveWorker()
+    {
+        $collection = new Collection($this->client);
+
+        $this->assertEquals(['stalled' => [], 'jobs' => []], $collection['w1']);
+
+        $queue = new Queue('test-queue', $this->client);
+        $queue->put('Sample', [], 'jid');
+        $queue->pop('w1');
+
+        $this->assertTrue($collection->remove('w1'));
+        $this->assertEmpty($collection->counts);
+    }
 }

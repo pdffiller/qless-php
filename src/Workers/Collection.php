@@ -98,4 +98,19 @@ class Collection implements ArrayAccess
     {
         throw new UnsupportedFeatureException('Deleting a worker is not supported using Workers collection.');
     }
+
+
+    /**
+     * @param string $worker
+     *
+     * @return bool
+     */
+    public function remove(string $worker): bool
+    {
+        if ($this->offsetExists($worker)) {
+            return $this->client->call('worker.deregister', $worker) === 1;
+        }
+
+        return false;
+    }
 }

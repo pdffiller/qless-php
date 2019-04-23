@@ -5,10 +5,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+- Added remove worker feature.
 
 ## [3.7.0] - 2019-04-19
 ### Added
-- Added state getter to a job 
+- Added state getter to a job. 
 
 ## [3.6.1] - 2019-04-09
 ### Fixed
