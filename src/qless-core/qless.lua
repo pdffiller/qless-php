@@ -1990,8 +1990,9 @@ function QlessRecurringJob:unrecur()
     return true
   end
 end
+
 function QlessWorker.deregister(...)
-  redis.call('zrem', 'ql:workers', unpack(arg))
+  return redis.call('zrem', 'ql:workers', unpack(arg))
 end
 
 function QlessWorker.counts(now, worker)
