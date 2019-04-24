@@ -134,6 +134,18 @@ class Collection implements ArrayAccess
     }
 
     /**
+     * Fetches a list of tracked jobs.
+     *
+     * @return array
+     */
+    public function tracked(): array
+    {
+        $tracked = $this->client->call('tracked') ?? '[]';
+
+        return json_decode($tracked, true);
+    }
+
+    /**
      * Reads jobs in a worker.
      *
      * @param string $worker

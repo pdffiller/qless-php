@@ -2109,6 +2109,11 @@ QlessAPI.workerJobs = function(now, worker, minScore)
   return cjson.encode(QlessWorker.jobs(worker, minScore))
 end
 
+QlessAPI.tracked = function (now)
+  local tracked = redis.call('zrange', 'ql:tracked', 0, -1)
+  return cjson.encode(tracked)
+end
+
 QlessAPI.track = function(now, command, jid)
   return cjson.encode(Qless.track(now, command, jid))
 end
