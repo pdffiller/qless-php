@@ -31,6 +31,24 @@ class CollectionTest extends QlessTestCase
     }
 
     /** @test */
+    public function shouldGetTrackedJobs()
+    {
+        $this->client->queues['foo']->put('Foo', [], 'jid-1');
+        $this->client->queues['foo']->put('Bar', [], 'jid-2');
+        $this->assertCount(0, $this->client->jobs->tracked());
+
+        $this->client->jobs['jid-1']->track();
+        $this->assertCount(1, $this->client->jobs->tracked());
+        $this->client->jobs['jid-2']->track();
+        $this->assertCount(2, $this->client->jobs->tracked());
+
+        $this->client->jobs['jid-1']->untrack();
+        $this->assertCount(1, $this->client->jobs->tracked());
+        $this->client->jobs['jid-2']->untrack();
+        $this->assertCount(0, $this->client->jobs->tracked());
+    }
+
+    /** @test */
     public function shouldReturnNullForInvalidJobID()
     {
         $this->assertNull($this->client->jobs['xxx']);
