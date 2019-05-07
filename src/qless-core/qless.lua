@@ -1995,7 +1995,7 @@ function QlessWorker.deregister(...)
   return redis.call('zrem', 'ql:workers', unpack(arg))
 end
 
-function QlessWorker.counts(now, worker)
+function QlessWorker.counts(now, worker, start, last)
   local interval = tonumber(Qless.config.get('max-worker-age', 86400))
 
   local workers  = redis.call('zrangebyscore', 'ql:workers', 0, now - interval)
@@ -2005,14 +2005,14 @@ function QlessWorker.counts(now, worker)
 
   redis.call('zremrangebyscore', 'ql:workers', 0, now - interval)
 
-  if worker then
+  if string.len(worker or '') > 0 then
     return {
       jobs    = redis.call('zrevrangebyscore', 'ql:w:' .. worker .. ':jobs', now + 8640000, now),
       stalled = redis.call('zrevrangebyscore', 'ql:w:' .. worker .. ':jobs', now, 0)
     }
   else
     local response = {}
-    local workers = redis.call('zrevrange', 'ql:workers', 0, -1)
+    local workers = redis.call('zrevrange', 'ql:workers', start or 0, last or -1)
     for index, worker in ipairs(workers) do
       table.insert(response, {
         name    = worker,
@@ -2102,12 +2102,16 @@ QlessAPI.heartbeat = function(now, jid, worker, data)
   return Qless.job(jid):heartbeat(now, worker, data)
 end
 
-QlessAPI.workers = function(now, worker)
-  return cjson.encode(QlessWorker.counts(now, worker))
+QlessAPI.workers = function(now, worker, start, last)
+  return cjson.encode(QlessWorker.counts(now, worker, start, last))
 end
 
 QlessAPI.workerJobs = function(now, worker, minScore)
   return cjson.encode(QlessWorker.jobs(worker, minScore))
+end
+
+QlessAPI.workersCount = function(now)
+  return redis.call('zcount', 'ql:workers', '-inf', '+inf')
 end
 
 QlessAPI.tracked = function (now)

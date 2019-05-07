@@ -40,7 +40,8 @@ use Predis\Client as Redis;
  * @method void pause(string $queueName, ...$args)
  * @method string queues(?string $queueName = null)
  * @method void unpause(string $queueName, ...$args)
- * @method string workers(?string $workerName = null)
+ * @method int workersCount()
+ * @method string workers(?string $workerName = null, ?int $start = null, ?int $last = null)
  * @method string workerJobs(string $worker, ?int $minScoreTime = null)
  * @method string subscription(string $queue, $op, $topic)
  *
