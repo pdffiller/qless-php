@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
+## [3.8.1]
+### Added
 - Added getting workers by range.
 - Added getting total count of registered workers.
 
@@ -202,7 +205,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
  - Initial stable release
 
-[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.8.0...HEAD
+[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.8.1...HEAD
+[3.8.1]: https://github.com/pdffiller/qless-php/compare/v3.8.0...v3.8.1
 [3.8.0]: https://github.com/pdffiller/qless-php/compare/v3.7.0...v3.8.0
 [3.7.0]: https://github.com/pdffiller/qless-php/compare/v3.6.1...v3.7.0
 [3.6.1]: https://github.com/pdffiller/qless-php/compare/v3.6.0...v3.6.1
