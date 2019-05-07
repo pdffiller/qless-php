@@ -44,6 +44,29 @@ class Collection implements ArrayAccess
     }
 
     /**
+     * How many registered workers at the moment.
+     *
+     * @return int
+     */
+    public function getCount(): int
+    {
+        return $this->client->workersCount() ?: 0;
+    }
+
+    /**
+     * Returns list of workers according specified range.
+     *
+     * @param int $start
+     * @param int $last
+     *
+     * @return array
+     */
+    public function getRange(int $start, int $last): array
+    {
+        return json_decode($this->client->workers(null, $start, $last), true) ?: [];
+    }
+
+    /**
      * {@inheritdoc}
      *
      * @param  mixed $offset

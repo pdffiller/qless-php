@@ -98,4 +98,61 @@ class CollectionTest extends QlessTestCase
         $this->assertTrue($collection->remove('w1'));
         $this->assertEmpty($collection->counts);
     }
+
+    /** @test */
+    public function shouldGetWorkersCount()
+    {
+        $collection = new Collection($this->client);
+
+        $this->assertEquals(0, $collection->getCount());
+
+        $this->startFourWorkers();
+
+        $this->assertEquals(4, $collection->getCount());
+    }
+
+    /** @test */
+    public function shouldGetWorkersRange()
+    {
+        $collection = new Collection($this->client);
+
+        $this->assertEquals([], $collection->getRange(0, -1));
+
+        $this->startFourWorkers();
+
+        $this->assertEquals(
+            [
+                ['stalled' => 0, 'name' => 'fourth-worker', 'jobs' => 1],
+                ['stalled' => 0, 'name' => 'third-worker', 'jobs' => 1],
+            ],
+            $collection->getRange(0, 1)
+        );
+
+        $this->assertEquals(
+            [
+                ['stalled' => 0, 'name' => 'second-worker', 'jobs' => 1],
+                ['stalled' => 0, 'name' => 'first-worker', 'jobs' => 1],
+            ],
+            $collection->getRange(2, 3)
+        );
+    }
+
+    private function startFourWorkers()
+    {
+        $queue = new Queue('first-queue', $this->client);
+        $queue->put('First', [], 'jid1');
+        $queue->pop('first-worker');
+
+        $queue = new Queue('second-queue', $this->client);
+        $queue->put('Second', [], 'jid2');
+        $queue->pop('second-worker');
+
+        $queue = new Queue('third-queue', $this->client);
+        $queue->put('Third', [], 'jid3');
+        $queue->pop('third-worker');
+
+        $queue = new Queue('fourth-queue', $this->client);
+        $queue->put('Fourth', [], 'jid4');
+        $queue->pop('fourth-worker');
+    }
 }
