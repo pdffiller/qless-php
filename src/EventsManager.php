@@ -154,8 +154,7 @@ final class EventsManager
             if (is_callable($handler)) {
                 $arguments = $arguments ?: [$event];
                 $status = call_user_func_array($handler, $arguments);
-            }
-            elseif (is_object($handler) && method_exists($handler, $eventHappening)) {
+            } elseif (is_object($handler) && method_exists($handler, $eventHappening)) {
                 $status = $handler->{$eventHappening}($event);
             }
         }
