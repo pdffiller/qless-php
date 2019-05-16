@@ -361,7 +361,7 @@ final class ForkingWorker extends AbstractWorker
 
     private function childStart(): void
     {
-        $this->getEventsManager()->fire(new WorkerEvent\AfterFork($this));
+        $this->getEventsManager()->fire(new WorkerEvent\BeforeFork($this));
 
         $socket = null;
         $this->childPID = $this->fork($socket);
