@@ -1290,6 +1290,7 @@ function QlessQueue:pop(now, worker, count)
   end
 
   self.work.remove(unpack(jids))
+  --redis.call('zrem', 'ql:workers', worker)
 
   return jids
 end
@@ -2001,6 +2002,7 @@ function QlessWorker.counts(now, worker, start, last)
   local workers  = redis.call('zrangebyscore', 'ql:workers', 0, now - interval)
   for index, worker in ipairs(workers) do
     redis.call('del', 'ql:w:' .. worker .. ':jobs')
+    QlessWorker.deregister(worker);
   end
 
   redis.call('zremrangebyscore', 'ql:workers', 0, now - interval)
