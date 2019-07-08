@@ -144,6 +144,9 @@ final class ForkingWorker extends AbstractWorker
                     } elseif ($pid === $this->watchdogPID) {
                         $exited = $this->watchdogProcessStatus($status);
                     } else {
+                        if ($this->isShuttingDown()) {
+                            break;
+                        }
                         // unexpected?
                         $this->logger->info(sprintf("master received status for unknown PID %d; exiting\n", $pid));
                         exit(1);
@@ -189,6 +192,9 @@ final class ForkingWorker extends AbstractWorker
                 error_reporting($old);
             }
         }
+
+        $this->logger->info("Deregistering worker {name}", ['name' => $this->name]);
+        $this->client->getWorkers()->remove($this->name);
     }
 
     /**
