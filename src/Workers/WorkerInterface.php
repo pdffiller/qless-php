@@ -31,6 +31,30 @@ interface WorkerInterface extends LoggerAwareInterface
     public function setName(string $name): void;
 
     /**
+     * Set worker memory limit
+     *
+     * @param int $bytes
+     * @return void
+     */
+    public function setMemoryLimit(int $bytes): void;
+
+    /**
+     * Set worker time limit
+     *
+     * @param int $seconds
+     * @return void
+     */
+    public function setTimeLimit(int $seconds): void;
+
+    /**
+     * Set maximum number jobs
+     *
+     * @param int $number
+     * @return void
+     */
+    public function setMaximumNumberJobs(int $number): void;
+
+    /**
      * Gets the internal worker name.
      *
      * @return string

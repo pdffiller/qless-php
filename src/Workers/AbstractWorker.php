@@ -74,6 +74,25 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     protected $paused = false;
 
     /**
+     * Memory limit execution
+     *
+     * @var int
+     */
+    protected $memoryLimit;
+
+    /**
+     * @var int
+     */
+    protected $maximumNumberOfJobs;
+
+    /**
+     * Time limit execution
+     *
+     * @var int
+     */
+    protected $timeLimitInSeconds;
+
+    /**
      * Is the worker has been halted.
      *
      * @var bool
@@ -160,6 +179,30 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     {
         $this->logger = $logger;
         $this->reserver->setLogger($logger);
+    }
+
+    /**
+     * @param int $bytes
+     */
+    public function setMemoryLimit(int $bytes): void
+    {
+        $this->memoryLimit = $bytes;
+    }
+
+    /**
+     * @param int $seconds
+     */
+    public function setTimeLimit(int $seconds): void
+    {
+        $this->timeLimitInSeconds = $seconds;
+    }
+
+    /**
+     * @param int $number
+     */
+    public function setMaximumNumberJobs(int $number): void
+    {
+        $this->maximumNumberOfJobs = $number;
     }
 
     /**
