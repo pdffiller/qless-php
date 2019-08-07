@@ -55,6 +55,35 @@ final class ForkingWorker extends AbstractWorker
     private $signalsSubscriber;
 
     /**
+     * @var int
+     */
+    private $numberExecutedJobs = 0;
+
+    /**
+     * @var int
+     */
+    private $endTime;
+
+    /**
+     * Memory limit execution
+     *
+     * @var int
+     */
+    private $memoryLimit;
+
+    /**
+     * @var int
+     */
+    private $maximumNumberOfJobs;
+
+    /**
+     * Time limit execution
+     *
+     * @var int
+     */
+    private $timeLimitInSeconds;
+
+    /**
      * {@inheritdoc}
      *
      * @return void
@@ -79,6 +108,30 @@ final class ForkingWorker extends AbstractWorker
     }
 
     /**
+     * @param int $bytes
+     */
+    public function setMemoryLimit(int $bytes): void
+    {
+        $this->memoryLimit = $bytes;
+    }
+
+    /**
+     * @param int $seconds
+     */
+    public function setTimeLimit(int $seconds): void
+    {
+        $this->timeLimitInSeconds = $seconds;
+    }
+
+    /**
+     * @param int $number
+     */
+    public function setMaximumNumberJobs(int $number): void
+    {
+        $this->maximumNumberOfJobs = $number;
+    }
+
+    /**
      * {@inheritdoc}
      *
      * @return void
@@ -87,6 +140,7 @@ final class ForkingWorker extends AbstractWorker
     {
         declare(ticks=1);
 
+        $this->endTime = $this->timeLimitInSeconds ? $this->timeLimitInSeconds + microtime(true) : null;
         $this->who = 'master:' . $this->name;
         $this->logContext = ['type' => $this->who, 'job.identifier' => null];
         $this->logger->info('{type}: worker started', $this->logContext);
@@ -179,6 +233,10 @@ final class ForkingWorker extends AbstractWorker
             $this->setCurrentJob(null);
             $this->logContext['job.identifier'] = null;
             $didWork = true;
+
+            $this->stopWhenJobCountIsExceeded();
+            $this->stopWhenTimeLimitIsReached();
+            $this->stopWhenMemoryUsageIsExceeded();
 
             /**
              * We need to reconnect due to bug in Redis library that always sends QUIT on destruction of \Redis
@@ -634,5 +692,59 @@ final class ForkingWorker extends AbstractWorker
 
         $this->childKill();
         $this->watchdogKill();
+    }
+
+    /**
+     * Stop when job count is exceeded
+     *
+     * @return void
+     */
+    private function stopWhenJobCountIsExceeded(): void
+    {
+        if ($this->isShuttingDown() || !($this->maximumNumberOfJobs > 0)) {
+            return;
+        }
+        if (++$this->numberExecutedJobs >= $this->maximumNumberOfJobs) {
+            $this->logger->info('Worker stopped due to maximum count of {count} exceeded', [
+                'count' => $this->maximumNumberOfJobs
+            ]);
+            $this->shutdown();
+        }
+    }
+
+    /**
+     * Stop when time limit is reached
+     *
+     * @return void
+     */
+    private function stopWhenTimeLimitIsReached(): void
+    {
+        if ($this->isShuttingDown() || $this->timeLimitInSeconds === null) {
+            return;
+        }
+        if ($this->endTime < microtime(true)) {
+            $this->logger->info('Worker stopped due to time limit of {timeLimit}s reached', [
+                'timeLimit' => $this->timeLimitInSeconds
+            ]);
+            $this->shutdown();
+        }
+    }
+
+    /**
+     * Stop when memory usage is exceeded
+     *
+     * @return void
+     */
+    private function stopWhenMemoryUsageIsExceeded(): void
+    {
+        if ($this->isShuttingDown() || $this->memoryLimit === null) {
+            return;
+        }
+        if ($this->memoryLimit < memory_get_usage(true)) {
+            $this->logger->info('Worker stopped due to memory limit of {limit} exceeded', [
+                'limit' => $this->memoryLimit
+            ]);
+            $this->shutdown();
+        }
     }
 }
