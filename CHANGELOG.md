@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
+- Added limits for workers by memory, execution time and tasks count.
 
 ## [3.8.3]
 ### Fixed
