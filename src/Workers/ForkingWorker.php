@@ -65,6 +65,25 @@ final class ForkingWorker extends AbstractWorker
     private $endTime;
 
     /**
+     * Memory limit execution
+     *
+     * @var int
+     */
+    private $memoryLimit;
+
+    /**
+     * @var int
+     */
+    private $maximumNumberOfJobs;
+
+    /**
+     * Time limit execution
+     *
+     * @var int
+     */
+    private $timeLimitInSeconds;
+
+    /**
      * {@inheritdoc}
      *
      * @return void
@@ -86,6 +105,30 @@ final class ForkingWorker extends AbstractWorker
         parent::setLogger($logger);
 
         $this->signalsSubscriber->setLogger($logger);
+    }
+
+    /**
+     * @param int $bytes
+     */
+    public function setMemoryLimit(int $bytes): void
+    {
+        $this->memoryLimit = $bytes;
+    }
+
+    /**
+     * @param int $seconds
+     */
+    public function setTimeLimit(int $seconds): void
+    {
+        $this->timeLimitInSeconds = $seconds;
+    }
+
+    /**
+     * @param int $number
+     */
+    public function setMaximumNumberJobs(int $number): void
+    {
+        $this->maximumNumberOfJobs = $number;
     }
 
     /**
@@ -191,10 +234,9 @@ final class ForkingWorker extends AbstractWorker
             $this->logContext['job.identifier'] = null;
             $didWork = true;
 
-            if ($this->stopWhenJobCountIsExceeded()) {
-            } elseif ($this->stopWhenTimeLimitIsReached()) {
-            } elseif ($this->stopWhenMemoryUsageIsExceeded()) {
-            }
+            $this->stopWhenJobCountIsExceeded();
+            $this->stopWhenTimeLimitIsReached();
+            $this->stopWhenMemoryUsageIsExceeded();
 
             /**
              * We need to reconnect due to bug in Redis library that always sends QUIT on destruction of \Redis
@@ -655,54 +697,54 @@ final class ForkingWorker extends AbstractWorker
     /**
      * Stop when job count is exceeded
      *
-     * @return bool
+     * @return void
      */
-    private function stopWhenJobCountIsExceeded(): bool
+    private function stopWhenJobCountIsExceeded(): void
     {
-        if ($this->maximumNumberOfJobs > 0 && ++$this->numberExecutedJobs >= $this->maximumNumberOfJobs) {
+        if ($this->isShuttingDown() || !($this->maximumNumberOfJobs > 0)) {
+            return;
+        }
+        if (++$this->numberExecutedJobs >= $this->maximumNumberOfJobs) {
             $this->logger->info('Worker stopped due to maximum count of {count} exceeded', [
                 'count' => $this->maximumNumberOfMessages
             ]);
             $this->shutdown();
-            return true;
         }
-
-        return false;
     }
 
     /**
      * Stop when time limit is reached
      *
-     * @return bool
+     * @return void
      */
-    private function stopWhenTimeLimitIsReached(): bool
+    private function stopWhenTimeLimitIsReached(): void
     {
-        if ($this->timeLimitInSeconds && $this->endTime < microtime(true)) {
+        if ($this->isShuttingDown() || !$this->timeLimitInSeconds) {
+            return;
+        }
+        if ($this->endTime < microtime(true)) {
             $this->logger->info('Worker stopped due to time limit of {timeLimit}s reached', [
                 'timeLimit' => $this->timeLimitInSeconds
             ]);
             $this->shutdown();
-            return true;
         }
-
-        return false;
     }
 
     /**
      * Stop when memory usage is exceeded
      *
-     * @return bool
+     * @return void
      */
-    private function stopWhenMemoryUsageIsExceeded(): bool
+    private function stopWhenMemoryUsageIsExceeded(): void
     {
-        if ($this->memoryLimit && $this->memoryLimit < memory_get_usage(true)) {
+        if ($this->isShuttingDown() || !$this->memoryLimit) {
+            return;
+        }
+        if ($this->memoryLimit < memory_get_usage(true)) {
             $this->logger->info('Worker stopped due to memory limit of {limit} exceeded', [
                 'limit' => $this->memoryLimit
             ]);
             $this->shutdown();
-            return true;
         }
-
-        return false;
     }
 }
