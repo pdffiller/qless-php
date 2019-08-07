@@ -719,7 +719,7 @@ final class ForkingWorker extends AbstractWorker
      */
     private function stopWhenTimeLimitIsReached(): void
     {
-        if ($this->isShuttingDown() || !$this->timeLimitInSeconds) {
+        if ($this->isShuttingDown() || $this->timeLimitInSeconds === null) {
             return;
         }
         if ($this->endTime < microtime(true)) {
@@ -737,7 +737,7 @@ final class ForkingWorker extends AbstractWorker
      */
     private function stopWhenMemoryUsageIsExceeded(): void
     {
-        if ($this->isShuttingDown() || !$this->memoryLimit) {
+        if ($this->isShuttingDown() || $this->memoryLimit === null) {
             return;
         }
         if ($this->memoryLimit < memory_get_usage(true)) {
