@@ -706,7 +706,7 @@ final class ForkingWorker extends AbstractWorker
         }
         if (++$this->numberExecutedJobs >= $this->maximumNumberOfJobs) {
             $this->logger->info('Worker stopped due to maximum count of {count} exceeded', [
-                'count' => $this->maximumNumberOfMessages
+                'count' => $this->maximumNumberOfJobs
             ]);
             $this->shutdown();
         }
