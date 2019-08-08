@@ -150,6 +150,8 @@ final class ForkingWorker extends AbstractWorker
         $didWork = false;
 
         while (true) {
+            $this->stopWhenTimeLimitIsReached();
+
             // Don't wait on any processes if we're already in shutdown mode.
             if ($this->isShuttingDown() == true) {
                 break;
@@ -235,7 +237,6 @@ final class ForkingWorker extends AbstractWorker
             $didWork = true;
 
             $this->stopWhenJobCountIsExceeded();
-            $this->stopWhenTimeLimitIsReached();
             $this->stopWhenMemoryUsageIsExceeded();
 
             /**
