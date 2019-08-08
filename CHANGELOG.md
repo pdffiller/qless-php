@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
+## [3.9.1]
 ### Fixed
 -fixed stop worker if limit time is reached after running
 
@@ -221,7 +223,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
  - Initial stable release
 
-[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.9.0...HEAD
+[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.9.1...HEAD
+[3.9.0]: https://github.com/pdffiller/qless-php/compare/v3.9.0...v3.9.1
 [3.9.0]: https://github.com/pdffiller/qless-php/compare/v3.8.3...v3.9.0
 [3.8.3]: https://github.com/pdffiller/qless-php/compare/v3.8.2...v3.8.3
 [3.8.2]: https://github.com/pdffiller/qless-php/compare/v3.8.1...v3.8.2
