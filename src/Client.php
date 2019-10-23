@@ -221,7 +221,8 @@ class Client implements EventsManagerAwareInterface
         return $this->lua;
     }
 
-    public function getEvents(): PubSubManager {
+    public function getEvents(): PubSubManager
+    {
         return $this->events;
     }
 
