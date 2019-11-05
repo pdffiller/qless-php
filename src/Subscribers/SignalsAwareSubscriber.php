@@ -32,7 +32,7 @@ class SignalsAwareSubscriber
         $this->logger = $logger;
     }
 
-    public function beforeFirstFork(WorkerEvent\BeforeFirstWork $event): void
+    public function beforeFirstWork(WorkerEvent\BeforeFirstWork $event): void
     {
         /**
          * Do not use declare(ticks=1) instead use pcntl_async_signals(true)

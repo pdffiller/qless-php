@@ -1018,6 +1018,17 @@ function Qless.queue(name)
         return redis.call('zrem', queue:prefix('completed'), unpack(arg))
       end
     end, add = function(now, jid)
+
+      local count = Qless.config.get('jobs-history-count')
+      local time  = Qless.config.get('jobs-history')
+
+      count = tonumber(count or 50000)
+      time  = tonumber(time  or 7 * 24 * 60 * 60)
+
+      redis.call('zremrangebyscore', queue:prefix('completed'), 0, now - time)
+
+      redis.call('zremrangebyrank', queue:prefix('completed'), 0, (-1-count))
+
       return redis.call('zadd',
         queue:prefix('completed'), now, jid)
     end, score = function(jid)
