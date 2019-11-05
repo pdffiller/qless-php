@@ -2,7 +2,7 @@
 
 namespace Qless\Jobs\Reservers;
 
-class DefaultReserver extends AbstractReserver implements ReserverInterface
+class DefaultReserver extends AbstractReserver
 {
     /**
      * {@inheritdoc}
