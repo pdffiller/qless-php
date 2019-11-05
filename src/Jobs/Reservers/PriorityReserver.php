@@ -34,12 +34,12 @@ class PriorityReserver extends AbstractReserver
     /**
      * Default min processed priority
      */
-    const DEFAULT_MIN_PRIORITY = 1;
+    public const DEFAULT_MIN_PRIORITY = 1;
 
     /**
      * Default max processed priority
      */
-    const DEFAULT_MAX_PRIORITY = 8;
+    public const DEFAULT_MAX_PRIORITY = 10;
 
     /**
      * @param array $priorities
@@ -101,7 +101,7 @@ class PriorityReserver extends AbstractReserver
         $this->initPriorityRange();
 
         foreach ($this->queues as $k => $queue) {
-            $priority = $priorities[(string) $queue] ?? self::DEFAULT_PRIORITY;
+            $priority = $this->priorities[(string) $queue] ?? self::DEFAULT_PRIORITY;
             if ($priority < $this->minPriority || $priority > $this->maxPriority) {
                 unset($this->queues[$k]);
             }
