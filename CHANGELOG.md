@@ -5,7 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
-
+ - Added getting queues by priority range
+ 
 ## [3.9.1]
 ### Fixed
 -fixed stop worker if limit time is reached after running
@@ -23,7 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Fire event BeforeFork before fork
 - Added deregister worker for SIGQUIT
 - Fix method name beforeFirstWork
-
+ 
 ## [3.8.1]
 ### Added
 - Added getting workers by range.

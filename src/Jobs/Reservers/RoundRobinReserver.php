@@ -12,7 +12,7 @@ use Qless\Queues\Queue;
  *
  * @package Qless\Jobs\Reservers
  */
-class RoundRobinReserver extends AbstractReserver implements ReserverInterface
+class RoundRobinReserver extends AbstractReserver
 {
     /** @var int */
     private $numQueues = 0;

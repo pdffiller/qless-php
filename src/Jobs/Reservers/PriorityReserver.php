@@ -8,10 +8,16 @@ use Qless\Queues\Queue;
  * Class PriorityReserver
  * @package Qless\Jobs\Reservers
  */
-class PriorityReserver extends AbstractReserver implements ReserverInterface
+class PriorityReserver extends AbstractReserver
 {
     /** @var array */
     private $priorities = [];
+
+    /** @var int */
+    private $minPriority;
+
+    /** @var int */
+    private $maxPriority;
 
     /**
      * {@inheritdoc}
@@ -26,11 +32,37 @@ class PriorityReserver extends AbstractReserver implements ReserverInterface
     const DEFAULT_PRIORITY = 5;
 
     /**
+     * Default min processed priority
+     */
+    public const DEFAULT_MIN_PRIORITY = 1;
+
+    /**
+     * Default max processed priority
+     */
+    public const DEFAULT_MAX_PRIORITY = 10;
+
+    /**
      * @param array $priorities
      */
     public function setPriorities(array $priorities): void
     {
         $this->priorities = $priorities;
+    }
+
+    /**
+     * @param int $minPriority
+     */
+    public function setMinPriority(int $minPriority): void
+    {
+        $this->minPriority = $minPriority;
+    }
+
+    /**
+     * @param int $maxPriority
+     */
+    public function setMaxPriority(int $maxPriority): void
+    {
+        $this->maxPriority = $maxPriority;
     }
 
     /**
@@ -42,10 +74,13 @@ class PriorityReserver extends AbstractReserver implements ReserverInterface
     {
         parent::beforeWork();
 
+        $this->filterQueuesByPriorityRange();
+
         // Random for queues with equal priorities
         shuffle($this->queues);
 
         $priorities = $this->priorities;
+
         usort($this->queues, function (Queue $firstQueue, Queue $secondQueue) use ($priorities) {
             $priorityFirst = $priorities[(string) $firstQueue] ?? self::DEFAULT_PRIORITY;
             $prioritySecond = $priorities[(string) $secondQueue] ?? self::DEFAULT_PRIORITY;
@@ -58,6 +93,29 @@ class PriorityReserver extends AbstractReserver implements ReserverInterface
                 'Monitoring the following queues: {queues}',
                 ['queues' => implode(', ', $this->queues)]
             );
+        }
+    }
+
+    private function filterQueuesByPriorityRange(): void
+    {
+        $this->initPriorityRange();
+
+        foreach ($this->queues as $k => $queue) {
+            $priority = $this->priorities[(string) $queue] ?? self::DEFAULT_PRIORITY;
+            if ($priority < $this->minPriority || $priority > $this->maxPriority) {
+                unset($this->queues[$k]);
+            }
+        }
+    }
+
+    private function initPriorityRange(): void
+    {
+        if (empty($this->minPriority)) {
+            $this->minPriority = self::DEFAULT_MIN_PRIORITY;
+        }
+
+        if (empty($this->maxPriority)) {
+            $this->maxPriority = self::DEFAULT_MAX_PRIORITY;
         }
     }
 }

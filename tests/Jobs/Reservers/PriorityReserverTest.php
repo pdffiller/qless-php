@@ -112,4 +112,73 @@ class PriorityReserverTest extends QlessTestCase
         $this->assertCount(3, $reserver->getQueues());
         $this->assertContainsOnly(Queue::class, $reserver->getQueues());
     }
+
+    /** @test */
+    public function shouldRangeByPriorityQueuesBeforeWork()
+    {
+        $reserver = new PriorityReserver(
+            $this->client->queues,
+            ['queue-1', 'queue-3', 'queue-2']
+        );
+
+        $reserver->setPriorities([
+            'queue-1' => 1,
+            'queue-3' => 10,
+            'queue-2' => 5,
+        ]);
+
+        $reserver->setMinPriority(3);
+        $reserver->setMaxPriority(8);
+        $reserver->beforework();
+
+        $queues = $reserver->getQueues();
+        $this->assertCount(1, $reserver->getQueues());
+        $this->assertEquals('queue-2', (string) $queues[0]);
+    }
+
+    /** @test */
+    public function shouldByMinPriorityQueuesBeforeWork()
+    {
+        $reserver = new PriorityReserver(
+            $this->client->queues,
+            ['queue-1', 'queue-3', 'queue-2']
+        );
+
+        $reserver->setPriorities([
+            'queue-1' => 1,
+            'queue-3' => 10,
+            'queue-2' => 5,
+        ]);
+
+        $reserver->setMinPriority(3);
+        $reserver->beforework();
+
+        $queues = $reserver->getQueues();
+        $this->assertCount(2, $reserver->getQueues());
+        $this->assertEquals('queue-3', (string) $queues[0]);
+        $this->assertEquals('queue-2', (string) $queues[1]);
+    }
+
+    /** @test */
+    public function shouldByMaxPriorityQueuesBeforeWork()
+    {
+        $reserver = new PriorityReserver(
+            $this->client->queues,
+            ['queue-1', 'queue-3', 'queue-2']
+        );
+
+        $reserver->setPriorities([
+            'queue-1' => 1,
+            'queue-3' => 10,
+            'queue-2' => 5,
+        ]);
+
+        $reserver->setMaxPriority(8);
+        $reserver->beforework();
+
+        $queues = $reserver->getQueues();
+        $this->assertCount(2, $reserver->getQueues());
+        $this->assertEquals('queue-2', (string) $queues[0]);
+        $this->assertEquals('queue-1', (string) $queues[1]);
+    }
 }

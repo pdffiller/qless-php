@@ -7,7 +7,7 @@ namespace Qless\Jobs\Reservers;
  *
  * @package Qless\Jobs\Reservers
  */
-class OrderedReserver extends AbstractReserver implements ReserverInterface
+class OrderedReserver extends AbstractReserver
 {
     /**
      * {@inheritdoc}
