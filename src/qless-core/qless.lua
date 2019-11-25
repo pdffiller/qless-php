@@ -1029,6 +1029,8 @@ function Qless.queue(name)
 
       redis.call('zremrangebyrank', queue:prefix('completed'), 0, (-1-count))
 
+      redis.call('zremrangebyscore', 'ql:tracked', 0, now - time)
+
       return redis.call('zadd',
         queue:prefix('completed'), now, jid)
     end, score = function(jid)

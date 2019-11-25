@@ -235,6 +235,34 @@ class BaseJobTest extends QlessTestCase
         $this->assertFalse($this->client->jobs['jid']->tracked);
     }
 
+    /** @test */
+    public function shouldRemoveOldTrackingJob()
+    {
+        $lifetime = 1;
+        $lifetimeOld = $this->client->config->get('jobs-history');
+        $this->client->config->set('jobs-history', $lifetime);
+
+        $jid = $this->client->queues['foo']->put('Foo', []);
+
+        $this->client->jobs[$jid]->track();
+
+        $this->assertTrue($this->client->jobs[$jid]->tracked);
+
+        sleep($lifetime);
+
+        $jid2 = $this->client->queues['foo']->put('Foo', []);
+
+        $queue = $this->client->queues['foo'];
+
+        $job = $queue->popByJid($jid2);
+
+        $job->complete();
+
+        $this->assertNotContains($jid, $this->client->getJobs()->tracked());
+
+        $this->client->config->set('jobs-history', $lifetimeOld);
+    }
+
     /**
      * @test
      * @expectedException \Qless\Exceptions\QlessException
