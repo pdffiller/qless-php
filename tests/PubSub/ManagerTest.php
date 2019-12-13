@@ -156,7 +156,7 @@ class ManagerTest extends QlessTestCase
         $jid = $queue->put(DummyPubSubJob::class, compact('type'));
 
         $this->runBackgroundTask(
-            '/usr/bin/php',
+            'php',
             [__DIR__ . '/../pubsubmanager-jobactions.php', $type, $jid],
             __DIR__ . '/../pubsubmanager-jobactions.log'
         );
