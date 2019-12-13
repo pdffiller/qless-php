@@ -106,7 +106,7 @@ class Client implements EventsManagerAwareInterface
         $this->jobs = new JobsCollection($this);
         $this->workers = new WorkersCollection($this);
         $this->queues = new QueuesCollection($this);
-        $this->events = new PubSubManager($this, new Redis($parameters, $options));
+        $this->events = new PubSubManager(new Redis($parameters, $options));
     }
 
     /**

@@ -36,10 +36,8 @@ final class Manager implements LoggerAwareInterface
      */
     public $redis;
 
-    /**
-     * @var Client
-     */
-    protected $client;
+    /** @var Consumer */
+    protected $pubSubConsumer;
 
     /** @var LoggerInterface */
     private $logger;
@@ -58,11 +56,15 @@ final class Manager implements LoggerAwareInterface
         self::EVENT_UNTRACK => []
     ];
 
-    public function __construct(Client $client, Redis $redis)
+    public function __construct(Redis $redis)
     {
-        $this->client = $client;
         $this->redis = $redis;
         $this->logger = new NullLogger();
+    }
+
+    public function __destruct()
+    {
+        $this->stopListening();
     }
 
     /**
@@ -100,7 +102,7 @@ final class Manager implements LoggerAwareInterface
     public function on(string $event, callable $callback): self
     {
         if (! \array_key_exists($event, $this->callbacks)) {
-            throw new InvalidArgumentException('event must be a known event type');
+            throw new InvalidArgumentException(sprintf('event must be a known event type, got "%s"', $event));
         }
 
         $this->callbacks[$event][] = \Closure::fromCallable($callback);
@@ -117,12 +119,21 @@ final class Manager implements LoggerAwareInterface
 
         $this->redis->connect();
 
-        /** @var Consumer $pubSub */
-        $pubSub = $this->redis->pubSubLoop();
-        $pubSub->subscribe(...$channels);
+        $this->pubSubConsumer = $this->redis->pubSubLoop();
+        $this->pubSubConsumer->subscribe(...$channels);
         /** @var \stdClass $message */
-        foreach ($pubSub as $message) {
+        foreach ($this->pubSubConsumer as $message) {
             $this->handleMessage($message);
+        }
+    }
+
+    /**
+     * Stop listening for events.
+     */
+    public function stopListening(): void
+    {
+        if ($this->pubSubConsumer) {
+            $this->pubSubConsumer->stop(true);
         }
     }
 

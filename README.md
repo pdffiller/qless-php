@@ -588,6 +588,8 @@ $events->on(
 $events->listen();
 ```
 
+The possible event types match those defined by [Qless-core](ttps://github.com/seomoz/qless-core) and are defined as constants on the `\Qless\PubSub\Manager` class: `EVENT_CANCELED`, `EVENT_COMPLETED`, `EVENT_FAILED`, `EVENT_POPPED`, `EVENT_STALLED`, `EVENT_PUT`, `EVENT_TRACK`, `EVENT_UNTRACK`.  
+
 
 #### Event System
 
