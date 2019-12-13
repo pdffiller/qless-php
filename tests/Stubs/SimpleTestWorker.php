@@ -5,7 +5,8 @@ namespace Qless\Tests\Stubs;
 use Qless\Events\User\Job as JobEvent;
 use Qless\Workers\AbstractWorker;
 
-class SimpleTestWorker extends AbstractWorker {
+class SimpleTestWorker extends AbstractWorker
+{
 
     /**
      * @var int
@@ -116,5 +117,4 @@ class SimpleTestWorker extends AbstractWorker {
             $this->shutdown();
         }
     }
-
 }

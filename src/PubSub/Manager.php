@@ -36,7 +36,7 @@ final class Manager implements LoggerAwareInterface
      */
     public $redis;
 
-    /** @var Consumer */
+    /** @var Consumer|null */
     protected $pubSubConsumer;
 
     /** @var LoggerInterface */
