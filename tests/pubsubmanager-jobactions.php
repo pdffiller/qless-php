@@ -16,7 +16,6 @@ $pubSubManager = $client->events;
 
 $pid = posix_getpid();
 array_shift($_SERVER['argv']);
-array_shift($_SERVER['argv']);
 $eventType = array_shift($_SERVER['argv']);
 $expectedJID = array_shift($_SERVER['argv']);
 
