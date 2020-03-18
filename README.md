@@ -549,6 +549,48 @@ $job->tag('howdy', 'hello');
 $job->untag('foo', 'bar');
 ```
 
+#### Notifications
+Tracked jobs emit events on specific pubsub channels as things happen to them. Whether it's getting popped off of a queue, completed by a worker, etc.
+
+An example of this is:
+
+```php
+/**
+ * @var \Qless\Client $client
+ * @var \Qless\PubSub\Manager $events
+ */
+$events = $client->events;
+$events->on(
+    Qless\PubSub\Manager::EVENT_COMPLETED,
+    function (string $jid) {
+        echo "{$jid} completed";
+    }
+);
+
+$events->listen();
+```
+
+Those familiar with redis pubsub will note that a redis connection can only be used for pubsub-y commands once listening. For this reason, invoking `Client->events` actually creates a second connection so that `Client` can still be used as it normally would be:
+
+```php
+/**
+ * @var \Qless\Client $client
+ * @var \Qless\PubSub\Manager $events
+ */
+$events = $client->events;
+$events->on(
+    Qless\PubSub\Manager::EVENT_FAILED,
+    function (string $jid) use ($client) {
+        echo "{$jid} failed in {$client->jobs[$jid]->queue}";
+    }
+);
+
+$events->listen();
+```
+
+The possible event types match those defined by [Qless-core](ttps://github.com/seomoz/qless-core) and are defined as constants on the `\Qless\PubSub\Manager` class: `EVENT_CANCELED`, `EVENT_COMPLETED`, `EVENT_FAILED`, `EVENT_POPPED`, `EVENT_STALLED`, `EVENT_PUT`, `EVENT_TRACK`, `EVENT_UNTRACK`.  
+
+
 #### Event System
 
 Qless also has a basic event system that can be used by your application to customize how some of the qless internals

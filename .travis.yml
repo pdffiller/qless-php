@@ -66,6 +66,7 @@ after_success:
 after_failure:
   - $(phpenv which php) -v
   - for m in `$(phpenv which php) -m | grep -e 'json\|pcntl\|posix\|sockets\|pcre'`; do php --ri $m; done
+  - tail -n +1 tests/*.log
 
 notifications:
   email: false

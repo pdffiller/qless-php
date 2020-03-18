@@ -13,3 +13,4 @@ phpcs.xml
 infection.json
 infection-log.txt
 infection-log.json
+/tests/pubsubmanager-jobactions.log

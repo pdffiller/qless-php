@@ -8,6 +8,7 @@ use Qless\Queues\Collection as QueuesCollection;
 use Qless\Subscribers\WatchdogSubscriber;
 use Qless\Support\PropertyAccessor;
 use Qless\Workers\Collection as WorkersCollection;
+use Qless\PubSub\Manager as PubSubManager;
 use Predis\Client as Redis;
 
 /**
@@ -50,6 +51,7 @@ use Predis\Client as Redis;
  * @property-read QueuesCollection $queues
  * @property-read Config $config
  * @property-read LuaScript $lua
+ * @property-read PubSubManager $events
  */
 class Client implements EventsManagerAwareInterface
 {
@@ -77,6 +79,11 @@ class Client implements EventsManagerAwareInterface
     private $workerName;
 
     /**
+     * @var PubSubManager
+     */
+    private $events;
+
+    /**
      * Client constructor.
      *
      * @param  mixed $parameters Connection parameters for one or more servers.
@@ -99,6 +106,7 @@ class Client implements EventsManagerAwareInterface
         $this->jobs = new JobsCollection($this);
         $this->workers = new WorkersCollection($this);
         $this->queues = new QueuesCollection($this);
+        $this->events = new PubSubManager(new Redis($parameters, $options));
     }
 
     /**
@@ -211,6 +219,11 @@ class Client implements EventsManagerAwareInterface
     public function getLua(): LuaScript
     {
         return $this->lua;
+    }
+
+    public function getEvents(): PubSubManager
+    {
+        return $this->events;
     }
 
     /**
