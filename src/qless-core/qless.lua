@@ -1711,7 +1711,7 @@ function QlessQueue:invalidate_lock_jid(now, jid)
   local worker, failure = unpack(
           redis.call('hmget', QlessJob.ns .. jid, 'worker', 'failure'))
 
-  if worker == nil then
+  if type(worker) ~= 'string' then
     worker = '';
   end
 
@@ -1768,7 +1768,7 @@ function QlessQueue:invalidate_locks(now, count)
     local worker, failure = unpack(
       redis.call('hmget', QlessJob.ns .. jid, 'worker', 'failure'))
 
-    if worker == nil then
+    if type(worker) ~= 'string' then
       worker = '';
     end
 
