@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.11.0]
+### Added
+ - Added PubSub Manager
+### Fixed
+ - Force check worker variable type
+
 ## [3.10.1]
 ### Fixed
  - Clear old data of removed tracked jobs 
@@ -231,7 +237,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
  - Initial stable release
 
-[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.10.1...HEAD
+[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.11.0...HEAD
+[3.11.0]: https://github.com/pdffiller/qless-php/compare/v3.10.1...v3.11.0
 [3.10.1]: https://github.com/pdffiller/qless-php/compare/v3.10.0...v3.10.1
 [3.10.0]: https://github.com/pdffiller/qless-php/compare/v3.9.1...v3.10.0
 [3.9.1]: https://github.com/pdffiller/qless-php/compare/v3.9.0...v3.9.1
