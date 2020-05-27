@@ -7,7 +7,7 @@ use Qless\Jobs\BaseJob;
 use Qless\Jobs\Reservers\DefaultReserver;
 use Qless\PubSub\Manager;
 use Qless\Tests\QlessTestCase;
-use Qless\Tests\Stubs\SimpleTestWorker;
+use Qless\Workers\SimpleWorker;
 
 /**
  * Qless\Tests\PubSub\ManagerTest
@@ -185,7 +185,7 @@ class ManagerTest extends QlessTestCase
 
         $expectedMessage = sprintf('%s: %s', $type, $jid);
 
-        $worker = new SimpleTestWorker(
+        $worker = new SimpleWorker(
             new DefaultReserver($client->queues, [self::QUEUE_NAME]),
             $client
         );

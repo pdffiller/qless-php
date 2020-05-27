@@ -5,6 +5,7 @@ namespace Qless\Workers;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qless\Client;
+use Qless\Events\User\Job as JobEvent;
 use Qless\Events\User\Worker as WorkerEvent;
 use Qless\EventsManagerAwareInterface;
 use Qless\EventsManagerAwareTrait;
@@ -139,6 +140,11 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     {
     }
 
+    protected function getLogger(): LoggerInterface
+    {
+        return $this->logger;
+    }
+
     /**
      * {@inheritdoc}
      *
@@ -148,6 +154,11 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     final public function setInterval(int $interval): void
     {
         $this->interval = abs($interval);
+    }
+
+    final public function getInterval(): int
+    {
+        return $this->interval;
     }
 
     /**
@@ -284,6 +295,10 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
         $this->paused = false;
     }
 
+    public function isPaused(): bool {
+        return $this->paused;
+    }
+
     /**
      * {@inheritdoc}
      *
@@ -308,4 +323,44 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
         // nothing to do
     }
     // @codeCoverageIgnoreEnd
+
+    /**
+     * @param BaseJob $job
+     * @param array $loggerContext
+     * @param string $loggerPrefix
+     */
+    protected function performJob(BaseJob $job, array $loggerContext, ?string $loggerPrefix = null): void
+    {
+        try {
+            if ($this->jobPerformHandler) {
+                if ($this->jobPerformHandler instanceof EventsManagerAwareInterface) {
+                    $this->jobPerformHandler->setEventsManager($this->client->getEventsManager());
+                }
+
+                if (method_exists($this->jobPerformHandler, 'setUp')) {
+                    $this->jobPerformHandler->setUp();
+                }
+
+                $this->getEventsManager()->fire(new JobEvent\BeforePerform($this->jobPerformHandler, $job));
+                $this->jobPerformHandler->perform($job);
+                $this->getEventsManager()->fire(new JobEvent\AfterPerform($this->jobPerformHandler, $job));
+
+                if (method_exists($this->jobPerformHandler, 'tearDown')) {
+                    $this->jobPerformHandler->tearDown();
+                }
+            } else {
+                $job->perform();
+            }
+
+            $this->logger->notice($loggerPrefix . 'job {job} has finished', $loggerContext);
+        } catch (\Throwable $e) {
+            $loggerContext['stack'] = $e->getMessage();
+            $this->logger->critical($loggerPrefix . 'job {job} has failed {stack}', $loggerContext);
+
+            $job->fail(
+                'system:fatal',
+                sprintf('%s: %s in %s on line %d', get_class($e), $e->getMessage(), $e->getFile(), $e->getLine())
+            );
+        }
+    }
 }
