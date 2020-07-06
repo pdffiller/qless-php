@@ -11,25 +11,25 @@ use Qless\Queues\Queue;
 class PriorityReserver extends AbstractReserver
 {
     /** @var array */
-    private $priorities = [];
+    protected $priorities = [];
 
     /** @var int */
-    private $minPriority;
+    protected $minPriority;
 
     /** @var int */
-    private $maxPriority;
+    protected $maxPriority;
 
     /**
      * {@inheritdoc}
      *
      * @var string
      */
-    const TYPE_DESCRIPTION = 'priority';
+    public const TYPE_DESCRIPTION = 'priority';
 
     /**
      * Default priority of queue
      */
-    const DEFAULT_PRIORITY = 5;
+    public const DEFAULT_PRIORITY = 5;
 
     /**
      * Default min processed priority
@@ -96,7 +96,7 @@ class PriorityReserver extends AbstractReserver
         }
     }
 
-    private function filterQueuesByPriorityRange(): void
+    protected function filterQueuesByPriorityRange(): void
     {
         $this->initPriorityRange();
 
@@ -108,7 +108,7 @@ class PriorityReserver extends AbstractReserver
         }
     }
 
-    private function initPriorityRange(): void
+    protected function initPriorityRange(): void
     {
         if (empty($this->minPriority)) {
             $this->minPriority = self::DEFAULT_MIN_PRIORITY;
