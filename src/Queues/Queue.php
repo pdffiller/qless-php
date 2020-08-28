@@ -43,7 +43,10 @@ class Queue implements EventsManagerAwareInterface
         $this->name   = $name;
 
         $this->setEventsManager($this->client->getEventsManager());
-        $this->registerSyncCompleteEvent();
+
+        if ($this->client->config->get('sync-enabled')) {
+            $this->registerSyncCompleteEvent();
+        }
     }
 
     /**
