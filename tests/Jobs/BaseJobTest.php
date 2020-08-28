@@ -600,21 +600,22 @@ class BaseJobTest extends QlessTestCase
 
     public function testJobCanCompleteSync()
     {
-        $queue = $this->client->queues['test-queue'];
-
-        $queue->put(JobHandler::class, []);
-
         $this->client->config->set('sync-enabled', true);
-
+        $queue = $this->client->queues['test-queue-sync-enabled'];
         $jid = $queue->put(JobHandler::class, []);
-
         $job = $this->client->jobs[$jid];
-
-        $this->client->config->clear('sync-enabled');
 
         $this->assertIsJob($job);
         $this->assertArrayHasKey('stack', $job->data->toArray());
         $this->assertFalse($job->getFailed());
+
+        $this->client->config->clear('sync-enabled');
+        $queue = $this->client->queues['test-queue-sync-disabled'];
+        $jid = $queue->put(JobHandler::class, []);
+        $job = $this->client->jobs[$jid];
+
+        $this->assertIsJob($job);
+        $this->assertArrayNotHasKey('stack', $job->data->toArray());
     }
 
     public function testPopByIdOnce()
