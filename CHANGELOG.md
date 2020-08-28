@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.11.1]
+### Fixed
+ - Add syncCompleteEvent only if needed
+ 
 ## [3.11.0]
 ### Added
  - Added PubSub Manager
@@ -237,7 +241,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
  - Initial stable release
 
-[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.11.0...HEAD
+[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.11.1...HEAD
+[3.11.1]: https://github.com/pdffiller/qless-php/compare/v3.11.0...v3.11.1
 [3.11.0]: https://github.com/pdffiller/qless-php/compare/v3.10.1...v3.11.0
 [3.10.1]: https://github.com/pdffiller/qless-php/compare/v3.10.0...v3.10.1
 [3.10.0]: https://github.com/pdffiller/qless-php/compare/v3.9.1...v3.10.0
