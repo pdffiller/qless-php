@@ -83,16 +83,16 @@ abstract class AbstractReserver implements ReserverInterface
         ?string $spec = null,
         ?string $worker = null
     ) {
-        if (empty($queues) == true && empty($spec) == true) {
+        if (empty($queues) === true && empty($spec) === true) {
             throw new InvalidArgumentException(
                 'A queues list or a specification to reserve queues are required.'
             );
         }
 
         // Get the queues to reserve.
-        if (empty($queues) == false) {
+        if (empty($queues) === false) {
             $queues = is_array($queues) ? $queues : [$queues];
-            $this->queues = array_map(function (string $name) use ($collection): Queue {
+            $this->queues = array_map(static function (string $name) use ($collection): Queue {
                 return $collection[trim($name)];
             }, $queues);
         } else {
@@ -123,10 +123,10 @@ abstract class AbstractReserver implements ReserverInterface
      */
     public function beforeWork(): void
     {
-        if ($this->refreshQueues && empty($this->spec) == false) {
+        if ($this->refreshQueues && empty($this->spec) === false) {
             $this->queues = $this->collection->fromSpec($this->spec);
 
-            if (empty($this->queues) == true) {
+            if (empty($this->queues) === true) {
                 $this->logger->info('Refreshing queues dynamically, but there are no queues yet');
             }
         }
@@ -147,8 +147,6 @@ abstract class AbstractReserver implements ReserverInterface
     }
 
     /**
-     * {@inheritdoc}
-     *
      * @param  LoggerInterface $logger
      * @return void
      */
@@ -184,7 +182,7 @@ abstract class AbstractReserver implements ReserverInterface
 
     protected function initializeDescription(array $queues): string
     {
-        $names = array_map(function (Queue $queue) {
+        $names = array_map(static function (Queue $queue) {
             return (string) $queue;
         }, $queues);
 

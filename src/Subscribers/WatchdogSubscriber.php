@@ -83,7 +83,7 @@ class WatchdogSubscriber implements LoggerAwareInterface
      * @param  int|null $pid
      * @return void
      */
-    public function watchdog(string $jid, string $worker, ?int $pid = null)
+    public function watchdog(string $jid, string $worker, ?int $pid = null): void
     {
         if (empty($this->channels) || $pid === null) {
             return;

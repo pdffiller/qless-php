@@ -41,9 +41,9 @@ class RecurringJob extends AbstractJob
     {
         parent::__construct($client, $data['jid'], $data);
 
-        $this->interval = (int) $data['interval'] ?? 60;
-        $this->count = (int) $data['count'] ?? 0;
-        $this->backlog = (int) $data['backlog'] ?? 0;
+        $this->interval = (int) ($data['interval'] ?? 60);
+        $this->count = (int) ($data['count'] ?? 0);
+        $this->backlog = (int) ($data['backlog'] ?? 0);
     }
 
     /**

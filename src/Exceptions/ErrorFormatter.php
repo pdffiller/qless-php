@@ -31,7 +31,7 @@ class ErrorFormatter
     /**
      * Tries to get the error constant name by its value.
      *
-     * @param  int $value
+     * @param  mixed $value
      * @return null|string
      */
     public function constant($value): ?string

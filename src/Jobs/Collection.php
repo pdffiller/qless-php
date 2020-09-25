@@ -37,7 +37,7 @@ class Collection implements ArrayAccess
      * @param  int $count
      * @return string[]
      */
-    public function completed(int $offset = 0, int $count = 25)
+    public function completed(int $offset = 0, int $count = 25): array
     {
         return $this->client->jobs('complete', null, $offset, $count);
     }

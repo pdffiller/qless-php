@@ -29,7 +29,7 @@ class OrderedReserver extends AbstractReserver
 
         $this->resetDescription();
 
-        if (empty($this->queues) == false) {
+        if (empty($this->queues) === false) {
             $this->logger->info(
                 'Monitoring the following queues: {queues}',
                 ['queues' => implode(', ', $this->queues)]

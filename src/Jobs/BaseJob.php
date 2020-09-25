@@ -113,8 +113,8 @@ class BaseJob extends AbstractJob implements \ArrayAccess
         $this->dependents = $data['dependents'] ?? [];
         $this->worker = $data['worker'];
         $this->expires = (float) ($data['expires'] ?? 0.0);
-        $this->remaining = (int) $data['remaining'] ?? 0;
-        $this->tracked = (bool) $data['tracked'] ?? false;
+        $this->remaining = (int) ($data['remaining'] ?? 0);
+        $this->tracked = (bool) ($data['tracked'] ?? false);
         $this->failed = $data['state'] === self::STATE_FAILED;
         $this->completed = $data['state'] === self::STATE_COMPLETED;
     }
@@ -317,7 +317,7 @@ class BaseJob extends AbstractJob implements \ArrayAccess
      * * string[] tags      replacement tags
      * * string[] depends   replacement list of JIDs this job is dependent on
      *
-     * @param  string $queue New queue name.
+     * @param  string|null $queue New queue name.
      * @param  array  $opts  Optional parameters.
      * @return string
      */
@@ -367,8 +367,7 @@ class BaseJob extends AbstractJob implements \ArrayAccess
      *
      * @return int remaining retries available
      */
-    public function retry($group, $message, $delay = 0)
-    {
+    public function retry(string $group, string $message, int $delay = 0): int {
         return $this->client
             ->retry(
                 $this->jid,

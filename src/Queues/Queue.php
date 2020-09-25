@@ -79,7 +79,7 @@ class Queue implements EventsManagerAwareInterface
         ?int $priority = null,
         ?array $tags = null,
         ?array $depends = null
-    ) {
+    ): string {
         try {
             $jid = $jid ?: str_replace('-', '', Uuid::uuid4()->toString());
         } catch (\Exception $e) {
@@ -125,7 +125,7 @@ class Queue implements EventsManagerAwareInterface
      * Get the next job on this queue.
      *
      * @param string|null $worker  Worker name popping the job.
-     * @param int         $numJobs Number of jobs to pop off of the queue.
+     * @param int|null         $numJobs Number of jobs to pop off of the queue.
      *
      * @return BaseJob|BaseJob[]|null
      *
@@ -200,7 +200,7 @@ class Queue implements EventsManagerAwareInterface
         ?int $priority = null,
         ?int $backlog = null,
         ?array $tags = null
-    ) {
+    ): string {
         try {
             $jid = $jid ?: Uuid::uuid4()->toString();
         } catch (\Exception $e) {
@@ -257,7 +257,7 @@ class Queue implements EventsManagerAwareInterface
      *
      * @return int
      */
-    public function unrecur(string $jid)
+    public function unrecur(string $jid): int
     {
         return $this->client->unrecur($jid);
     }
@@ -369,7 +369,7 @@ class Queue implements EventsManagerAwareInterface
      * }
      * </code>
      *
-     * @param  int $date The date for which stats to retrieve as a unix timestamp.
+     * @param  int|null $date The date for which stats to retrieve as a unix timestamp.
      * @return array
      *
      * @throws QlessException
@@ -410,7 +410,7 @@ class Queue implements EventsManagerAwareInterface
     {
         $stat = json_decode($this->client->queues($this->name), true);
 
-        return isset($stat['name']) && $stat['name'] === $this->name && $stat['paused'] == true;
+        return isset($stat['name']) && $stat['name'] === $this->name && $stat['paused'] === true;
     }
 
     /**
@@ -422,7 +422,7 @@ class Queue implements EventsManagerAwareInterface
         $subscriptions = $this->client->subscription($this->name, 'add', $topicPattern);
         $subscriptions = json_decode($subscriptions, true);
 
-        return in_array($topicPattern, $subscriptions);
+        return in_array($topicPattern, $subscriptions, true);
     }
 
     /**
@@ -431,7 +431,7 @@ class Queue implements EventsManagerAwareInterface
      */
     public function unSubscribe(string $topicPattern): bool
     {
-        return $this->client->subscription($this->name, 'remove', $topicPattern) == 'true';
+        return $this->client->subscription($this->name, 'remove', $topicPattern) === 'true';
     }
 
     /**
@@ -445,7 +445,7 @@ class Queue implements EventsManagerAwareInterface
                     return;
                 }
                 $job = $this->popByJid($event->getJid());
-                if (!empty($job)) {
+                if ($job !== null) {
                     $job->perform();
                 }
             });

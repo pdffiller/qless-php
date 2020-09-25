@@ -151,9 +151,6 @@ class Client implements EventsManagerAwareInterface
      */
     public function call(string $command, ...$arguments)
     {
-        $arguments = func_get_args();
-        array_shift($arguments);
-
         return $this->__call($command, $arguments);
     }
 

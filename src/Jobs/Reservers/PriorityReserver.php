@@ -81,14 +81,14 @@ class PriorityReserver extends AbstractReserver
 
         $priorities = $this->priorities;
 
-        usort($this->queues, function (Queue $firstQueue, Queue $secondQueue) use ($priorities) {
+        usort($this->queues, static function (Queue $firstQueue, Queue $secondQueue) use ($priorities) {
             $priorityFirst = $priorities[(string) $firstQueue] ?? self::DEFAULT_PRIORITY;
             $prioritySecond = $priorities[(string) $secondQueue] ?? self::DEFAULT_PRIORITY;
 
             return $prioritySecond - $priorityFirst;
         });
 
-        if (empty($this->queues) == false) {
+        if (empty($this->queues) === false) {
             $this->logger->info(
                 'Monitoring the following queues: {queues}',
                 ['queues' => implode(', ', $this->queues)]

@@ -37,7 +37,7 @@ class Config
     {
         $res = $this->client->call('config.get', $name);
 
-        return $res === null ? $default : $res;
+        return $res ?? $default;
     }
 
     /**
@@ -58,11 +58,12 @@ class Config
      * Clears the specified config name.
      *
      * @param string $name
+     *
      * @return void
      *
      * @throws QlessException
      */
-    public function clear($name): void
+    public function clear(string $name): void
     {
         $this->client->call('config.unset', $name);
     }
