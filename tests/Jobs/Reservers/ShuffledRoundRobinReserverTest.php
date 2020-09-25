@@ -2,6 +2,7 @@
 
 namespace Qless\Tests\Jobs\Reservers;
 
+use Qless\Exceptions\InvalidArgumentException;
 use Qless\Jobs\Reservers\ShuffledRoundRobinReserver;
 use Qless\Queues\Queue;
 
@@ -12,18 +13,21 @@ use Qless\Queues\Queue;
  */
 class ShuffledRoundRobinReserverTest extends RoundRobinReserverTest
 {
+
     /**
      * @test
-     * @expectedException \Qless\Exceptions\InvalidArgumentException
-     * @expectedExceptionMessage A queues list or a specification to reserve queues are required.
+     *
      */
-    public function shouldThrowExceptionForNoQueuesAndSpec()
+    public function shouldThrowExceptionForNoQueuesAndSpec(): void
     {
+        $this->expectExceptionMessage("A queues list or a specification to reserve queues are required.");
+        $this->expectException(InvalidArgumentException::class);
         new ShuffledRoundRobinReserver($this->client->queues, []);
     }
 
-    /** @test */
-    public function shouldNormalConstructObjectWithQueuesStack()
+    /** @test
+     */
+    public function shouldNormalConstructObjectWithQueuesStack(): void
     {
         $queue1 = new Queue('queue-1', $this->client);
         $queue2 = new Queue('queue-2', $this->client);
@@ -32,19 +36,20 @@ class ShuffledRoundRobinReserverTest extends RoundRobinReserverTest
 
         $reserver = new ShuffledRoundRobinReserver($this->client->queues, ['queue-1', 'queue-2']);
 
-        $this->assertEquals($stack, $reserver->getQueues());
+        self::assertEquals($stack, $reserver->getQueues());
     }
 
-    /** @test */
-    public function shouldGetDescription()
+    /** @test
+     */
+    public function shouldGetDescription(): void
     {
         $reserver = new ShuffledRoundRobinReserver($this->client->queues, ['queue-1', 'queue-2']);
 
-        $this->assertEquals('queue-1, queue-2 (shuffled round robin)', $reserver->getDescription());
+        self::assertEquals('queue-1, queue-2 (shuffled round robin)', $reserver->getDescription());
     }
 
     /** @test */
-    public function shouldShuffleQueuesBeforeWork()
+    public function shouldShuffleQueuesBeforeWork(): void
     {
         $reserver = new ShuffledRoundRobinReserver(
             $this->client->queues,
@@ -53,12 +58,12 @@ class ShuffledRoundRobinReserverTest extends RoundRobinReserverTest
 
         $reserver->beforework();
 
-        $this->assertRegExp(
+        self::assertRegExp(
             '#queue-\d, queue-\d, queue-\d, queue-\d, queue-\d \(shuffled round robin\)#',
             $reserver->getDescription()
         );
 
-        $this->assertCount(5, $reserver->getQueues());
-        $this->assertContainsOnly(Queue::class, $reserver->getQueues());
+        self::assertCount(5, $reserver->getQueues());
+        self::assertContainsOnly(Queue::class, $reserver->getQueues());
     }
 }

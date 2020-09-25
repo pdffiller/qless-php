@@ -17,12 +17,12 @@ class WatchdogSubscriberTest extends QlessTestCase
     use RedisAwareTrait;
 
     /** @test */
-    public function shouldReceiveExpectedMessages()
+    public function shouldReceiveExpectedMessages(): void
     {
         $system = $this->createMock(SystemFacade::class);
 
         $system
-            ->expects($this->atLeast(1))
+            ->expects(self::atLeast(1))
             ->method('posixKill')
             ->with(1, SIGKILL)
             ->willReturn(true);
@@ -37,6 +37,6 @@ class WatchdogSubscriberTest extends QlessTestCase
         exec(escapeshellcmd("php '{$publisher}'") . " > {$publisher}.log 2>&1 &");
 
         $listener->watchdog('jid-1', 'test-worker', 1);
-        $this->assertTrue(true);
+        self::assertTrue(true);
     }
 }

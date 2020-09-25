@@ -2,6 +2,7 @@
 
 namespace Qless\Tests;
 
+use Qless\Exceptions\RuntimeException;
 use Qless\LuaScript;
 use Qless\Tests\Support\RedisAwareTrait;
 
@@ -54,11 +55,12 @@ class LuaScriptTest extends QlessTestCase
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\RuntimeException
-     * @expectedExceptionMessageRegExp "Unable to locate qless-core file at path: .*"
+     *
+     *
      */
-    public function shouldThrowExpectedExceptionWhenLuaCoreDoesNotExists()
-    {
+    public function shouldThrowExpectedExceptionWhenLuaCoreDoesNotExists(): void {
+        $this->expectExceptionMessageRegExp('Unable to locate qless-core file at path: .*');
+        $this->expectException(RuntimeException::class);
         $luaScript = new LuaScript($this->redis());
 
         $luaScript->run('some-command', []);

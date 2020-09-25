@@ -11,38 +11,38 @@ use Qless\Workers\ForkingWorker;
 
 class WorkerLimitTest extends QlessTestCase
 {
-    public function testNumberJobs()
+    public function testNumberJobs(): void
     {
         $queue = $this->getQueue();
         $worker = $this->getWorker();
         $worker->setMaximumNumberJobs(1);
         $worker->run();
 
-        $this->assertEquals(99, $queue->length());
+        self::assertEquals(99, $queue->length());
     }
 
-    public function testTimeLimitWorker()
+    public function testTimeLimitWorker(): void
     {
         $queue = $this->getQueue();
         $worker = $this->getWorker();
         $worker->setTimeLimit(1);
         $worker->run();
 
-        $this->assertNotEmpty($queue->length());
+        self::assertNotEmpty($queue->length());
     }
 
-    public function testMemoryLimitWorker()
+    public function testMemoryLimitWorker(): void
     {
         $queue = $this->getQueue();
         $worker = $this->getWorker();
         $worker->setMemoryLimit(1);
         $worker->run();
 
-        $this->assertNotEmpty($queue->length());
+        self::assertNotEmpty($queue->length());
     }
 
 
-    private function getQueue()
+    private function getQueue(): Queue
     {
         $queue = new Queue('test-queue', $this->client);
         for ($i = 0; $i < 100; $i++) {
@@ -52,7 +52,7 @@ class WorkerLimitTest extends QlessTestCase
         return $queue;
     }
 
-    private function getWorker()
+    private function getWorker(): ForkingWorker
     {
         return new ForkingWorker(
             new OrderedReserver($this->client->queues, ['test-queue']),

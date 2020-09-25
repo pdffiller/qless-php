@@ -10,45 +10,45 @@ namespace Qless\Tests;
 class ConfigTest extends QlessTestCase
 {
     /** @test */
-    public function shouldGetDefaultHeartbeat()
+    public function shouldGetDefaultHeartbeat(): void
     {
-        $this->assertEquals(60, $this->client->config->get('heartbeat'));
+        self::assertEquals(60, $this->client->config->get('heartbeat'));
     }
 
     /** @test */
-    public function shouldSetConfigValue()
+    public function shouldSetConfigValue(): void
     {
         $key = md5(uniqid(microtime(true), true));
         $value = hash('sha1', uniqid(microtime(true), true));
 
         $this->client->config->set($key, $value);
-        $this->assertEquals($value, $this->client->config->get($key));
+        self::assertEquals($value, $this->client->config->get($key));
     }
 
     /** @test */
-    public function shouldGetDefaultValue()
+    public function shouldGetDefaultValue(): void
     {
-        $this->assertEquals(null, $this->client->config->get('foo.bar.baz'));
-        $this->assertEquals('xyz', $this->client->config->get('foo.bar.baz', 'xyz'));
+        self::assertEquals(null, $this->client->config->get('foo.bar.baz'));
+        self::assertEquals('xyz', $this->client->config->get('foo.bar.baz', 'xyz'));
     }
 
     /** @test */
-    public function shouldGetDefaultGracePeriod()
+    public function shouldGetDefaultGracePeriod(): void
     {
         $val = $this->client->config->get('grace-period');
-        $this->assertEquals(10, $val);
+        self::assertEquals(10, $val);
     }
 
     /** @test */
-    public function shouldSetHeartbeat()
+    public function shouldSetHeartbeat(): void
     {
         $this->client->config->set('heartbeat', 10);
         $val = $this->client->config->get('heartbeat');
-        $this->assertEquals(10, $val);
+        self::assertEquals(10, $val);
     }
 
     /** @test */
-    public function shouldClearTheConfigValue()
+    public function shouldClearTheConfigValue(): void
     {
         $key = md5(uniqid(microtime(true), true));
         $value = hash('sha1', uniqid(microtime(true), true));
@@ -56,6 +56,6 @@ class ConfigTest extends QlessTestCase
         $this->client->config->set($key, $value);
         $this->client->config->clear($key);
 
-        $this->assertNull($this->client->config->get($key));
+        self::assertNull($this->client->config->get($key));
     }
 }

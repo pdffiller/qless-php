@@ -4,6 +4,8 @@ namespace Qless\Tests\PubSub;
 
 use Qless\Jobs\BaseJob;
 use Qless\PubSub\Manager;
+use function fwrite;
+use function sleep;
 
 class DummyPubSubJob
 {
@@ -27,7 +29,7 @@ class DummyPubSubJob
                 break;
             case Manager::EVENT_STALLED:
                 if ($job->retries === $job->remaining) {
-                    \sleep($job->ttl() + 1);
+                    sleep($job->ttl() + 1);
                 }
                 break;
             case Manager::EVENT_UNTRACK:
@@ -39,7 +41,7 @@ class DummyPubSubJob
                 break;
 
             default:
-                \fwrite(STDERR, 'Invalid job type provided: ' . var_export($type, true) . PHP_EOL);
+                fwrite(STDERR, 'Invalid job type provided: ' . var_export($type, true) . PHP_EOL);
         }
     }
 }

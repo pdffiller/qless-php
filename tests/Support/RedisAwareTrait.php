@@ -22,7 +22,7 @@ trait RedisAwareTrait
      */
     protected function redis(bool $recreate = false): Redis
     {
-        if ($this->instance instanceof Redis == false || $recreate === true) {
+        if ($this->instance instanceof Redis === false || $recreate === true) {
             $config = $this->getRedisConfig();
 
             $this->instance = new Redis(

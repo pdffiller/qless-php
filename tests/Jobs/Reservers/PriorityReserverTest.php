@@ -2,6 +2,7 @@
 
 namespace Qless\Tests\Jobs\Reservers;
 
+use Qless\Exceptions\InvalidArgumentException;
 use Qless\Jobs\BaseJob;
 use Qless\Jobs\Reservers\PriorityReserver;
 use Qless\Queues\Queue;
@@ -16,16 +17,18 @@ class PriorityReserverTest extends QlessTestCase
 {
     /**
      * @test
-     * @expectedException \Qless\Exceptions\InvalidArgumentException
-     * @expectedExceptionMessage A queues list or a specification to reserve queues are required.
+     *
+     *
      */
-    public function shouldThrowExceptionForNoQueuesAndSpec()
+    public function shouldThrowExceptionForNoQueuesAndSpec(): void
     {
+        $this->expectExceptionMessage("A queues list or a specification to reserve queues are required.");
+        $this->expectException(InvalidArgumentException::class);
         new PriorityReserver($this->client->queues, []);
     }
 
     /** @test */
-    public function shouldReserveJob()
+    public function shouldReserveJob(): void
     {
         $queue1 = new Queue('queue-1-', $this->client);
         $queue2 = new Queue('queue-2-', $this->client);
@@ -64,11 +67,11 @@ class PriorityReserverTest extends QlessTestCase
         $reserver->reserve()->perform();
         $reserver->reserve()->perform();
 
-        $this->assertEquals('queue-2-queue-1-queue-4-queue-3', $_SERVER['performed']);
+        self::assertEquals('queue-2-queue-1-queue-4-queue-3', $_SERVER['performed']);
     }
 
     /** @test */
-    public function shouldNormalConstructObjectWithQueuesStack()
+    public function shouldNormalConstructObjectWithQueuesStack(): void
     {
         $queue1 = new Queue('queue-1', $this->client);
         $queue2 = new Queue('queue-2', $this->client);
@@ -77,19 +80,19 @@ class PriorityReserverTest extends QlessTestCase
 
         $reserver = new PriorityReserver($this->client->queues, ['queue-1', 'queue-2']);
 
-        $this->assertEquals($stack, $reserver->getQueues());
+        self::assertEquals($stack, $reserver->getQueues());
     }
 
     /** @test */
-    public function shouldGetDescription()
+    public function shouldGetDescription(): void
     {
         $reserver = new PriorityReserver($this->client->queues, ['queue-1', 'queue-2']);
 
-        $this->assertEquals('queue-1, queue-2 (priority)', $reserver->getDescription());
+        self::assertEquals('queue-1, queue-2 (priority)', $reserver->getDescription());
     }
 
     /** @test */
-    public function shouldOrderByPriorityQueuesBeforeWork()
+    public function shouldOrderByPriorityQueuesBeforeWork(): void
     {
         $reserver = new PriorityReserver(
             $this->client->queues,
@@ -104,17 +107,17 @@ class PriorityReserverTest extends QlessTestCase
 
         $reserver->beforework();
 
-        $this->assertRegExp(
+        self::assertRegExp(
             '#queue-3, queue-2, queue-1 \(priority\)#',
             $reserver->getDescription()
         );
 
-        $this->assertCount(3, $reserver->getQueues());
-        $this->assertContainsOnly(Queue::class, $reserver->getQueues());
+        self::assertCount(3, $reserver->getQueues());
+        self::assertContainsOnly(Queue::class, $reserver->getQueues());
     }
 
     /** @test */
-    public function shouldRangeByPriorityQueuesBeforeWork()
+    public function shouldRangeByPriorityQueuesBeforeWork(): void
     {
         $reserver = new PriorityReserver(
             $this->client->queues,
@@ -132,12 +135,12 @@ class PriorityReserverTest extends QlessTestCase
         $reserver->beforework();
 
         $queues = $reserver->getQueues();
-        $this->assertCount(1, $reserver->getQueues());
-        $this->assertEquals('queue-2', (string) $queues[0]);
+        self::assertCount(1, $reserver->getQueues());
+        self::assertEquals('queue-2', (string) $queues[0]);
     }
 
     /** @test */
-    public function shouldByMinPriorityQueuesBeforeWork()
+    public function shouldByMinPriorityQueuesBeforeWork(): void
     {
         $reserver = new PriorityReserver(
             $this->client->queues,
@@ -154,13 +157,13 @@ class PriorityReserverTest extends QlessTestCase
         $reserver->beforework();
 
         $queues = $reserver->getQueues();
-        $this->assertCount(2, $reserver->getQueues());
-        $this->assertEquals('queue-3', (string) $queues[0]);
-        $this->assertEquals('queue-2', (string) $queues[1]);
+        self::assertCount(2, $reserver->getQueues());
+        self::assertEquals('queue-3', (string) $queues[0]);
+        self::assertEquals('queue-2', (string) $queues[1]);
     }
 
     /** @test */
-    public function shouldByMaxPriorityQueuesBeforeWork()
+    public function shouldByMaxPriorityQueuesBeforeWork(): void
     {
         $reserver = new PriorityReserver(
             $this->client->queues,
@@ -177,8 +180,8 @@ class PriorityReserverTest extends QlessTestCase
         $reserver->beforework();
 
         $queues = $reserver->getQueues();
-        $this->assertCount(2, $reserver->getQueues());
-        $this->assertEquals('queue-2', (string) $queues[0]);
-        $this->assertEquals('queue-1', (string) $queues[1]);
+        self::assertCount(2, $reserver->getQueues());
+        self::assertEquals('queue-2', (string) $queues[0]);
+        self::assertEquals('queue-1', (string) $queues[1]);
     }
 }

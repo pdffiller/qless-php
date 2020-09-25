@@ -4,6 +4,7 @@ namespace Qless\Tests\Stubs;
 
 use Qless\Events\User\Job as JobEvent;
 use Qless\Workers\AbstractWorker;
+use Throwable;
 
 class SimpleTestWorker extends AbstractWorker
 {
@@ -54,7 +55,7 @@ class SimpleTestWorker extends AbstractWorker
             $this->stopWhenTimeLimitIsReached();
 
             // Don't wait on any processes if we're already in shutdown mode.
-            if ($this->isShuttingDown() == true) {
+            if ($this->isShuttingDown() === true) {
                 break;
             }
 
@@ -69,7 +70,7 @@ class SimpleTestWorker extends AbstractWorker
 
             try {
                 $job->perform();
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $loggerContext['stack'] = $e->getMessage();
                 $this->logger->critical('{type}: job {job} has failed {stack}', $loggerContext);
 

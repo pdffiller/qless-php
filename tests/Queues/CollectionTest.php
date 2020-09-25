@@ -3,6 +3,8 @@
 namespace Qless\Tests\Queues;
 
 use Qless\Exceptions\QlessException;
+use Qless\Exceptions\UnknownPropertyException;
+use Qless\Exceptions\UnsupportedFeatureException;
 use Qless\Queues\Queue;
 use Qless\Tests\QlessTestCase;
 use Qless\Queues\Collection;
@@ -15,10 +17,10 @@ use Qless\Queues\Collection;
 class CollectionTest extends QlessTestCase
 {
     /** @test */
-    public function shouldGetQueuesList()
+    public function shouldGetQueuesList(): void
     {
         $collection = new Collection($this->client);
-        $this->assertEquals([], $collection->counts);
+        self::assertEquals([], $collection->counts);
 
         $this->client->put('w1', 'test-queue', 'j1', 'klass', '{}', 0);
 
@@ -35,40 +37,43 @@ class CollectionTest extends QlessTestCase
             ]
         ];
 
-        $this->assertEquals($expected, $collection->counts);
+        self::assertEquals($expected, $collection->counts);
     }
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\UnknownPropertyException
-     * @expectedExceptionMessage Getting unknown property: Qless\Queues\Collection::foo
+     *
+     *
      */
-    public function shouldThrowExceptionWhenGetInaccessibleProperty()
+    public function shouldThrowExceptionWhenGetInaccessibleProperty(): void
     {
+        $this->expectExceptionMessage("Getting unknown property: Qless\Queues\Collection::foo");
+        $this->expectException(UnknownPropertyException::class);
         $collection = new Collection($this->client);
+        /** @noinspection PhpUndefinedFieldInspection */
         $collection->foo;
     }
 
     /** @test */
-    public function shouldCheckWhetherAOffsetExists()
+    public function shouldCheckWhetherAOffsetExists(): void
     {
         $collection = new Collection($this->client);
 
-        $this->assertFalse(isset($collection['foo']));
-        $this->assertFalse(isset($collection['bar']));
+        self::assertFalse(isset($collection['foo']));
+        self::assertFalse(isset($collection['bar']));
 
         $this->client->put('w1', 'foo', 'j1', 'klass', '{}', 0);
 
-        $this->assertTrue(isset($collection['foo']));
-        $this->assertFalse(isset($collection['bar']));
+        self::assertTrue(isset($collection['foo']));
+        self::assertFalse(isset($collection['bar']));
     }
 
     /** @test */
-    public function shouldGetQueues()
+    public function shouldGetQueues(): void
     {
         $collection = new Collection($this->client);
 
-        $this->assertInstanceOf(Queue::class, $collection['q1']);
+        self::assertInstanceOf(Queue::class, $collection['q1']);
     }
 
     /**
@@ -87,6 +92,8 @@ class CollectionTest extends QlessTestCase
 
     /**
      * @test
+     *
+     *
      */
     public function shouldRemoveEmptyQueueOnDeletingProperty(): void
     {
@@ -104,40 +111,41 @@ class CollectionTest extends QlessTestCase
     /**
      * @test
      * @expectedException \Qless\Exceptions\UnsupportedFeatureException
-     * @expectedExceptionMessage Setting a queue is not supported using Queues collection.
+        $this->expectExceptionMessage("Setting a queue is not supported using Queues collection.");
      */
     public function shouldThrowExceptionOnSettingProperty()
     {
+        $this->expectException(UnsupportedFeatureException::class);
         $collection = new Collection($this->client);
         $collection['foo'] = 'bar';
     }
 
     /** @test */
-    public function shouldGetQueuesListBySpecification()
+    public function shouldGetQueuesListBySpecification(): void
     {
         $pattern = 'eu-(west|east)-\d+';
         $collection = new Collection($this->client);
 
-        $this->assertEquals([], $collection->fromSpec($pattern));
+        self::assertEquals([], $collection->fromSpec($pattern));
 
         $this->client->put('w1', 'foo', 'j1', 'klass', '{}', 0);
-        $this->assertEquals([], $collection->fromSpec($pattern));
+        self::assertEquals([], $collection->fromSpec($pattern));
 
         $this->client->put('w1', 'eu-west-2', 'j1', 'klass', '{}', 0);
         $queues = $collection->fromSpec($pattern);
 
-        $this->assertTrue(is_array($queues));
-        $this->assertInstanceOf(Queue::class, $queues[0]);
-        $this->assertCount(1, $queues);
-        $this->assertEquals('eu-west-2', (string) $queues[0]);
+        self::assertIsArray($queues);
+        self::assertInstanceOf(Queue::class, $queues[0]);
+        self::assertCount(1, $queues);
+        self::assertEquals('eu-west-2', (string) $queues[0]);
 
         $this->client->put('w1', 'eu-east-1', 'j1', 'klass', '{}', 0);
         $queues = $collection->fromSpec($pattern);
 
-        $this->assertCount(2, $queues);
-        $this->assertEquals('eu-west-2', (string) $queues[0]);
-        $this->assertEquals('eu-east-1', (string) $queues[1]);
+        self::assertCount(2, $queues);
+        self::assertEquals('eu-west-2', (string) $queues[0]);
+        self::assertEquals('eu-east-1', (string) $queues[1]);
 
-        $this->assertEquals([], $collection->fromSpec(''));
+        self::assertEquals([], $collection->fromSpec(''));
     }
 }

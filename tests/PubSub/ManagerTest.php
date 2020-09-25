@@ -177,6 +177,6 @@ class ManagerTest extends QlessTestCase
         $messagesReceived = explode(PHP_EOL, $this->getBackgroundStdOut());
         $this->stopBackgroundTask();
 
-        $this->assertContains($expectedMessage, $messagesReceived, 'Expected events of type ' . $type);
+        self::assertContains($expectedMessage, $messagesReceived, 'Expected events of type ' . $type);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Qless\Tests\Jobs;
 
+use Qless\Exceptions\UnsupportedFeatureException;
 use Qless\Queues\Queue;
 use Qless\Tests\QlessTestCase;
 
@@ -13,46 +14,46 @@ use Qless\Tests\QlessTestCase;
 class CollectionTest extends QlessTestCase
 {
     /** @test */
-    public function shouldGetTaggedJobs()
+    public function shouldGetTaggedJobs(): void
     {
-        $this->assertEquals([], $this->client->jobs->tagged('foo'));
-        $this->assertEquals([], $this->client->jobs->tagged('bar'));
+        self::assertEquals([], $this->client->jobs->tagged('foo'));
+        self::assertEquals([], $this->client->jobs->tagged('bar'));
 
         $this->client->queues['test-queue']->put('Foo', [], 'jid-1', null, null, null, ['foo', 'bar']);
         $this->client->queues['test-queue']->put('Foo', [], 'jid-2', null, null, null, ['bar', 'baz']);
 
-        $this->assertEquals(['jid-1', 'jid-2'], $this->client->jobs->tagged('bar'));
+        self::assertEquals(['jid-1', 'jid-2'], $this->client->jobs->tagged('bar'));
 
         $this->client->queues['test-queue']->put('Foo', [], 'jid-3', null, null, null, ['foo']);
         $this->client->queues['test-queue']->put('Foo', [], 'jid-4', null, null, null, ['foo']);
         $this->client->queues['test-queue']->put('Foo', [], 'jid-5', null, null, null, ['foo']);
 
-        $this->assertEquals(['jid-3', 'jid-4'], $this->client->jobs->tagged('foo', 1, 2));
+        self::assertEquals(['jid-3', 'jid-4'], $this->client->jobs->tagged('foo', 1, 2));
     }
 
     /** @test */
-    public function shouldGetTrackedJobs()
+    public function shouldGetTrackedJobs(): void
     {
         $this->client->queues['foo']->put('Foo', [], 'jid-1');
         $this->client->queues['foo']->put('Bar', [], 'jid-2');
-        $this->assertCount(0, $this->client->jobs->tracked());
+        self::assertCount(0, $this->client->jobs->tracked());
 
         $this->client->jobs['jid-1']->track();
-        $this->assertCount(1, $this->client->jobs->tracked());
+        self::assertCount(1, $this->client->jobs->tracked());
         $this->client->jobs['jid-2']->track();
-        $this->assertCount(2, $this->client->jobs->tracked());
+        self::assertCount(2, $this->client->jobs->tracked());
 
         $this->client->jobs['jid-1']->untrack();
-        $this->assertCount(1, $this->client->jobs->tracked());
+        self::assertCount(1, $this->client->jobs->tracked());
         $this->client->jobs['jid-2']->untrack();
-        $this->assertCount(0, $this->client->jobs->tracked());
+        self::assertCount(0, $this->client->jobs->tracked());
     }
 
     /** @test */
-    public function shouldReturnNullForInvalidJobID()
+    public function shouldReturnNullForInvalidJobID(): void
     {
-        $this->assertNull($this->client->jobs['xxx']);
-        $this->assertNull($this->client->jobs->get('xxx'));
+        self::assertNull($this->client->jobs['xxx']);
+        self::assertNull($this->client->jobs->get('xxx'));
 
         $this->client->queues['test-queue']->put('Foo', [], 'xxx');
 
@@ -61,71 +62,75 @@ class CollectionTest extends QlessTestCase
     }
 
     /** @test */
-    public function shouldDetectIfJobExist()
+    public function shouldDetectIfJobExist(): void
     {
         $jid = substr(md5(uniqid(microtime(true), true)), 0, 16);
-        $this->assertFalse($this->client->jobs->offsetExists($jid));
+        self::assertFalse($this->client->jobs->offsetExists($jid));
 
         $this->client->queues['test-queue']->put('Foo', [], $jid);
-        $this->assertTrue($this->client->jobs->offsetExists($jid));
+        self::assertTrue($this->client->jobs->offsetExists($jid));
     }
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\UnsupportedFeatureException
-     * @expectedExceptionMessage Deleting a job is not supported using Jobs collection.
+     *
+     *
      */
-    public function shouldThrowExceptionOnDeletingProperty()
+    public function shouldThrowExceptionOnDeletingProperty(): void
     {
+        $this->expectExceptionMessage("Deleting a job is not supported using Jobs collection.");
+        $this->expectException(UnsupportedFeatureException::class);
         unset($this->client->jobs['xxx']);
     }
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\UnsupportedFeatureException
-     * @expectedExceptionMessage Setting a job is not supported using Jobs collection.
+     *
+     *
      */
-    public function shouldThrowExceptionOnSettingProperty()
+    public function shouldThrowExceptionOnSettingProperty(): void
     {
+        $this->expectExceptionMessage("Setting a job is not supported using Jobs collection.");
+        $this->expectException(UnsupportedFeatureException::class);
         $this->client->jobs->offsetSet('foo', 'bar');
     }
 
-    public function testItReturnsExistingJob()
+    public function testItReturnsExistingJob(): void
     {
         $this->put('j-1');
         $j = $this->client->jobs['j-1'];
 
-        $this->assertNotNull($j);
-        $this->assertEquals('j-1', $j->jid);
+        self::assertNotNull($j);
+        self::assertEquals('j-1', $j->jid);
     }
 
     /** @test */
-    public function shouldReturnExistingJobsKeyedByJobIdentifier()
+    public function shouldReturnExistingJobsKeyedByJobIdentifier(): void
     {
-        $this->assertEquals([], $this->client->jobs->multiget([]));
-        $this->assertEquals([], $this->client->jobs->multiget(['non-existent-1', 'non-existent-2']));
+        self::assertEquals([], $this->client->jobs->multiget([]));
+        self::assertEquals([], $this->client->jobs->multiget(['non-existent-1', 'non-existent-2']));
 
         $this->put('j-1');
         $this->put('j-2');
 
         $j = $this->client->jobs->multiget(['j-1', 'j-2']);
 
-        $this->assertCount(2, $j);
-        $this->assertArrayHasKey('j-1', $j);
-        $this->assertArrayHasKey('j-2', $j);
+        self::assertCount(2, $j);
+        self::assertArrayHasKey('j-1', $j);
+        self::assertArrayHasKey('j-2', $j);
     }
 
-    public function testItReturnsNoCompletedJobsWhenNoneExist()
+    public function testItReturnsNoCompletedJobsWhenNoneExist(): void
     {
         $this->put('j-1');
         $this->put('j-2');
 
         $j = $this->client->jobs->completed();
-        $this->assertEmpty($j);
+        self::assertEmpty($j);
     }
 
     /** @test */
-    public function shouldReturnCompletedJobs()
+    public function shouldReturnCompletedJobs(): void
     {
         $this->put('j-1');
         $this->put('j-2');
@@ -138,11 +143,11 @@ class CollectionTest extends QlessTestCase
         $j = $this->client->jobs->completed();
         sort($j);
 
-        $this->assertEquals(['j-1', 'j-2'], $j);
+        self::assertEquals(['j-1', 'j-2'], $j);
     }
 
     /** @test */
-    public function shouldReturnFailedJobs()
+    public function shouldReturnFailedJobs(): void
     {
         $this->put('j-1');
         $this->put('j-2');
@@ -158,15 +163,15 @@ class CollectionTest extends QlessTestCase
 
         $j = $this->client->jobs->failed();
 
-        $this->assertEquals(3, $j['system']);
-        $this->assertEquals(1, $j['main']);
+        self::assertEquals(3, $j['system']);
+        self::assertEquals(1, $j['main']);
     }
 
     /**
      * @test
      * @depends shouldReturnFailedJobs
      */
-    public function shouldReturnFailedBySpecificGroup()
+    public function shouldReturnFailedBySpecificGroup(): void
     {
         $this->put('j-1');
         $this->put('j-2');
@@ -182,10 +187,10 @@ class CollectionTest extends QlessTestCase
 
         $j = $this->client->jobs->failedForGroup('system');
 
-        $this->assertCount(3, $j['jobs']);
+        self::assertCount(3, $j['jobs']);
     }
 
-    public function testItReturnsRunningJob()
+    public function testItReturnsRunningJob(): void
     {
         $this->put('j-1');
         $this->put('j-2');
@@ -194,10 +199,10 @@ class CollectionTest extends QlessTestCase
         $q->pop();
 
         $j = $this->client->jobs['j-1'];
-        $this->assertNotNull($j);
+        self::assertNotNull($j);
     }
 
-    public function testItReturnsWorkerJobs()
+    public function testItReturnsWorkerJobs(): void
     {
         $this->client->put('w1', 'test-queue', 'job1', 'klass', '{}', 0);
         $this->client->put('w1', 'test-queue', 'job2', 'klass', '{}', 0);
@@ -205,11 +210,11 @@ class CollectionTest extends QlessTestCase
         $this->client->pop('test-queue', 'w1', 2);
 
         $jobs = $this->client->jobs->fromWorker('w1');
-        $this->assertIsArray($jobs);
-        $this->assertCount(2, $jobs);
+        self::assertIsArray($jobs);
+        self::assertCount(2, $jobs);
     }
 
-    public function testItReturnsNoWorkerJobsOnEmptyWorker()
+    public function testItReturnsNoWorkerJobsOnEmptyWorker(): void
     {
         $this->put('j-1');
 
@@ -217,22 +222,22 @@ class CollectionTest extends QlessTestCase
         $q->pop();
 
         $jobs = $this->client->jobs->fromWorker('');
-        $this->assertIsArray($jobs);
-        $this->assertCount(0, $jobs);
+        self::assertIsArray($jobs);
+        self::assertCount(0, $jobs);
     }
 
-    public function testItReturnsWorkerJobsByTimeFilter()
+    public function testItReturnsWorkerJobsByTimeFilter(): void
     {
         $this->client->put('w1', 'test-queue', 'job1', 'klass', '{}', 0);
 
         $this->client->pop('test-queue', 'w1', 1);
 
         $jobs = $this->client->jobs->fromWorker('w1', '1 hour');
-        $this->assertIsArray($jobs);
-        $this->assertCount(1, $jobs);
+        self::assertIsArray($jobs);
+        self::assertCount(1, $jobs);
     }
 
-    public function testItReturnsAllWorkerJobsByInvalidTimeFilter()
+    public function testItReturnsAllWorkerJobsByInvalidTimeFilter(): void
     {
         $this->client->put('w1', 'test-queue', 'job1', 'klass', '{}', 0);
         $this->client->put('w1', 'test-queue', 'job2', 'klass', '{}', 0);
@@ -241,12 +246,12 @@ class CollectionTest extends QlessTestCase
         $this->client->pop('test-queue', 'w1', 3);
 
         $jobs = $this->client->jobs->fromWorker('w1', '<whoops!VERY_bad_Time#>');
-        $this->assertIsArray($jobs);
-        $this->assertCount(3, $jobs);
+        self::assertIsArray($jobs);
+        self::assertCount(3, $jobs);
     }
 
 
-    private function put($jid, $opts = [])
+    private function put($jid, $opts = []): void
     {
         $opts = array_merge([
             'data'     => [],

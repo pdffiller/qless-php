@@ -12,29 +12,31 @@ use Qless\Tests\QlessTestCase;
  */
 class ErrorFormatterTest extends QlessTestCase
 {
+
     /**
      * @test
      * @dataProvider errorConstantsProvider
+     *
      * @param mixed $value
      * @param string $expected
      */
-    public function shouldReturnConstantName($value, $expected)
+    public function shouldReturnConstantName($value, string $expected): void
     {
         $handler = new ErrorFormatter();
 
-        $this->assertEquals($expected, $handler->constant($value));
+        self::assertEquals($expected, $handler->constant($value));
     }
 
     /** @test */
-    public function shouldReturnNullOnNonExistentConstant()
+    public function shouldReturnNullOnNonExistentConstant(): void
     {
         $handler = new ErrorFormatter();
 
-        $this->assertNull($handler->constant(7));
-        $this->assertNull($handler->constant('error'));
+        self::assertNull($handler->constant(7));
+        self::assertNull($handler->constant('error'));
     }
 
-    public function errorConstantsProvider()
+    public function errorConstantsProvider(): array
     {
         return [
             [E_ERROR, 'E_ERROR'],

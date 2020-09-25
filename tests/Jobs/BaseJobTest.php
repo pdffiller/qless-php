@@ -2,10 +2,16 @@
 
 namespace Qless\Tests\Jobs;
 
+use Qless\Exceptions\InvalidArgumentException;
+use Qless\Exceptions\InvalidJobException;
 use Qless\Exceptions\JobAlreadyFinishedException;
+use Qless\Exceptions\LostLockException;
+use Qless\Exceptions\QlessException;
+use Qless\Exceptions\UnknownPropertyException;
 use Qless\Jobs\BaseJob;
 use Qless\Tests\QlessTestCase;
 use Qless\Tests\Stubs\JobHandler;
+use Throwable;
 
 /**
  * Qless\Tests\Jobs\BaseJobTest
@@ -16,57 +22,60 @@ class BaseJobTest extends QlessTestCase
 {
     /**
      * @test
-     * @expectedException \Qless\Exceptions\UnknownPropertyException
-     * @expectedExceptionMessage Setting unknown property: Qless\Jobs\BaseJob::foo
+     *
+     *
      */
-    public function shouldThrowExceptionWhenSettingUnknownProperty()
+    public function shouldThrowExceptionWhenSettingUnknownProperty(): void
     {
+        $this->expectExceptionMessage("Setting unknown property: Qless\Jobs\BaseJob::foo");
+        $this->expectException(UnknownPropertyException::class);
         $queue = $this->client->queues['test-queue'];
         $queue->put('SampleHandler', [], 'jid');
 
         $job = $this->client->jobs['jid'];
 
+        /** @noinspection PhpUndefinedFieldInspection */
         $job->foo = 'bar';
     }
 
     /** @test */
-    public function shouldChangeJobPriority()
+    public function shouldChangeJobPriority(): void
     {
         $queue = $this->client->queues['test-queue'];
         $queue->put('SampleHandler', [], 'jid');
 
         $job = $this->client->jobs['jid'];
-        $this->assertEquals(0, $job->priority);
+        self::assertEquals(0, $job->priority);
 
         $job = $this->client->jobs['jid'];
         $job->priority = 18;
 
         $job = $this->client->jobs['jid'];
 
-        $this->assertEquals(18, $job->priority);
+        self::assertEquals(18, $job->priority);
     }
 
     /** @test */
-    public function shouldChangeFailedFlag()
+    public function shouldChangeFailedFlag(): void
     {
         $queue = $this->client->queues['test-queue'];
         $queue->put('SampleHandler', [], 'jid');
 
         $job = $this->client->jobs['jid'];
-        $this->assertEquals(false, $job->failed);
+        self::assertEquals(false, $job->failed);
 
         $job = $queue->pop();
-        $this->assertEquals(false, $job->failed);
+        self::assertEquals(false, $job->failed);
 
         $job->fail('test', 'current job is failed');
-        $this->assertEquals(true, $job->failed);
+        self::assertEquals(true, $job->failed);
 
         $job = $this->client->jobs['jid'];
-        $this->assertEquals(true, $job->failed);
+        self::assertEquals(true, $job->failed);
     }
 
     /** @test */
-    public function shouldRequeueJob()
+    public function shouldRequeueJob(): void
     {
         $queue = $this->client->queues['test-queue'];
 
@@ -75,17 +84,19 @@ class BaseJobTest extends QlessTestCase
 
         $job = $queue->pop();
 
-        $this->assertEquals(1, $job->priority);
-        $this->assertEquals(['tag1','tag2'], $job->tags);
+        self::assertEquals(1, $job->priority);
+        self::assertEquals(['tag1','tag2'], $job->tags);
     }
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\InvalidArgumentException
-     * @expectedExceptionMessage Could not find job class SampleJobPerformClass.
+     *
+     *
      */
-    public function shouldThrowsExpectedExceptionWhenGetInstanceWithNonExistentClass()
+    public function shouldThrowsExpectedExceptionWhenGetInstanceWithNonExistentClass(): void
     {
+        $this->expectExceptionMessage("Could not find job class SampleJobPerformClass.");
+        $this->expectException(InvalidArgumentException::class);
         $queue = $this->client->queues['test-queue'];
 
         $this->client->config->set('heartbeat', -10);
@@ -101,11 +112,13 @@ class BaseJobTest extends QlessTestCase
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\InvalidArgumentException
-     * @expectedExceptionMessage Job class "stdClass" does not contain perform method "myPerformMethod".
+     *
+     *
      */
-    public function shouldThrowsExpectedExceptionWhenGetInstanceWithNonExistentPerformMethod()
+    public function shouldThrowsExpectedExceptionWhenGetInstanceWithNonExistentPerformMethod(): void
     {
+        $this->expectExceptionMessage("Job class \"stdClass\" does not contain perform method \"myPerformMethod\".");
+        $this->expectException(InvalidArgumentException::class);
         $queue = $this->client->queues['test-queue'];
 
         $this->client->config->set('heartbeat', -10);
@@ -121,10 +134,11 @@ class BaseJobTest extends QlessTestCase
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\InvalidArgumentException
+     *
      */
-    public function shouldThrowsExpectedExceptionWhenGetInstanceWithInvalidPerformMethod()
+    public function shouldThrowsExpectedExceptionWhenGetInstanceWithInvalidPerformMethod(): void
     {
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(
             'Job class "Qless\Tests\Stubs\JobHandler" does not contain perform method "myPerformMethod2".'
         );
@@ -143,7 +157,7 @@ class BaseJobTest extends QlessTestCase
     }
 
     /** @test */
-    public function shouldGetWorkerInstance()
+    public function shouldGetWorkerInstance(): void
     {
         $queue = $this->client->queues['test-queue'];
 
@@ -155,11 +169,11 @@ class BaseJobTest extends QlessTestCase
         $job = $queue->pop();
         $queue->pop();
 
-        $this->assertInstanceOf(JobHandler::class, $job->getInstance());
+        self::assertInstanceOf(JobHandler::class, $job->getInstance());
     }
 
     /** @test */
-    public function shouldGetWorkerInstanceWithDefaultPerformMethod()
+    public function shouldGetWorkerInstanceWithDefaultPerformMethod(): void
     {
         $queue = $this->client->queues['test-queue'];
 
@@ -171,16 +185,16 @@ class BaseJobTest extends QlessTestCase
         $job = $queue->pop();
         $queue->pop();
 
-        $this->assertInstanceOf(JobHandler::class, $job->getInstance());
+        self::assertInstanceOf(JobHandler::class, $job->getInstance());
     }
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\LostLockException
-     * @expectedExceptionMessageRegExp "Job .* given out to another worker: worker-2 "
      */
-    public function shouldThrowIOnCallingHeartbeatForInvalidJob()
+    public function shouldThrowIOnCallingHeartbeatForInvalidJob(): void
     {
+        $this->expectExceptionMessageRegExp('Job .* given out to another worker: worker-2 ');
+        $this->expectException(LostLockException::class);
         $queue = $this->client->queues['test-queue'];
 
         $this->client->config->set('heartbeat', -10);
@@ -196,11 +210,13 @@ class BaseJobTest extends QlessTestCase
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\LostLockException
-     * @expectedExceptionMessage Job jid not currently running: waiting
+     *
+     *
      */
-    public function shouldThrowLostLockExceptionWhenHeartbeatFail()
+    public function shouldThrowLostLockExceptionWhenHeartbeatFail(): void
     {
+        $this->expectExceptionMessage("Job jid not currently running: waiting");
+        $this->expectException(LostLockException::class);
         $queue = $this->client->queues['test-queue'];
         $queue->put('Foo', [], 'jid');
 
@@ -208,7 +224,7 @@ class BaseJobTest extends QlessTestCase
     }
 
     /** @test */
-    public function shouldProvideAccessToHeartbeat()
+    public function shouldProvideAccessToHeartbeat(): void
     {
         $this->client->config->set('heartbeat', 10);
         $this->client->queues['foo']->put('Foo', [], 'jid');
@@ -219,24 +235,24 @@ class BaseJobTest extends QlessTestCase
         $this->client->config->set('heartbeat', 20);
         $job->heartbeat();
 
-        $this->assertTrue($job->ttl() > $before);
+        self::assertTrue($job->ttl() > $before);
     }
 
     /** @test */
-    public function shouldStartTrackingJob()
+    public function shouldStartTrackingJob(): void
     {
         $this->client->queues['foo']->put('Foo', [], 'jid');
-        $this->assertFalse($this->client->jobs['jid']->tracked);
+        self::assertFalse($this->client->jobs['jid']->tracked);
 
         $this->client->jobs['jid']->track();
-        $this->assertTrue($this->client->jobs['jid']->tracked);
+        self::assertTrue($this->client->jobs['jid']->tracked);
 
         $this->client->jobs['jid']->untrack();
-        $this->assertFalse($this->client->jobs['jid']->tracked);
+        self::assertFalse($this->client->jobs['jid']->tracked);
     }
 
     /** @test */
-    public function shouldRemoveOldTrackingJob()
+    public function shouldRemoveOldTrackingJob(): void
     {
         $lifetime = 1;
         $lifetimeOld = $this->client->config->get('jobs-history');
@@ -246,7 +262,7 @@ class BaseJobTest extends QlessTestCase
 
         $this->client->jobs[$jid]->track();
 
-        $this->assertTrue($this->client->jobs[$jid]->tracked);
+        self::assertTrue($this->client->jobs[$jid]->tracked);
 
         sleep($lifetime);
 
@@ -258,24 +274,26 @@ class BaseJobTest extends QlessTestCase
 
         $job->complete();
 
-        $this->assertNotContains($jid, $this->client->getJobs()->tracked());
+        self::assertNotContains($jid, $this->client->getJobs()->tracked());
 
         $this->client->config->set('jobs-history', $lifetimeOld);
     }
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\QlessException
-     * @expectedExceptionMessage Job jid not running
+     *
+     *
      */
-    public function shouldThrowExceptionWhenTimeoutFail()
+    public function shouldThrowExceptionWhenTimeoutFail(): void
     {
+        $this->expectExceptionMessage("Job jid not running");
+        $this->expectException(QlessException::class);
         $this->client->queues['foo']->put('Foo', [], 'jid');
         $this->client->jobs['jid']->timeout();
     }
 
     /** @test */
-    public function shouldTimeoutJob()
+    public function shouldTimeoutJob(): void
     {
         $this->client->queues['foo']->put('Foo', [], 'jid');
         $job = $this->client->queues['foo']->pop();
@@ -285,66 +303,66 @@ class BaseJobTest extends QlessTestCase
 
         $job = $this->client->queues['foo']->pop();
 
-        $this->assertEquals('timed-out', $job->history[2]['what']);
+        self::assertEquals('timed-out', $job->history[2]['what']);
     }
 
     /** @test */
-    public function shouldGetCorrectTtl()
+    public function shouldGetCorrectTtl(): void
     {
         $queue = $this->client->queues['test-queue'];
         $queue->put('SampleJobPerformClass', []);
 
-        $this->assertGreaterThan(55, $queue->pop()->ttl());
+        self::assertGreaterThan(55, $queue->pop()->ttl());
     }
 
     /** @test */
-    public function shouldCompleteJob()
+    public function shouldCompleteJob(): void
     {
         $queue = $this->client->queues['test-queue'];
         $queue->put('SampleJobPerformClass', []);
 
-        $this->assertEquals('complete', $queue->pop()->complete());
+        self::assertEquals('complete', $queue->pop()->complete());
     }
 
     /** @test */
-    public function shouldCompleteJobAndPutItInAnotherQueue()
+    public function shouldCompleteJobAndPutItInAnotherQueue(): void
     {
         $queue1 = $this->client->queues['test-queue-1'];
         $queue2 = $this->client->queues['test-queue-2'];
 
         $queue1->put('SampleJobPerformClass', ['size' => 2]);
 
-        $this->assertEquals(1, $queue1->length());
-        $this->assertEquals(0, $queue2->length());
+        self::assertEquals(1, $queue1->length());
+        self::assertEquals(0, $queue2->length());
 
         $job1 = $queue1->pop();
-        $this->assertEquals(2, $job1->data['size']);
+        self::assertEquals(2, $job1->data['size']);
 
         $job1->data['size'] -= 1;
 
-        $this->assertEquals('waiting', $job1->complete('test-queue-2'));
+        self::assertEquals('waiting', $job1->complete('test-queue-2'));
 
-        $this->assertEquals(0, $queue1->length());
-        $this->assertEquals(1, $queue2->length());
+        self::assertEquals(0, $queue1->length());
+        self::assertEquals(1, $queue2->length());
 
         $job2 = $queue2->pop();
 
-        $this->assertInstanceOf(BaseJob::class, $job2);
-        $this->assertEquals(1, $job2->data['size']);
+        self::assertInstanceOf(BaseJob::class, $job2);
+        self::assertEquals(1, $job2->data['size']);
     }
 
     /** @test */
-    public function shouldNotPopFailedJob()
+    public function shouldNotPopFailedJob(): void
     {
         $queue = $this->client->queues['test-queue'];
 
         $queue->put('SampleJobPerformClass', [], 'jid');
 
-        $this->assertEquals('jid', $queue->pop()->fail('account', 'failed to connect'));
-        $this->assertNull($queue->pop('worker-1'));
+        self::assertEquals('jid', $queue->pop()->fail('account', 'failed to connect'));
+        self::assertNull($queue->pop('worker-1'));
     }
 
-    public function testRetryDoesReturnJobAndDefaultsToFiveRetries()
+    public function testRetryDoesReturnJobAndDefaultsToFiveRetries(): void
     {
         $queue = $this->client->queues['test-queue'];
 
@@ -352,23 +370,23 @@ class BaseJobTest extends QlessTestCase
 
         $job1 = $queue->pop();
         $remaining = $job1->retry('account', 'failed to connect');
-        $this->assertEquals(4, $remaining);
+        self::assertEquals(4, $remaining);
 
         $job1 = $queue->pop();
-        $this->assertEquals('jid', $job1->jid);
+        self::assertEquals('jid', $job1->jid);
     }
 
-    public function testRetryDoesRespectRetryParameterWithOneRetry()
+    public function testRetryDoesRespectRetryParameterWithOneRetry(): void
     {
         $queue = $this->client->queues['test-queue'];
 
         $queue->put('SampleJobPerformClass', [], 'jid', 0, 1);
 
         $this->assertZero($queue->pop()->retry('account', 'failed to connect'));
-        $this->assertEquals('jid', $queue->pop()->jid);
+        self::assertEquals('jid', $queue->pop()->jid);
     }
 
-    public function testRetryDoesReturnNegativeWhenNoMoreAvailable()
+    public function testRetryDoesReturnNegativeWhenNoMoreAvailable(): void
     {
         $queue = $this->client->queues['test-queue'];
 
@@ -376,10 +394,10 @@ class BaseJobTest extends QlessTestCase
 
         $job1 = $queue->pop();
         $remaining = $job1->retry('account', 'failed to connect');
-        $this->assertEquals(-1, $remaining);
+        self::assertEquals(-1, $remaining);
     }
 
-    public function testRetryTransitionsToFailedWhenExhaustedRetries()
+    public function testRetryTransitionsToFailedWhenExhaustedRetries(): void
     {
         $queue = $this->client->queues['test-queue'];
 
@@ -388,38 +406,40 @@ class BaseJobTest extends QlessTestCase
         $job = $queue->pop();
         $job->retry('account', 'failed to connect');
 
-        $this->assertNull($queue->pop());
+        self::assertNull($queue->pop());
     }
 
     /** @test */
-    public function shouldCancelRemovesJob()
+    public function shouldCancelRemovesJob(): void
     {
         $queue = $this->client->queues['test-queue'];
 
         $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0);
         $queue->put('SampleJobPerformClass', [], 'jid-2', 0, 0);
 
-        $this->assertEquals(['jid-1'], $queue->pop()->cancel());
+        self::assertEquals(['jid-1'], $queue->pop()->cancel());
     }
 
     /** @test */
-    public function shouldCancelRemovesJobWithDependents()
+    public function shouldCancelRemovesJobWithDependents(): void
     {
         $queue = $this->client->queues['test-queue'];
 
         $queue->put('SampleJobPerformClass', [], 'jid-1', null, 0);
         $queue->put('SampleJobPerformClass', [], 'jid-2', null, 0, null, null, ['jid-1']);
 
-        $this->assertEquals(['jid-1', 'jid-2'], $queue->pop()->cancel(true));
+        self::assertEquals(['jid-1', 'jid-2'], $queue->pop()->cancel(true));
     }
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\QlessException
-     * @expectedExceptionMessage jid-1 is a dependency of jid-2 but is not mentioned to be canceled
+     *
+     *
      */
-    public function shouldThrowExceptionOnCancelWithoutDependencies()
+    public function shouldThrowExceptionOnCancelWithoutDependencies(): void
     {
+        $this->expectExceptionMessage("jid-1 is a dependency of jid-2 but is not mentioned to be canceled");
+        $this->expectException(QlessException::class);
         $queue = $this->client->queues['test-queue'];
 
         $queue->put('SampleJobPerformClass', [], 'jid-1', null, 0);
@@ -429,7 +449,7 @@ class BaseJobTest extends QlessTestCase
     }
 
     /** @test */
-    public function shouldUnlockJobWhenDependenciesIsCompleted()
+    public function shouldUnlockJobWhenDependenciesIsCompleted(): void
     {
         $queue = $this->client->queues['test-queue'];
 
@@ -439,15 +459,15 @@ class BaseJobTest extends QlessTestCase
         $stuffingJob = $queue->pop();
         $turkeyJob = $queue->pop();
 
-        $this->assertEquals(['jid-2'], $stuffingJob->dependents);
-        $this->assertEquals('jid-1', $stuffingJob->jid);
+        self::assertEquals(['jid-2'], $stuffingJob->dependents);
+        self::assertEquals('jid-1', $stuffingJob->jid);
 
-        $this->assertNull($turkeyJob);
+        self::assertNull($turkeyJob);
 
         $stuffingJob->complete();
         $turkeyJob = $queue->pop();
 
-        $this->assertEquals('jid-2', $turkeyJob->jid);
+        self::assertEquals('jid-2', $turkeyJob->jid);
     }
 
     /**
@@ -457,17 +477,17 @@ class BaseJobTest extends QlessTestCase
      * @param string $property
      * @param string $type
      */
-    public function shouldGetInternalProperties(string $property, string $type)
+    public function shouldGetInternalProperties(string $property, string $type): void
     {
         $queue = $this->client->queues['test-queue'];
 
         $queue->put('SampleJobPerformClass', []);
         $job = $queue->pop();
 
-        $this->assertEquals($type, gettype($job->{$property}));
+        self::assertEquals($type, gettype($job->{$property}));
     }
 
-    public function jobPropertiesDataProvider()
+    public function jobPropertiesDataProvider(): array
     {
         return [
             ['jid', 'string'],
@@ -490,21 +510,24 @@ class BaseJobTest extends QlessTestCase
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\UnknownPropertyException
-     * @expectedExceptionMessage Getting unknown property: Qless\Jobs\BaseJob::foo
+     *
+     *
      */
-    public function shouldThrowExceptionWhenGetInaccessibleProperty()
+    public function shouldThrowExceptionWhenGetInaccessibleProperty(): void
     {
+        $this->expectExceptionMessage("Getting unknown property: Qless\Jobs\BaseJob::foo");
+        $this->expectException(UnknownPropertyException::class);
         $queue = $this->client->queues['test-queue'];
 
         $queue->put('SampleJobPerformClass', []);
         $job = $queue->pop();
 
+        /** @noinspection PhpUndefinedFieldInspection */
         $job->foo;
     }
 
     /** @test */
-    public function shouldTreatedLikeAString()
+    public function shouldTreatedLikeAString(): void
     {
         $queue = $this->client->queues['test-queue'];
 
@@ -513,32 +536,32 @@ class BaseJobTest extends QlessTestCase
 
         $expected = 'Qless\Jobs\BaseJob SampleJobPerformClass job-id / test-queue';
 
-        $this->assertEquals($expected, (string) $job);
-        $this->assertEquals($expected, $job->__toString());
+        self::assertEquals($expected, (string) $job);
+        self::assertEquals($expected, $job->__toString());
     }
 
     /** @test */
-    public function shouldProvideAccessToTheDataUsingArrayNotation()
+    public function shouldProvideAccessToTheDataUsingArrayNotation(): void
     {
         $queue = $this->client->queues['test-queue'];
 
         $queue->put('SampleJobPerformClass', ['foo' => 'bar'], 'job-id');
         $job = $queue->pop();
 
-        $this->assertTrue(isset($job['foo']));
-        $this->assertEquals('bar', $job['foo']);
+        self::assertTrue(isset($job['foo']));
+        self::assertEquals('bar', $job['foo']);
 
         $job['baz'] = 'buz';
 
-        $this->assertTrue(isset($job['baz']));
-        $this->assertEquals('buz', $job['baz']);
+        self::assertTrue(isset($job['baz']));
+        self::assertEquals('buz', $job['baz']);
 
         unset($job['baz']);
 
-        $this->assertFalse(isset($job['baz']));
+        self::assertFalse(isset($job['baz']));
     }
 
-    public function testItCanAddTagsToAJobWithNoExistingTags()
+    public function testItCanAddTagsToAJobWithNoExistingTags(): void
     {
         $queue = $this->client->queues['test-queue'];
 
@@ -546,10 +569,10 @@ class BaseJobTest extends QlessTestCase
         $queue->pop()->tag('a', 'b');
 
         $data = json_decode($this->client->get('jid-1'));
-        $this->assertEquals(['a', 'b'], $data->tags);
+        self::assertEquals(['a', 'b'], $data->tags);
     }
 
-    public function testItCanAddTagsToAJobWithExistingTags()
+    public function testItCanAddTagsToAJobWithExistingTags(): void
     {
         $queue = $this->client->queues['test-queue'];
 
@@ -557,10 +580,10 @@ class BaseJobTest extends QlessTestCase
         $queue->pop()->tag('a', 'b');
 
         $data = json_decode($this->client->get('jid-1'));
-        $this->assertEquals(['1', '2', 'a', 'b'], $data->tags);
+        self::assertEquals(['1', '2', 'a', 'b'], $data->tags);
     }
 
-    public function testItCanRemoveExistingTags()
+    public function testItCanRemoveExistingTags(): void
     {
         $queue = $this->client->queues['test-queue'];
 
@@ -568,10 +591,10 @@ class BaseJobTest extends QlessTestCase
         $queue->pop()->untag('2', '3');
 
         $data = json_decode($this->client->get('jid-1'));
-        $this->assertEquals(['1'], $data->tags);
+        self::assertEquals(['1'], $data->tags);
     }
 
-    public function testRequeueJobWithNewTags()
+    public function testRequeueJobWithNewTags(): void
     {
         $queue = $this->client->queues['test-queue'];
 
@@ -579,15 +602,13 @@ class BaseJobTest extends QlessTestCase
         $queue->pop()->requeue(null, ['tags' => ['nnn']]);
 
         $job = $queue->pop();
-        $this->assertEquals(1, $job->priority);
-        $this->assertEquals(['nnn'], $job->tags);
+        self::assertEquals(1, $job->priority);
+        self::assertEquals(['nnn'], $job->tags);
     }
 
-    /**
-     * @expectedException \Qless\Exceptions\InvalidJobException
-     */
-    public function testThrowsInvalidJobExceptionWhenRequeuingCancelledJob()
+    public function testThrowsInvalidJobExceptionWhenRequeuingCancelledJob(): void
     {
+        $this->expectException(InvalidJobException::class);
         $queue = $this->client->queues['test-queue'];
 
         $data = ['performMethod' => 'myPerformMethod', 'payload' => 'otherData'];
@@ -598,7 +619,7 @@ class BaseJobTest extends QlessTestCase
         $job->requeue();
     }
 
-    public function testJobCanCompleteSync()
+    public function testJobCanCompleteSync(): void
     {
         $this->client->config->set('sync-enabled', true);
         $queue = $this->client->queues['test-queue-sync-enabled'];
@@ -606,8 +627,8 @@ class BaseJobTest extends QlessTestCase
         $job = $this->client->jobs[$jid];
 
         $this->assertIsJob($job);
-        $this->assertArrayHasKey('stack', $job->data->toArray());
-        $this->assertFalse($job->getFailed());
+        self::assertArrayHasKey('stack', $job->data->toArray());
+        self::assertFalse($job->getFailed());
 
         $this->client->config->clear('sync-enabled');
         $queue = $this->client->queues['test-queue-sync-disabled'];
@@ -615,10 +636,10 @@ class BaseJobTest extends QlessTestCase
         $job = $this->client->jobs[$jid];
 
         $this->assertIsJob($job);
-        $this->assertArrayNotHasKey('stack', $job->data->toArray());
+        self::assertArrayNotHasKey('stack', $job->data->toArray());
     }
 
-    public function testPopByIdOnce()
+    public function testPopByIdOnce(): void
     {
         $queue = $this->client->queues['test-queue'];
 
@@ -630,10 +651,10 @@ class BaseJobTest extends QlessTestCase
 
         $job2 = $queue->popByJid($jid);
 
-        $this->assertNull($job2);
+        self::assertNull($job2);
     }
 
-    public function testJobCantChangeFailToComplete()
+    public function testJobCantChangeFailToComplete(): void
     {
         $queue = $this->client->queues['test-queue'];
 
@@ -649,13 +670,13 @@ class BaseJobTest extends QlessTestCase
         try {
             $job->complete();
             $exception = null;
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
         }
 
-        $this->assertInstanceOf(JobAlreadyFinishedException::class, $exception);
+        self::assertInstanceOf(JobAlreadyFinishedException::class, $exception);
     }
 
-    public function testJobCantChangeCompleteToFail()
+    public function testJobCantChangeCompleteToFail(): void
     {
         $queue = $this->client->queues['test-queue'];
 
@@ -671,13 +692,13 @@ class BaseJobTest extends QlessTestCase
         try {
             $job->fail($job->getQueue(), 'Test Fail');
             $exception = null;
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
         }
 
-        $this->assertInstanceOf(JobAlreadyFinishedException::class, $exception);
+        self::assertInstanceOf(JobAlreadyFinishedException::class, $exception);
     }
 
-    public function testJobCantCompleteTwice()
+    public function testJobCantCompleteTwice(): void
     {
         $queue = $this->client->queues['test-queue'];
 
@@ -693,13 +714,13 @@ class BaseJobTest extends QlessTestCase
         try {
             $job->complete();
             $exception = null;
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
         }
 
-        $this->assertInstanceOf(JobAlreadyFinishedException::class, $exception);
+        self::assertInstanceOf(JobAlreadyFinishedException::class, $exception);
     }
 
-    public function testJobCantFailedTwice()
+    public function testJobCantFailedTwice(): void
     {
         $queue = $this->client->queues['test-queue'];
 
@@ -715,9 +736,9 @@ class BaseJobTest extends QlessTestCase
         try {
             $job->fail($job->getQueue(), 'Test Fail');
             $exception = null;
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
         }
 
-        $this->assertInstanceOf(JobAlreadyFinishedException::class, $exception);
+        self::assertInstanceOf(JobAlreadyFinishedException::class, $exception);
     }
 }
