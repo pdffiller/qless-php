@@ -16,6 +16,33 @@ final class SimpleWorker extends AbstractWorker
 {
     use JobLoopWorkerTrait;
 
+    /** @var SignalsAwareSubscriber */
+    private $signalsSubscriber;
+
+    /**
+     * {@inheritdoc}
+     *
+     * @return void
+     */
+    public function onConstruct(): void
+    {
+        $this->signalsSubscriber = new SignalsAwareSubscriber($this->logger);
+        $this->getEventsManager()->attach(WorkerEvent\AbstractWorkerEvent::getEntityName(), $this->signalsSubscriber);
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @param  LoggerInterface $logger
+     * @return void
+     */
+    public function setLogger(LoggerInterface $logger): void
+    {
+        parent::setLogger($logger);
+
+        $this->signalsSubscriber->setLogger($logger);
+    }
+
     /**
      * @param BaseJob $job
      */
@@ -31,6 +58,7 @@ final class SimpleWorker extends AbstractWorker
      */
     public function perform(): void
     {
-        $this->doJobLoop($this->client, $this->reserver);
+        $this->logContext = ['type' => $this->name];
+        $this->doJobLoop($this->client, $this->reserver, '{type}: ');
     }
 }
