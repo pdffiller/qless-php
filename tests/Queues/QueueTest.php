@@ -2,6 +2,7 @@
 
 namespace Qless\Tests\Queues;
 
+use Qless\Exceptions\QlessException;
 use Qless\Tests\QlessTestCase;
 use Qless\Queues\Queue;
 
@@ -229,5 +230,44 @@ class QueueTest extends QlessTestCase
         $this->assertSame(10, $queue->heartbeat);
         unset($queue->heartbeat);
         $this->assertSame(60, $queue->heartbeat);
+    }
+
+    public function testItCanForgetEmptyQueue()
+    {
+        $data = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+
+        $queue = new Queue('test-queue', $this->client);
+        $queue->put('Xxx\Yyy', $data, "jid-1");
+        self::assertTrue(isset($this->client->queues['test-queue']));
+        $queue->cancel("jid-1");
+        $queue->forget();
+        self::assertFalse(isset($this->client->queues['test-queue']));
+    }
+
+    public function testItCanForceForgetNonEmptyQueue()
+    {
+        $data = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+
+        $queue = new Queue('test-queue', $this->client);
+        $queue->put('Xxx\Yyy', $data, "jid-1");
+        self::assertTrue(isset($this->client->queues['test-queue']));
+        $queue->forget(true);
+        self::assertFalse(isset($this->client->queues['test-queue']));
+    }
+
+    public function testItCannotForgetNonEmptyQueue()
+    {
+        $data = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+
+        $queue = new Queue('test-queue', $this->client);
+        $queue->put('Xxx\Yyy', $data, "jid-1");
+        self::assertTrue(isset($this->client->queues['test-queue']));
+        $this->expectException(QlessException::class);
+        $this->expectExceptionMessage('Queue is not empty');
+        try {
+            $queue->forget();
+        } finally {
+            self::assertTrue(isset($this->client->queues['test-queue']));
+        }
     }
 }
