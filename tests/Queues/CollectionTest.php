@@ -16,7 +16,9 @@ use Qless\Queues\Collection;
  */
 class CollectionTest extends QlessTestCase
 {
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetQueuesList(): void
     {
         $collection = new Collection($this->client);
@@ -42,8 +44,6 @@ class CollectionTest extends QlessTestCase
 
     /**
      * @test
-     *
-     *
      */
     public function shouldThrowExceptionWhenGetInaccessibleProperty(): void
     {
@@ -54,7 +54,9 @@ class CollectionTest extends QlessTestCase
         $collection->foo;
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldCheckWhetherAOffsetExists(): void
     {
         $collection = new Collection($this->client);
@@ -68,7 +70,9 @@ class CollectionTest extends QlessTestCase
         self::assertFalse(isset($collection['bar']));
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetQueues(): void
     {
         $collection = new Collection($this->client);
@@ -92,8 +96,6 @@ class CollectionTest extends QlessTestCase
 
     /**
      * @test
-     *
-     *
      */
     public function shouldRemoveEmptyQueueOnDeletingProperty(): void
     {
@@ -110,17 +112,17 @@ class CollectionTest extends QlessTestCase
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\UnsupportedFeatureException
-        $this->expectExceptionMessage("Setting a queue is not supported using Queues collection.");
      */
-    public function shouldThrowExceptionOnSettingProperty()
+    public function shouldThrowExceptionOnSettingProperty(): void
     {
         $this->expectException(UnsupportedFeatureException::class);
         $collection = new Collection($this->client);
         $collection['foo'] = 'bar';
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetQueuesListBySpecification(): void
     {
         $pattern = 'eu-(west|east)-\d+';
