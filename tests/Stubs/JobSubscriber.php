@@ -3,6 +3,7 @@
 namespace Qless\Tests\Stubs;
 
 use Qless\Events\User\Job\AbstractJobEvent;
+use stdClass;
 
 /**
  * Qless\Tests\Stubs\JobSubscriber
@@ -13,7 +14,7 @@ class JobSubscriber
 {
     private $status;
 
-    public function __construct(\stdClass $status)
+    public function __construct(stdClass $status)
     {
         $this->status = $status;
     }

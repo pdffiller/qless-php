@@ -12,8 +12,10 @@ class TopicTest extends QlessTestCase
 {
     use RedisAwareTrait;
 
-    /** @test */
-    public function shouldGetQueuesBySubscription()
+    /**
+     * @test
+     */
+    public function shouldGetQueuesBySubscription(): void
     {
         $queues = [];
         for ($i = 1; $i<=2; $i++) {
@@ -33,16 +35,18 @@ class TopicTest extends QlessTestCase
         $queuesRedApples = $queuesCollection->fromSubscriptions('big.red.apples');
         sort($queuesRedApples);
 
-        $this->assertEquals($queuesExpected, $queuesGreenApples);
-        $this->assertEquals($queuesExpected, $queuesRedApples);
-        $this->assertEquals([], $queuesCollection->fromSubscriptions('*.*.oranges'));
+        self::assertEquals($queuesExpected, $queuesGreenApples);
+        self::assertEquals($queuesExpected, $queuesRedApples);
+        self::assertEquals([], $queuesCollection->fromSubscriptions('*.*.oranges'));
 
         $queues[1]->unsubscribe('big.*.*');
         $queues[2]->unsubscribe('big.*.apples');
     }
 
-    /** @test */
-    public function shouldQueueSubscribe()
+    /**
+     * @test
+     */
+    public function shouldQueueSubscribe(): void
     {
         $queues = [];
         for ($i = 1; $i<=5; $i++) {
@@ -65,15 +69,17 @@ class TopicTest extends QlessTestCase
         $job4 = $queues[4]->pop();
         $job5 = $queues[5]->pop();
 
-        $this->assertEquals('Xxx\Yyy', $job1->getKlass());
-        $this->assertEquals('Xxx\Yyy', $job2->getKlass());
-        $this->assertEquals('Xxx\Yyy', $job3->getKlass());
-        $this->assertEmpty($job4);
-        $this->assertEquals('Xxx\Yyy', $job5->getKlass());
+        self::assertEquals('Xxx\Yyy', $job1->getKlass());
+        self::assertEquals('Xxx\Yyy', $job2->getKlass());
+        self::assertEquals('Xxx\Yyy', $job3->getKlass());
+        self::assertEmpty($job4);
+        self::assertEquals('Xxx\Yyy', $job5->getKlass());
     }
 
-    /** @test */
-    public function shouldQueueUnSubscribe()
+    /**
+     * @test
+     */
+    public function shouldQueueUnSubscribe(): void
     {
         $queues = [];
         for ($i = 1; $i<=3; $i++) {
@@ -95,8 +101,8 @@ class TopicTest extends QlessTestCase
         $job2 = $queues[2]->pop();
         $job3 = $queues[3]->pop();
 
-        $this->assertEquals('Xxx\Yyy', $job1->getKlass());
-        $this->assertEmpty($job2);
-        $this->assertEquals('Xxx\Yyy', $job3->getKlass());
+        self::assertEquals('Xxx\Yyy', $job1->getKlass());
+        self::assertEmpty($job2);
+        self::assertEquals('Xxx\Yyy', $job3->getKlass());
     }
 }

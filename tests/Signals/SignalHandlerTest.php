@@ -19,9 +19,9 @@ class SignalHandlerTest extends QlessTestCase
      * @param int    $signal
      * @param string $expected
      */
-    public function shouldGetSignalName(int $signal, string $expected)
+    public function shouldGetSignalName(int $signal, string $expected): void
     {
-        $this->assertEquals($expected, SignalHandler::sigName($signal));
+        self::assertEquals($expected, SignalHandler::sigName($signal));
     }
 
     public function signalDataProvider(): array

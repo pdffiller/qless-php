@@ -13,8 +13,10 @@ use Qless\Queues\Queue;
  */
 class QueueTest extends QlessTestCase
 {
-    /** @test */
-    public function shouldPutAndPopAJob()
+    /**
+     * @test
+     */
+    public function shouldPutAndPopAJob(): void
     {
         $queue = new Queue('test-queue', $this->client);
 
@@ -23,24 +25,30 @@ class QueueTest extends QlessTestCase
         $job = $queue->pop();
 
         $this->assertIsJob($job);
-        $this->assertEquals('jid', $job->jid);
+        self::assertEquals('jid', $job->jid);
     }
 
-    /** @test */
-    public function shouldGenerateAJobIdIfNotProvided()
+    /**
+     * @test
+     */
+    public function shouldGenerateAJobIdIfNotProvided(): void
     {
         $queue = new Queue('test-queue', $this->client);
-        $this->assertRegExp('/^[[:xdigit:]]{32}$/', $queue->put('Xxx\Yyy', []));
+        self::assertRegExp('/^[[:xdigit:]]{32}$/', $queue->put('Xxx\Yyy', []));
     }
 
-    /** @test */
-    public function shouldGetNullWithoutAnyJobInTheQueue()
+    /**
+     * @test
+     */
+    public function shouldGetNullWithoutAnyJobInTheQueue(): void
     {
-        $this->assertNull((new Queue('test-queue', $this->client))->pop());
+        self::assertNull((new Queue('test-queue', $this->client))->pop());
     }
 
-    /** @test */
-    public function shouldGetTheQueueLength()
+    /**
+     * @test
+     */
+    public function shouldGetTheQueueLength(): void
     {
         $queue = new Queue('test-queue', $this->client);
 
@@ -48,11 +56,13 @@ class QueueTest extends QlessTestCase
             $queue->put('SampleClass', [], "jid-{$id}");
         }, range(1, 10));
 
-        $this->assertEquals(10, $queue->length());
+        self::assertEquals(10, $queue->length());
     }
 
-    /** @test */
-    public function shouldPopMultipleJobs()
+    /**
+     * @test
+     */
+    public function shouldPopMultipleJobs(): void
     {
         $queue = new Queue('test-queue-2', $this->client);
 
@@ -60,11 +70,13 @@ class QueueTest extends QlessTestCase
             $queue->put('Xxx\Yyy', [], "jid-{$jid}");
         }
 
-        $this->assertCount(10, $queue->pop(null, 10));
+        self::assertCount(10, $queue->pop(null, 10));
     }
 
-    /** @test */
-    public function shouldPutAndPopInTheSameOrder()
+    /**
+     * @test
+     */
+    public function shouldPutAndPopInTheSameOrder(): void
     {
         $queue = new Queue('test-queue', $this->client);
 
@@ -77,37 +89,41 @@ class QueueTest extends QlessTestCase
             return $queue->pop()->jid;
         }, $putJids);
 
-        $this->assertTrue(is_array($putJids));
-        $this->assertTrue(is_array($popJids));
+        self::assertIsArray($putJids);
+        self::assertIsArray($popJids);
 
-        $this->assertCount(10, $putJids);
-        $this->assertCount(10, $popJids);
+        self::assertCount(10, $putJids);
+        self::assertCount(10, $popJids);
 
-        $this->assertEquals($putJids, $popJids);
+        self::assertEquals($putJids, $popJids);
     }
 
-    /** @test */
-    public function shouldPutJobWithPriority()
+    /**
+     * @test
+     */
+    public function shouldPutJobWithPriority(): void
     {
         $queue = new Queue('test-queue', $this->client);
 
         $jid = $queue->put('SampleHandler', [], null, null, null, -10);
         $job = $queue->pop();
 
-        $this->assertEquals($jid, $job->jid);
-        $this->assertEquals(-10, $job->priority);
+        self::assertEquals($jid, $job->jid);
+        self::assertEquals(-10, $job->priority);
 
         $job->complete();
 
         $jid = $queue->put('SampleHandler', []);
         $job = $queue->pop();
 
-        $this->assertEquals($jid, $job->jid);
-        $this->assertEquals(0, $job->priority);
+        self::assertEquals($jid, $job->jid);
+        self::assertEquals(0, $job->priority);
     }
 
-    /** @test */
-    public function shouldPopJobsWithHigherPriorityFirst()
+    /**
+     * @test
+     */
+    public function shouldPopJobsWithHigherPriorityFirst(): void
     {
         $queue = new Queue('test-queue', $this->client);
 
@@ -124,66 +140,68 @@ class QueueTest extends QlessTestCase
             return $queue->pop()->jid;
         }, $putJids);
 
-        $this->assertTrue(is_array($putJids));
-        $this->assertTrue(is_array($popJids));
+        self::assertIsArray($putJids);
+        self::assertIsArray($popJids);
 
-        $this->assertCount(10, $putJids);
-        $this->assertCount(10, $popJids);
+        self::assertCount(10, $putJids);
+        self::assertCount(10, $popJids);
 
-        $this->assertEquals(array_reverse($putJids), $popJids);
+        self::assertEquals(array_reverse($putJids), $popJids);
     }
 
-    /** @test */
-    public function shouldScheduleJob()
+    /**
+     * @test
+     */
+    public function shouldScheduleJob(): void
     {
         $queue = new Queue('test-queue', $this->client);
         $queue->put('MyJobClass', ['foo' => 'bar'], null, 1);
 
-        $this->assertNull($queue->pop());
+        self::assertNull($queue->pop());
 
         sleep(1);
         $this->assertIsJob($queue->pop());
     }
 
-    public function testRunningJobIsReplaced()
+    public function testRunningJobIsReplaced(): void
     {
         $queue = new Queue('test-queue', $this->client);
 
-        $this->assertEquals('jid-1', $queue->put('Xxx\Yyy', [], "jid-1"));
+        self::assertEquals('jid-1', $queue->put('Xxx\Yyy', [], "jid-1"));
 
         $queue->pop();
 
-        $this->assertEquals(
+        self::assertEquals(
             'jid-1',
             $queue->put('Xxx\Yyy', [], "jid-1")
         );
     }
 
-    public function testPausedQueueDoesNotReturnJobs()
+    public function testPausedQueueDoesNotReturnJobs(): void
     {
         $queue = new Queue('test-queue', $this->client);
         $queue->pause();
         $queue->put('Xxx\Yyy', []);
 
-        $this->assertNull($queue->pop());
+        self::assertNull($queue->pop());
     }
 
-    public function testQueueIsNotPausedByDefault()
+    public function testQueueIsNotPausedByDefault(): void
     {
         $queue = new Queue('test-queue', $this->client);
         $val = $queue->isPaused();
-        $this->assertFalse($val);
+        self::assertFalse($val);
     }
 
-    public function testQueueCorrectlyReportsIsPaused()
+    public function testQueueCorrectlyReportsIsPaused(): void
     {
         $queue = new Queue('test-queue', $this->client);
         $queue->pause();
         $val = $queue->isPaused();
-        $this->assertTrue($val);
+        self::assertTrue($val);
     }
 
-    public function testPausedQueueThatIsResumedDoesReturnJobs()
+    public function testPausedQueueThatIsResumedDoesReturnJobs(): void
     {
         $queue = new Queue('test-queue', $this->client);
         $queue->pause();
@@ -193,7 +211,7 @@ class QueueTest extends QlessTestCase
         $this->assertIsJob($queue->pop());
     }
 
-    public function testHighPriorityJobPoppedBeforeLowerPriorityJobs()
+    public function testHighPriorityJobPoppedBeforeLowerPriorityJobs(): void
     {
         $queue = new Queue('test-queue', $this->client);
 
@@ -204,32 +222,32 @@ class QueueTest extends QlessTestCase
         $queue->put('Xxx\Yyy', $data, "jid-high", 0, 0, 1);
         $queue->put('Xxx\Yyy', $data, "jid-3");
 
-        $this->assertEquals('jid-high', $queue->pop()->jid);
+        self::assertEquals('jid-high', $queue->pop()->jid);
     }
 
-    public function testItUsesGlobalHeartbeatValueWhenNotSet()
+    public function testItUsesGlobalHeartbeatValueWhenNotSet(): void
     {
         $this->client->config->set('heartbeat', 10);
         $queue = new Queue('test-queue', $this->client);
 
-        $this->assertSame(10, $queue->heartbeat);
+        self::assertSame(10, $queue->heartbeat);
     }
 
-    public function testItUsesOwnHeartbeatValue()
+    public function testItUsesOwnHeartbeatValue(): void
     {
         $queue = new Queue('test-queue', $this->client);
         $queue->heartbeat = 55;
 
-        $this->assertSame(55, $queue->heartbeat);
+        self::assertSame(55, $queue->heartbeat);
     }
 
-    public function testItCanUnsetHeartbeatValueForQueue()
+    public function testItCanUnsetHeartbeatValueForQueue(): void
     {
         $queue = new Queue('test-queue', $this->client);
         $queue->heartbeat = 10;
-        $this->assertSame(10, $queue->heartbeat);
+        self::assertSame(10, $queue->heartbeat);
         unset($queue->heartbeat);
-        $this->assertSame(60, $queue->heartbeat);
+        self::assertSame(60, $queue->heartbeat);
     }
 
     public function testItCanForgetEmptyQueue()

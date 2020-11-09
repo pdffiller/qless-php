@@ -4,6 +4,7 @@ namespace Qless\Tests\Stubs;
 
 use Qless\Events\User\Job as JobEvent;
 use Qless\Workers\AbstractWorker;
+use RuntimeException;
 
 /**
  * Qless\Tests\Stubs\PerformClassAwareWorker
@@ -15,7 +16,7 @@ class PerformClassAwareWorker extends AbstractWorker
     public function perform(): void
     {
         if (!$this->jobPerformHandler) {
-            throw new \RuntimeException('Job handler not set');
+            throw new RuntimeException('Job handler not set');
         }
 
         $job = $this->reserve();

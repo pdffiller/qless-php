@@ -22,7 +22,7 @@ class EventsDrivenJobHandler implements EventsManagerAwareInterface, PerformAwar
         $_SERVER['caller'] = ['stack' => []];
     }
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->getEventsManager()->attach(
             JobEvent\BeforePerform::getName(),

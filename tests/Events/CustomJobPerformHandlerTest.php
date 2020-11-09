@@ -16,8 +16,10 @@ use Qless\Tests\Stubs\PerformClassAwareWorker;
  */
 class CustomJobPerformHandlerTest extends QlessTestCase
 {
-    /** @test */
-    public function shouldSubscribeOnEvents()
+    /**
+     * @test
+     */
+    public function shouldSubscribeOnEvents(): void
     {
         $jid = (new Queue('test-queue', $this->client))->put(JobHandler::class, []);
 
@@ -36,6 +38,6 @@ class CustomJobPerformHandlerTest extends QlessTestCase
             "{$jid}:job:afterPerform"
         ];
 
-        $this->assertEquals($expected, $_SERVER['caller']['stack']);
+        self::assertEquals($expected, $_SERVER['caller']['stack']);
     }
 }

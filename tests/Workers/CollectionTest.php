@@ -2,6 +2,8 @@
 
 namespace Qless\Tests\Workers;
 
+use Qless\Exceptions\UnknownPropertyException;
+use Qless\Exceptions\UnsupportedFeatureException;
 use Qless\Queues\Queue;
 use Qless\Tests\QlessTestCase;
 use Qless\Workers\Collection;
@@ -13,114 +15,127 @@ use Qless\Workers\Collection;
  */
 class CollectionTest extends QlessTestCase
 {
-    /** @test */
-    public function shouldGetWorkersList()
+    /**
+     * @test
+     */
+    public function shouldGetWorkersList(): void
     {
         $collection = new Collection($this->client);
 
-        $this->assertEquals([], $collection->counts);
+        self::assertEquals([], $collection->counts);
         $this->client->pop('test-queue', 'w1', 1);
-        $this->assertEquals([['stalled' => 0, 'name' => 'w1', 'jobs' => 0]], $collection->counts);
+        self::assertEquals([['stalled' => 0, 'name' => 'w1', 'jobs' => 0]], $collection->counts);
     }
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\UnknownPropertyException
-     * @expectedExceptionMessage Getting unknown property: Qless\Workers\Collection::foo
      */
-    public function shouldThrowExceptionWhenGetInaccessibleProperty()
+    public function shouldThrowExceptionWhenGetInaccessibleProperty(): void
     {
+        $this->expectExceptionMessage("Getting unknown property: Qless\Workers\Collection::foo");
+        $this->expectException(UnknownPropertyException::class);
         $collection = new Collection($this->client);
+        /** @noinspection PhpUndefinedFieldInspection */
         $collection->foo;
     }
 
-    /** @test */
-    public function shouldCheckWhetherAOffsetExists()
+    /**
+     * @test
+     */
+    public function shouldCheckWhetherAOffsetExists(): void
     {
         $collection = new Collection($this->client);
 
-        $this->assertFalse(isset($collection['foo']));
-        $this->assertFalse(isset($collection['bar']));
+        self::assertFalse(isset($collection['foo']));
+        self::assertFalse(isset($collection['bar']));
 
         $this->client->pop('test-queue', 'foo', 1);
 
-        $this->assertTrue(isset($collection['foo']));
-        $this->assertFalse(isset($collection['bar']));
+        self::assertTrue(isset($collection['foo']));
+        self::assertFalse(isset($collection['bar']));
     }
 
-    /** @test */
-    public function shouldGetWorker()
+    /**
+     * @test
+     */
+    public function shouldGetWorker(): void
     {
         $collection = new Collection($this->client);
 
-        $this->assertEquals(['stalled' => [], 'jobs' => []], $collection['w1']);
+        self::assertEquals(['stalled' => [], 'jobs' => []], $collection['w1']);
 
         $queue = new Queue('test-queue', $this->client);
         $queue->put('Sample', [], 'jid');
         $queue->pop('w1');
 
-        $this->assertEquals(['stalled' => [], 'jobs' => ['jid']], $collection['w1']);
+        self::assertEquals(['stalled' => [], 'jobs' => ['jid']], $collection['w1']);
     }
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\UnsupportedFeatureException
-     * @expectedExceptionMessage Deleting a worker is not supported using Workers collection.
      */
-    public function shouldThrowExceptionOnDeletingProperty()
+    public function shouldThrowExceptionOnDeletingProperty(): void
     {
+        $this->expectExceptionMessage("Deleting a worker is not supported using Workers collection.");
+        $this->expectException(UnsupportedFeatureException::class);
         $collection = new Collection($this->client);
         unset($collection['foo']);
     }
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\UnsupportedFeatureException
-     * @expectedExceptionMessage Setting a worker is not supported using Workers collection.
      */
-    public function shouldThrowExceptionOnSettingProperty()
+    public function shouldThrowExceptionOnSettingProperty(): void
     {
+        $this->expectExceptionMessage("Setting a worker is not supported using Workers collection.");
+        $this->expectException(UnsupportedFeatureException::class);
         $collection = new Collection($this->client);
         $collection['foo'] = 'bar';
     }
 
-    /** @test */
-    public function shouldRemoveWorker()
+    /**
+     * @test
+     */
+    public function shouldRemoveWorker(): void
     {
         $collection = new Collection($this->client);
 
-        $this->assertEquals(['stalled' => [], 'jobs' => []], $collection['w1']);
+        self::assertEquals(['stalled' => [], 'jobs' => []], $collection['w1']);
 
         $queue = new Queue('test-queue', $this->client);
         $queue->put('Sample', [], 'jid');
         $queue->pop('w1');
 
-        $this->assertTrue($collection->remove('w1'));
-        $this->assertEmpty($collection->counts);
+        self::assertTrue($collection->remove('w1'));
+        self::assertEmpty($collection->counts);
     }
 
-    /** @test */
-    public function shouldGetWorkersCount()
+    /**
+     * @test
+     */
+    public function shouldGetWorkersCount(): void
     {
         $collection = new Collection($this->client);
 
-        $this->assertEquals(0, $collection->getCount());
+        self::assertEquals(0, $collection->getCount());
 
         $this->startFourWorkers();
 
-        $this->assertEquals(4, $collection->getCount());
+        self::assertEquals(4, $collection->getCount());
     }
 
-    /** @test */
-    public function shouldGetWorkersRange()
+    /**
+     * @test
+     */
+    public function shouldGetWorkersRange(): void
     {
         $collection = new Collection($this->client);
 
-        $this->assertEquals([], $collection->getRange(0, -1));
+        self::assertEquals([], $collection->getRange(0, -1));
 
         $this->startFourWorkers();
 
-        $this->assertEquals(
+        self::assertEquals(
             [
                 ['stalled' => 0, 'name' => 'fourth-worker', 'jobs' => 1],
                 ['stalled' => 0, 'name' => 'third-worker', 'jobs' => 1],
@@ -128,7 +143,7 @@ class CollectionTest extends QlessTestCase
             $collection->getRange(0, 1)
         );
 
-        $this->assertEquals(
+        self::assertEquals(
             [
                 ['stalled' => 0, 'name' => 'second-worker', 'jobs' => 1],
                 ['stalled' => 0, 'name' => 'first-worker', 'jobs' => 1],
@@ -137,7 +152,7 @@ class CollectionTest extends QlessTestCase
         );
     }
 
-    private function startFourWorkers()
+    private function startFourWorkers(): void
     {
         $queue = new Queue('first-queue', $this->client);
         $queue->put('First', [], 'jid1');

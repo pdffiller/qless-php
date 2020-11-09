@@ -8,6 +8,7 @@ use Qless\Tests\QlessTestCase;
 use Qless\Tests\Stubs\JobHandler;
 use Qless\Tests\Stubs\JobSubscriber;
 use Qless\Events\User\Queue\BeforeEnqueue;
+use stdClass;
 
 /**
  * Qless\Tests\Events\JobEventsTest
@@ -27,23 +28,25 @@ class JobEventsTest extends QlessTestCase
     {
         parent::setUp();
 
-        $this->status = new \stdClass();
+        $this->status = new stdClass();
     }
 
-    /** @test */
-    public function shouldSubscribeToAroundPerformEvents()
+    /**
+     * @test
+     */
+    public function shouldSubscribeToAroundPerformEvents(): void
     {
         $this->putJob();
         $this->subscribeToJobEvents();
 
         $job = $this->popJob();
 
-        $this->assertFalse(isset($this->status->triggered));
-        $this->assertEquals([], $job->data->toArray());
+        self::assertFalse(isset($this->status->triggered));
+        self::assertEquals([], $job->data->toArray());
 
         $job->perform();
 
-        $this->assertTrue(isset($this->status->triggered));
+        self::assertTrue(isset($this->status->triggered));
 
         $expected = [
             [
@@ -56,7 +59,7 @@ class JobEventsTest extends QlessTestCase
             ]
         ];
 
-        $this->assertEquals($expected, $this->status->triggered);
+        self::assertEquals($expected, $this->status->triggered);
 
         $expected = [
             'stack' => [
@@ -66,18 +69,20 @@ class JobEventsTest extends QlessTestCase
             ],
         ];
 
-        $this->assertEquals($expected, $job->data->toArray());
+        self::assertEquals($expected, $job->data->toArray());
     }
 
-    /** @test */
-    public function shouldAppendJobDataViaEventSubscriber()
+    /**
+     * @test
+     */
+    public function shouldAppendJobDataViaEventSubscriber(): void
     {
         $this->subscribeToQueueEvents();
         $this->putJob(['payload' => 'data']);
 
         $job = $this->popJob();
 
-        $this->assertEquals(
+        self::assertEquals(
             [
                 'payload' => 'data',
                 'metadata' => [
@@ -95,7 +100,7 @@ class JobEventsTest extends QlessTestCase
         return $queue->pop();
     }
 
-    private function subscribeToQueueEvents()
+    private function subscribeToQueueEvents(): void
     {
         $this->client
             ->getEventsManager()
@@ -107,7 +112,7 @@ class JobEventsTest extends QlessTestCase
             });
     }
 
-    private function subscribeToJobEvents()
+    private function subscribeToJobEvents(): void
     {
         $this->client->getEventsManager()->attach('job', new JobSubscriber($this->status));
     }

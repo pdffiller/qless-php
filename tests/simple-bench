@@ -86,7 +86,7 @@ function histogram($l) {
     $l = array_values(array_filter($l));
 
     foreach (range(0, count($l) - 1) as $i) {
-        fprintf(STDOUT, "\t\t%2d, %10.9f, %d" . PHP_EOL, $i, floatval($l[$i]) / $count, $l[$i]);
+        fprintf(STDOUT, "\t\t%2d, %10.9f, %d" . PHP_EOL, $i, (float) $l[$i] / $count, $l[$i]);
     }
 }
 

@@ -7,6 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Qless\Client;
 use Qless\Jobs\BaseJob;
 use Qless\Tests\Support\RedisAwareTrait;
+use SebastianBergmann\RecursionContext\InvalidArgumentException;
 
 /**
  * Qless\Tests\QlessTestCase
@@ -63,11 +64,11 @@ abstract class QlessTestCase extends TestCase
      * @param string $message
      *
      * @throws ExpectationFailedException
-     * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     public function assertZero($condition, string $message = ''): void
     {
-        $this->assertEquals(0, $condition, $message);
+        self::assertEquals(0, $condition, $message);
     }
 
     /**
@@ -77,10 +78,10 @@ abstract class QlessTestCase extends TestCase
      * @param string $message
      *
      * @throws ExpectationFailedException
-     * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
+     * @throws InvalidArgumentException
      */
-    public function assertIsJob($condition, string $message = '')
+    public function assertIsJob($condition, string $message = ''): void
     {
-        $this->assertInstanceOf(BaseJob::class, $condition, $message);
+        self::assertInstanceOf(BaseJob::class, $condition, $message);
     }
 }

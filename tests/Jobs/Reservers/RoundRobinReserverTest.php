@@ -2,6 +2,7 @@
 
 namespace Qless\Tests\Jobs\Reservers;
 
+use Qless\Exceptions\InvalidArgumentException;
 use Qless\Jobs\BaseJob;
 use Qless\Jobs\Reservers\RoundRobinReserver;
 use Qless\Queues\Queue;
@@ -14,18 +15,22 @@ use Qless\Tests\QlessTestCase;
  */
 class RoundRobinReserverTest extends QlessTestCase
 {
+
     /**
      * @test
-     * @expectedException \Qless\Exceptions\InvalidArgumentException
-     * @expectedExceptionMessage A queues list or a specification to reserve queues are required.
+     *
      */
-    public function shouldThrowExceptionForNoQueuesAndSpec()
+    public function shouldThrowExceptionForNoQueuesAndSpec(): void
     {
+        $this->expectExceptionMessage("A queues list or a specification to reserve queues are required.");
+        $this->expectException(InvalidArgumentException::class);
         new RoundRobinReserver($this->client->queues, []);
     }
 
-    /** @test */
-    public function shouldReserveJob()
+    /**
+     * @test
+     */
+    public function shouldReserveJob(): void
     {
         $queue1 = new Queue('queue-1', $this->client);
         $queue2 = new Queue('queue-2', $this->client);
@@ -36,7 +41,7 @@ class RoundRobinReserverTest extends QlessTestCase
         $class = new class {
             public function perform(BaseJob $job): void
             {
-                $_SERVER['performed'] .= "{$job->data[0]}";
+                $_SERVER['performed'] .= ($job->data[0]);
             }
         };
 
@@ -53,11 +58,12 @@ class RoundRobinReserverTest extends QlessTestCase
         $reserver->reserve()->perform();
         $reserver->reserve()->perform();
 
-        $this->assertEquals('foo-bar-baz', $_SERVER['performed']);
+        self::assertEquals('foo-bar-baz', $_SERVER['performed']);
     }
 
-    /** @test */
-    public function shouldNormalConstructObjectWithQueuesStack()
+    /** @test
+     */
+    public function shouldNormalConstructObjectWithQueuesStack(): void
     {
         $queue1 = new Queue('queue-1', $this->client);
         $queue2 = new Queue('queue-2', $this->client);
@@ -66,22 +72,25 @@ class RoundRobinReserverTest extends QlessTestCase
 
         $reserver = new RoundRobinReserver($this->client->queues, ['queue-1', 'queue-2']);
 
-        $this->assertEquals($stack, $reserver->getQueues());
+        self::assertEquals($stack, $reserver->getQueues());
     }
 
-    /** @test */
-    public function shouldGetDescription()
+    /** @test
+     */
+    public function shouldGetDescription(): void
     {
         $reserver = new RoundRobinReserver($this->client->queues, ['queue-1', 'queue-2']);
 
-        $this->assertEquals('queue-1, queue-2 (round robin)', $reserver->getDescription());
+        self::assertEquals('queue-1, queue-2 (round robin)', $reserver->getDescription());
     }
 
-    /** @test */
-    public function shouldGetNullOnEmptyQueue()
+    /**
+     * @test
+     */
+    public function shouldGetNullOnEmptyQueue(): void
     {
         $reserver = new RoundRobinReserver($this->client->queues, ['queue-1', 'queue-2']);
 
-        $this->assertNull($reserver->reserve());
+        self::assertNull($reserver->reserve());
     }
 }

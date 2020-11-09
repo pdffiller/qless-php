@@ -3,6 +3,8 @@
 namespace Qless\Tests;
 
 use Qless\Config;
+use Qless\Exceptions\QlessException;
+use Qless\Exceptions\UnknownPropertyException;
 use Qless\Jobs\Collection as JobsCollection;
 use Qless\LuaScript;
 use Qless\Queues\Queue;
@@ -20,28 +22,32 @@ class ClientTest extends QlessTestCase
 {
     use RedisAwareTrait;
 
-    /** @test */
-    public function shouldGetEmptyWorkersList()
+    /**
+     * @test
+     */
+    public function shouldGetEmptyWorkersList(): void
     {
-        $this->assertEquals('{}', $this->client->call('workers'));
+        self::assertEquals('{}', $this->client->call('workers'));
     }
 
-    /** @test */
-    public function shouldGetAWorkersList()
+    /**
+     * @test
+     */
+    public function shouldGetAWorkersList(): void
     {
         $this->client->pop('test-queue', 'w1', 1);
 
-        $this->assertEquals(
+        self::assertEquals(
             '[{"stalled":0,"name":"w1","jobs":0}]',
             $this->client->call('workers')
         );
 
-        $this->assertEquals(
+        self::assertEquals(
             '{"stalled":{},"jobs":{}}',
             $this->client->call('workers', 'w1')
         );
 
-        $this->assertEquals(
+        self::assertEquals(
             '{"stalled":{},"jobs":{}}',
             $this->client->call('workers', 'w2')
         );
@@ -54,16 +60,18 @@ class ClientTest extends QlessTestCase
 [{"stalled":0,"name":"w4","jobs":0},{"stalled":0,"name":"w3","jobs":0},{"stalled":0,"name":"w1","jobs":0}]
 WRK;
 
-        $this->assertEquals(
+        self::assertEquals(
             $expected,
             $this->client->call('workers')
         );
     }
 
-    /** @test */
-    public function shouldCreateASubscriber()
+    /**
+     * @test
+     */
+    public function shouldCreateASubscriber(): void
     {
-        $this->assertInstanceOf(WatchdogSubscriber::class, $this->client->createSubscriber([]));
+        self::assertInstanceOf(WatchdogSubscriber::class, $this->client->createSubscriber([]));
     }
 
     /**
@@ -73,12 +81,12 @@ WRK;
      * @param string $property
      * @param $expected
      */
-    public function shouldReturnExpectedValueOnMagicGet(string $property, $expected)
+    public function shouldReturnExpectedValueOnMagicGet(string $property, $expected): void
     {
-        $this->assertInstanceOf($expected, $this->client->{$property});
+        self::assertInstanceOf($expected, $this->client->{$property});
     }
 
-    public function inaccessiblePropertyDataProvider()
+    public function inaccessiblePropertyDataProvider(): array
     {
         return [
             ['jobs',    JobsCollection::class],
@@ -91,11 +99,11 @@ WRK;
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\UnknownPropertyException
-     * @expectedExceptionMessage Getting unknown property: Qless\Client::foo
      */
-    public function shouldThrowExceptionWhenGetInaccessibleProperty()
+    public function shouldThrowExceptionWhenGetInaccessibleProperty(): void
     {
+        $this->expectExceptionMessage("Getting unknown property: Qless\Client::foo");
+        $this->expectException(UnknownPropertyException::class);
         $this->client->foo;
     }
 
@@ -110,7 +118,7 @@ WRK;
      * @param int    $expires
      * @param array  $data
      *
-     * @throws \Qless\Exceptions\QlessException
+     * @throws QlessException
      */
     public function shouldGetTheNextJobOnTheDesiredQueue(
         string $qName,
@@ -119,54 +127,56 @@ WRK;
         string $cName,
         int $expires,
         array $data
-    ) {
+    ): void {
         $queue = new Queue($qName, $this->client);
         $queue->put($cName, $data, $jName);
 
         $actual = $this->client->pop($qName, $wName, 1);
 
-        $this->assertTrue(is_string($actual));
-        $this->assertNotEmpty($actual);
+        self::assertIsString($actual);
+        self::assertNotEmpty($actual);
 
         $actual = json_decode($actual, true);
 
-        $this->assertTrue(is_array($actual));
-        $this->assertCount(1, $actual);
+        self::assertIsArray($actual);
+        self::assertCount(1, $actual);
 
         $actual = $actual[0];
 
-        $this->assertArrayHasKey('expires', $actual);
+        self::assertArrayHasKey('expires', $actual);
 
-        $this->assertGreaterThan($expires, $actual['expires']);
-        $this->assertLessThan($expires + 2, $actual['expires']);
+        self::assertGreaterThan($expires, $actual['expires']);
+        self::assertLessThan($expires + 2, $actual['expires']);
 
         $heartbeat = 60;
-        $realDate  = intval($actual['expires'] - $heartbeat);
+        $realDate  = (int) ($actual['expires'] - $heartbeat);
 
         $actual['expires'] = $expires;
 
-        $this->assertEquals(
+        self::assertEquals(
             $this->getExpectedJob($jName, $cName, $qName, $wName, $expires, $realDate, $data),
             [$actual]
         );
     }
 
-    /** @test */
-    public function shouldReturnEmptyStringWhenJobDoesNotExist()
+    /**
+     * @test
+     */
+    public function shouldReturnEmptyStringWhenJobDoesNotExist(): void
     {
-        $this->assertEquals('{}', $this->client->pop('non-existent-queue', 'worker-1', 1));
+        self::assertEquals('{}', $this->client->pop('non-existent-queue', 'worker-1', 1));
     }
 
-    public function popDataProvider()
+    public function popDataProvider(): array
     {
         return [
             [
-                'test-queue-' . mt_rand(1, 99),
-                'job-' . mt_rand(1, 99),
-                'worker-' . mt_rand(1, 99),
+                'test-queue-' . random_int(1, 99),
+                'job-' . random_int(1, 99),
+                'worker-' . random_int(1, 99),
                 'Xxx\Yyy',
                 time() + 60,
-                ['performMethod' => 'myPerformMethod', 'payload' => 'message-' . mt_rand(1, 99)],
+                ['performMethod' => 'myPerformMethod', 'payload' => 'message-' . random_int(1, 99)],
             ]
         ];
     }
@@ -179,7 +189,7 @@ WRK;
         int $expires,
         int $realDate,
         array $data
-    ) {
+    ): array {
         return [
             [
                 'jid'          => $jName,
@@ -215,86 +225,94 @@ WRK;
         ];
     }
 
-    /** @test */
-    public function shouldRetrieveStats()
+    /**
+     * @test
+     */
+    public function shouldRetrieveStats(): void
     {
         $queue = new Queue('some-queue', $this->client);
         $queue->put('Xxx\Yyy', ['some-data']);
 
         $stats = $this->client->stats('some-queue', time());
 
-        $this->assertNotEmpty($stats);
-        $this->assertTrue(is_string($stats));
+        self::assertNotEmpty($stats);
+        self::assertIsString($stats);
 
         $stats = json_decode($stats, true);
 
-        $this->assertArrayHasKey('failed', $stats);
-        $this->assertArrayHasKey('retries', $stats);
-        $this->assertArrayHasKey('failures', $stats);
-        $this->assertArrayHasKey('wait', $stats);
-        $this->assertArrayHasKey('run', $stats);
+        self::assertArrayHasKey('failed', $stats);
+        self::assertArrayHasKey('retries', $stats);
+        self::assertArrayHasKey('failures', $stats);
+        self::assertArrayHasKey('wait', $stats);
+        self::assertArrayHasKey('run', $stats);
 
-        $this->assertCount(5, $stats);
+        self::assertCount(5, $stats);
 
-        $this->assertTrue(is_array($stats['wait']));
-        $this->assertCount(4, $stats['wait']);
+        self::assertIsArray($stats['wait']);
+        self::assertCount(4, $stats['wait']);
 
-        $this->assertTrue(is_array($stats['run']));
-        $this->assertCount(4, $stats['run']);
+        self::assertIsArray($stats['run']);
+        self::assertCount(4, $stats['run']);
     }
 
-    /** @test */
-    public function shouldPauseTheQueue()
+    /**
+     * @test
+     */
+    public function shouldPauseTheQueue(): void
     {
         $queue = new Queue('some-queue', $this->client);
         $queue->put('Xxx\Yyy', ['some-data'], 'job-42');
 
-        $this->assertFalse($queue->isPaused());
+        self::assertFalse($queue->isPaused());
 
         $this->client->pause('some-queue');
-        $this->assertTrue($queue->isPaused());
+        self::assertTrue($queue->isPaused());
 
         $this->client->unpause('some-queue');
-        $this->assertFalse($queue->isPaused());
+        self::assertFalse($queue->isPaused());
     }
 
-    /** @test */
-    public function shouldGetJob()
+    /**
+     * @test
+     */
+    public function shouldGetJob(): void
     {
         $queue = new Queue('some-queue', $this->client);
         $queue->put('Xxx\Yyy', ['some-data'], 'job-42');
 
         $actual = $this->client->get('job-42');
 
-        $this->assertNotEmpty($actual);
-        $this->assertJson($actual);
+        self::assertNotEmpty($actual);
+        self::assertJson($actual);
 
-        $this->assertNull($this->client->get('job-43'));
-    }
-
-    /** @test */
-    public function shouldCorrectDetermineLength()
-    {
-        $queue = new Queue('some-queue-2', $this->client);
-
-        $this->assertEquals(0, $this->client->length('some-queue-2'));
-
-        $queue->put('Xxx\Yyy', ['some-data'], 'job-42');
-        $this->assertEquals(1, $this->client->length('some-queue-2'));
-
-        $queue->pop()->complete();
-
-        $this->assertEquals(0, $this->client->length('some-queue-2'));
-        $this->assertEquals(0, $this->client->length('some-queue-3'));
+        self::assertNull($this->client->get('job-43'));
     }
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\QlessException
-     * @expectedExceptionMessage Job job-42 is not currently running: waiting
      */
-    public function shouldThrowExpectedExceptionOnCompleteRunningJob()
+    public function shouldCorrectDetermineLength(): void
     {
+        $queue = new Queue('some-queue-2', $this->client);
+
+        self::assertEquals(0, $this->client->length('some-queue-2'));
+
+        $queue->put('Xxx\Yyy', ['some-data'], 'job-42');
+        self::assertEquals(1, $this->client->length('some-queue-2'));
+
+        $queue->pop()->complete();
+
+        self::assertEquals(0, $this->client->length('some-queue-2'));
+        self::assertEquals(0, $this->client->length('some-queue-3'));
+    }
+
+    /**
+     * @test
+     */
+    public function shouldThrowExpectedExceptionOnCompleteRunningJob(): void
+    {
+        $this->expectExceptionMessage("Job job-42 is not currently running: waiting");
+        $this->expectException(QlessException::class);
         $queue = new Queue('some-queue', $this->client);
         $queue->put('Xxx\Yyy', ['some-data'], 'job-42');
 
@@ -303,11 +321,11 @@ WRK;
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\QlessException
-     * @expectedExceptionMessage Job job-43 does not exist
      */
-    public function shouldThrowExpectedExceptionOnCompleteNonExistingJob()
+    public function shouldThrowExpectedExceptionOnCompleteNonExistingJob(): void
     {
+        $this->expectExceptionMessage("Job job-43 does not exist");
+        $this->expectException(QlessException::class);
         $queue = new Queue('some-queue', $this->client);
         $queue->put('Xxx\Yyy', ['some-data'], 'job-43');
 
@@ -316,22 +334,26 @@ WRK;
         $this->client->complete('job-43', 'worker-1', 'some-queue', '{}');
     }
 
-    /** @test */
-    public function shouldCompleteJob()
+    /**
+     * @test
+     */
+    public function shouldCompleteJob(): void
     {
         $queue = new Queue('some-queue', $this->client);
         $queue->put('Xxx\Yyy', ['some-data'], 'job-44');
 
         $this->client->pop('some-queue', 'worker-1', 1);
 
-        $this->assertEquals(
+        self::assertEquals(
             'complete',
             $this->client->complete('job-44', 'worker-1', 'some-queue', '{}')
         );
     }
 
-    /** @test */
-    public function shouldReturnAListOfQueues()
+    /**
+     * @test
+     */
+    public function shouldReturnAListOfQueues(): void
     {
         $this->client->flush();
 
@@ -340,8 +362,8 @@ WRK;
 
         $queue = $this->client->queues('some-queue-1');
 
-        $this->assertJson($queue);
-        $this->assertNotEmpty($queue);
+        self::assertJson($queue);
+        self::assertNotEmpty($queue);
 
         $expected1 = [
             'paused'    => false,
@@ -354,7 +376,7 @@ WRK;
             'scheduled' => 0,
         ];
 
-        $this->assertEquals($expected1, json_decode($queue, true));
+        self::assertEquals($expected1, json_decode($queue, true));
 
         $expected2 = [
             'paused'    => false,
@@ -369,10 +391,10 @@ WRK;
 
         $queue = $this->client->queues('some-queue-100');
 
-        $this->assertJson($queue);
-        $this->assertNotEmpty($queue);
+        self::assertJson($queue);
+        self::assertNotEmpty($queue);
 
-        $this->assertEquals($expected2, json_decode($queue, true));
+        self::assertEquals($expected2, json_decode($queue, true));
 
         $expected3 = [
             [
@@ -397,21 +419,23 @@ WRK;
             ],
         ];
 
-        $this->assertEquals($expected3, json_decode($this->client->queues(), true));
+        self::assertEquals($expected3, json_decode($this->client->queues(), true));
     }
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\QlessException
-     * @expectedExceptionMessage Job foo does not exist
      */
-    public function shouldThrowExceptionWhenTimeoutFail()
+    public function shouldThrowExceptionWhenTimeoutFail(): void
     {
+        $this->expectExceptionMessage("Job foo does not exist");
+        $this->expectException(QlessException::class);
         $this->client->timeout('foo');
     }
 
-    /** @test */
-    public function shouldGetWaitingList()
+    /**
+     * @test
+     */
+    public function shouldGetWaitingList(): void
     {
         $queueName = uniqid('waiting_test_', false);
         $jobId = uniqid('job-', false);
@@ -419,11 +443,13 @@ WRK;
         (new Queue($queueName, $this->client))->put('Xxx\Yyy', ['test' => 'some-data'], $jobId);
         $jobIds = $this->client->jobs('waiting', $queueName);
 
-        $this->assertEquals($jobId, array_pop($jobIds));
+        self::assertEquals($jobId, array_pop($jobIds));
     }
 
-    /** @test */
-    public function shouldGetCompletedList()
+    /**
+     * @test
+     */
+    public function shouldGetCompletedList(): void
     {
         $queueName = uniqid('completed_test_', false);
         $jobId = uniqid('job-', false);
@@ -438,6 +464,6 @@ WRK;
 
         $jobIds = $this->client->jobs('complete', $queueName);
 
-        $this->assertEquals($jobId, array_pop($jobIds));
+        self::assertEquals($jobId, array_pop($jobIds));
     }
 }
