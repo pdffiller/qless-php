@@ -4,6 +4,7 @@ namespace Qless\Queues;
 
 use ArrayAccess;
 use Qless\Client;
+use Qless\Exceptions\QlessException;
 use Qless\Exceptions\UnsupportedFeatureException;
 use Qless\Support\PropertyAccessor;
 
@@ -136,10 +137,10 @@ class Collection implements ArrayAccess
     /**
      * {@inheritdoc}
      *
-     * @throws UnsupportedFeatureException
+     * @throws QlessException If the queue is not empty.
      */
     public function offsetUnset($offset)
     {
-        throw new UnsupportedFeatureException('Deleting a queue is not supported using Queues collection.');
+        $this[$offset]->forget();
     }
 }

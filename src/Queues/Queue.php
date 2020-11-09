@@ -382,6 +382,23 @@ class Queue implements EventsManagerAwareInterface
     }
 
     /**
+     * Forget this queue, removing it from the backing store
+     *
+     * @param bool $force Force the queue to be removed, ignoring any jobs held in the queue.
+     *
+     * @return void
+     * @throws QlessException If the queue is not empty.
+     */
+    public function forget(bool $force = false): void
+    {
+        if (!$force && $this->length() > 0) {
+            throw new QlessException('Queue is not empty');
+        }
+
+        $this->client->call('queue.forget', $this->name);
+    }
+
+    /**
      * Pauses this queue so it will not process any more Jobs.
      *
      * @return void

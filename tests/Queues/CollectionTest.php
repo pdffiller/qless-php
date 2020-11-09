@@ -2,6 +2,7 @@
 
 namespace Qless\Tests\Queues;
 
+use Qless\Exceptions\QlessException;
 use Qless\Queues\Queue;
 use Qless\Tests\QlessTestCase;
 use Qless\Queues\Collection;
@@ -72,13 +73,32 @@ class CollectionTest extends QlessTestCase
 
     /**
      * @test
-     * @expectedException \Qless\Exceptions\UnsupportedFeatureException
-     * @expectedExceptionMessage Deleting a queue is not supported using Queues collection.
      */
-    public function shouldThrowExceptionOnDeletingProperty()
+    public function shouldThrowExceptionOnDeletingPropertyWhenNotEmpty(): void
     {
+        $this->expectException(QlessException::class);
+        $this->expectExceptionMessage('Queue is not empty');
+        $data = ['performMethod' => 'myPerformMethod', 'payload' => 'otherData'];
+
         $collection = new Collection($this->client);
+        $collection['foo']->put('Xxx\Yyy', $data, "jid-1");
         unset($collection['foo']);
+    }
+
+    /**
+     * @test
+     */
+    public function shouldRemoveEmptyQueueOnDeletingProperty(): void
+    {
+        $data = ["performMethod" => 'myPerformMethod', "payload" => "otherData"];
+
+        $collection = new Collection($this->client);
+        $queue = $collection['test-queue'];
+        $queue->put('Xxx\Yyy', $data, "jid-1");
+        self::assertTrue(isset($collection['test-queue']));
+        $queue->cancel("jid-1");
+        unset($collection['test-queue']);
+        self::assertFalse(isset($this->client->queues['test-queue']));
     }
 
     /**
