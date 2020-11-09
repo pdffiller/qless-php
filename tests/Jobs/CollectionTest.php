@@ -13,7 +13,9 @@ use Qless\Tests\QlessTestCase;
  */
 class CollectionTest extends QlessTestCase
 {
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetTaggedJobs(): void
     {
         self::assertEquals([], $this->client->jobs->tagged('foo'));
@@ -31,7 +33,9 @@ class CollectionTest extends QlessTestCase
         self::assertEquals(['jid-3', 'jid-4'], $this->client->jobs->tagged('foo', 1, 2));
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetTrackedJobs(): void
     {
         $this->client->queues['foo']->put('Foo', [], 'jid-1');
@@ -49,7 +53,9 @@ class CollectionTest extends QlessTestCase
         self::assertCount(0, $this->client->jobs->tracked());
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldReturnNullForInvalidJobID(): void
     {
         self::assertNull($this->client->jobs['xxx']);
@@ -61,7 +67,9 @@ class CollectionTest extends QlessTestCase
         $this->assertIsJob($this->client->jobs->get('xxx'));
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldDetectIfJobExist(): void
     {
         $jid = substr(md5(uniqid(microtime(true), true)), 0, 16);
@@ -73,8 +81,6 @@ class CollectionTest extends QlessTestCase
 
     /**
      * @test
-     *
-     *
      */
     public function shouldThrowExceptionOnDeletingProperty(): void
     {
@@ -85,8 +91,6 @@ class CollectionTest extends QlessTestCase
 
     /**
      * @test
-     *
-     *
      */
     public function shouldThrowExceptionOnSettingProperty(): void
     {
@@ -104,7 +108,9 @@ class CollectionTest extends QlessTestCase
         self::assertEquals('j-1', $j->jid);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldReturnExistingJobsKeyedByJobIdentifier(): void
     {
         self::assertEquals([], $this->client->jobs->multiget([]));
@@ -129,7 +135,9 @@ class CollectionTest extends QlessTestCase
         self::assertEmpty($j);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldReturnCompletedJobs(): void
     {
         $this->put('j-1');
@@ -146,7 +154,9 @@ class CollectionTest extends QlessTestCase
         self::assertEquals(['j-1', 'j-2'], $j);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldReturnFailedJobs(): void
     {
         $this->put('j-1');

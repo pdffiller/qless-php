@@ -16,7 +16,9 @@ class WatchdogSubscriberTest extends QlessTestCase
 {
     use RedisAwareTrait;
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldReceiveExpectedMessages(): void
     {
         $system = $this->createMock(SystemFacade::class);

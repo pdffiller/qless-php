@@ -27,7 +27,9 @@ class RoundRobinReserverTest extends QlessTestCase
         new RoundRobinReserver($this->client->queues, []);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldReserveJob(): void
     {
         $queue1 = new Queue('queue-1', $this->client);
@@ -82,7 +84,9 @@ class RoundRobinReserverTest extends QlessTestCase
         self::assertEquals('queue-1, queue-2 (round robin)', $reserver->getDescription());
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetNullOnEmptyQueue(): void
     {
         $reserver = new RoundRobinReserver($this->client->queues, ['queue-1', 'queue-2']);

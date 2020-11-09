@@ -9,13 +9,17 @@ namespace Qless\Tests;
  */
 class ConfigTest extends QlessTestCase
 {
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetDefaultHeartbeat(): void
     {
         self::assertEquals(60, $this->client->config->get('heartbeat'));
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldSetConfigValue(): void
     {
         $key = md5(uniqid(microtime(true), true));
@@ -25,21 +29,27 @@ class ConfigTest extends QlessTestCase
         self::assertEquals($value, $this->client->config->get($key));
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetDefaultValue(): void
     {
         self::assertEquals(null, $this->client->config->get('foo.bar.baz'));
         self::assertEquals('xyz', $this->client->config->get('foo.bar.baz', 'xyz'));
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetDefaultGracePeriod(): void
     {
         $val = $this->client->config->get('grace-period');
         self::assertEquals(10, $val);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldSetHeartbeat(): void
     {
         $this->client->config->set('heartbeat', 10);
@@ -47,7 +57,9 @@ class ConfigTest extends QlessTestCase
         self::assertEquals(10, $val);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldClearTheConfigValue(): void
     {
         $key = md5(uniqid(microtime(true), true));

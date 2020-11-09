@@ -41,7 +41,9 @@ class ManagerTest extends QlessTestCase
      */
     protected $process;
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldNotAcceptOtherEvents(): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -50,49 +52,65 @@ class ManagerTest extends QlessTestCase
         });
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldReceiveCanceledEvent(): void
     {
         $this->shouldReceivedExpectedMessageType(Manager::EVENT_CANCELED);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldReceiveCompletedEvent(): void
     {
         $this->shouldReceivedExpectedMessageType(Manager::EVENT_COMPLETED);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldReceiveFailedEvent(): void
     {
         $this->shouldReceivedExpectedMessageType(Manager::EVENT_FAILED);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldReceivePoppedEvent(): void
     {
         $this->shouldReceivedExpectedMessageType(Manager::EVENT_POPPED);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldReceiveStalledEvent(): void
     {
         $this->shouldReceivedExpectedMessageType(Manager::EVENT_STALLED);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldReceivePutEvent(): void
     {
         $this->shouldReceivedExpectedMessageType(Manager::EVENT_PUT);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldReceiveTrackEvent(): void
     {
         $this->shouldReceivedExpectedMessageType(Manager::EVENT_TRACK);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldReceiveUntrackEvent(): void
     {
         $this->shouldReceivedExpectedMessageType(Manager::EVENT_UNTRACK);

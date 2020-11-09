@@ -12,7 +12,9 @@ class TopicTest extends QlessTestCase
 {
     use RedisAwareTrait;
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetQueuesBySubscription(): void
     {
         $queues = [];
@@ -41,7 +43,9 @@ class TopicTest extends QlessTestCase
         $queues[2]->unsubscribe('big.*.apples');
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldQueueSubscribe(): void
     {
         $queues = [];
@@ -72,7 +76,9 @@ class TopicTest extends QlessTestCase
         self::assertEquals('Xxx\Yyy', $job5->getKlass());
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldQueueUnSubscribe(): void
     {
         $queues = [];

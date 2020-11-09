@@ -31,7 +31,9 @@ class JobEventsTest extends QlessTestCase
         $this->status = new stdClass();
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldSubscribeToAroundPerformEvents(): void
     {
         $this->putJob();
@@ -70,7 +72,9 @@ class JobEventsTest extends QlessTestCase
         self::assertEquals($expected, $job->data->toArray());
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldAppendJobDataViaEventSubscriber(): void
     {
         $this->subscribeToQueueEvents();

@@ -18,8 +18,6 @@ class OrderedReserverTest extends QlessTestCase
 {
     /**
      * @test
-     *
-     *
      */
     public function shouldThrowExceptionForNoQueuesAndSpec(): void
     {
@@ -28,7 +26,9 @@ class OrderedReserverTest extends QlessTestCase
         new OrderedReserver($this->client->queues, []);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldReserveJob(): void
     {
         $queue1 = new Queue('queue-1', $this->client);
@@ -54,7 +54,9 @@ class OrderedReserverTest extends QlessTestCase
         self::assertEquals('queue-1:foo', $_SERVER['performed']);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetQueues(): void
     {
         $reserver = new OrderedReserver($this->client->queues, ['queue-1', 'queue-2']);
@@ -65,7 +67,9 @@ class OrderedReserverTest extends QlessTestCase
         );
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetDescription(): void
     {
         $reserver = new OrderedReserver($this->client->queues, ['queue-1', 'queue-2']);
@@ -73,7 +77,9 @@ class OrderedReserverTest extends QlessTestCase
         self::assertEquals('queue-1, queue-2 (ordered)', $reserver->getDescription());
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetNullOnEmptyQueue(): void
     {
         $reserver = new OrderedReserver($this->client->queues, ['queue-1', 'queue-2']);
@@ -81,7 +87,9 @@ class OrderedReserverTest extends QlessTestCase
         self::assertNull($reserver->reserve());
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldSortQueues(): void
     {
         $reserver = new OrderedReserver($this->client->queues, ['queue-7', 'queue-20', 'queue-0']);
@@ -92,7 +100,9 @@ class OrderedReserverTest extends QlessTestCase
         self::assertEquals('queue-0, queue-7, queue-20 (ordered)', $reserver->getDescription());
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldReserveQueuesBySpec(): void
     {
         $spec = 'eu-(west|east)-\d+';

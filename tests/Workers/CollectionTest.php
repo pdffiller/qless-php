@@ -15,7 +15,9 @@ use Qless\Workers\Collection;
  */
 class CollectionTest extends QlessTestCase
 {
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetWorkersList(): void
     {
         $collection = new Collection($this->client);
@@ -27,8 +29,6 @@ class CollectionTest extends QlessTestCase
 
     /**
      * @test
-     *
-     *
      */
     public function shouldThrowExceptionWhenGetInaccessibleProperty(): void
     {
@@ -39,7 +39,9 @@ class CollectionTest extends QlessTestCase
         $collection->foo;
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldCheckWhetherAOffsetExists(): void
     {
         $collection = new Collection($this->client);
@@ -53,7 +55,9 @@ class CollectionTest extends QlessTestCase
         self::assertFalse(isset($collection['bar']));
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetWorker(): void
     {
         $collection = new Collection($this->client);
@@ -69,8 +73,6 @@ class CollectionTest extends QlessTestCase
 
     /**
      * @test
-     *
-     *
      */
     public function shouldThrowExceptionOnDeletingProperty(): void
     {
@@ -82,8 +84,6 @@ class CollectionTest extends QlessTestCase
 
     /**
      * @test
-     *
-     *
      */
     public function shouldThrowExceptionOnSettingProperty(): void
     {
@@ -93,7 +93,9 @@ class CollectionTest extends QlessTestCase
         $collection['foo'] = 'bar';
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldRemoveWorker(): void
     {
         $collection = new Collection($this->client);
@@ -108,7 +110,9 @@ class CollectionTest extends QlessTestCase
         self::assertEmpty($collection->counts);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetWorkersCount(): void
     {
         $collection = new Collection($this->client);
@@ -120,7 +124,9 @@ class CollectionTest extends QlessTestCase
         self::assertEquals(4, $collection->getCount());
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetWorkersRange(): void
     {
         $collection = new Collection($this->client);

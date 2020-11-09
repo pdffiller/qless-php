@@ -55,8 +55,6 @@ class LuaScriptTest extends QlessTestCase
 
     /**
      * @test
-     *
-     *
      */
     public function shouldThrowExpectedExceptionWhenLuaCoreDoesNotExists(): void {
         $this->expectExceptionMessageRegExp('~Unable to locate qless-core file at path: .*~');

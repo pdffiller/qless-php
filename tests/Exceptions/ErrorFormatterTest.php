@@ -27,7 +27,9 @@ class ErrorFormatterTest extends QlessTestCase
         self::assertEquals($expected, $handler->constant($value));
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldReturnNullOnNonExistentConstant(): void
     {
         $handler = new ErrorFormatter();

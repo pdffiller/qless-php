@@ -17,8 +17,6 @@ class PriorityReserverTest extends QlessTestCase
 {
     /**
      * @test
-     *
-     *
      */
     public function shouldThrowExceptionForNoQueuesAndSpec(): void
     {
@@ -27,7 +25,9 @@ class PriorityReserverTest extends QlessTestCase
         new PriorityReserver($this->client->queues, []);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldReserveJob(): void
     {
         $queue1 = new Queue('queue-1-', $this->client);
@@ -70,7 +70,9 @@ class PriorityReserverTest extends QlessTestCase
         self::assertEquals('queue-2-queue-1-queue-4-queue-3', $_SERVER['performed']);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldNormalConstructObjectWithQueuesStack(): void
     {
         $queue1 = new Queue('queue-1', $this->client);
@@ -83,7 +85,9 @@ class PriorityReserverTest extends QlessTestCase
         self::assertEquals($stack, $reserver->getQueues());
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetDescription(): void
     {
         $reserver = new PriorityReserver($this->client->queues, ['queue-1', 'queue-2']);
@@ -91,7 +95,9 @@ class PriorityReserverTest extends QlessTestCase
         self::assertEquals('queue-1, queue-2 (priority)', $reserver->getDescription());
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldOrderByPriorityQueuesBeforeWork(): void
     {
         $reserver = new PriorityReserver(
@@ -116,7 +122,9 @@ class PriorityReserverTest extends QlessTestCase
         self::assertContainsOnly(Queue::class, $reserver->getQueues());
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldRangeByPriorityQueuesBeforeWork(): void
     {
         $reserver = new PriorityReserver(
@@ -139,7 +147,9 @@ class PriorityReserverTest extends QlessTestCase
         self::assertEquals('queue-2', (string) $queues[0]);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldByMinPriorityQueuesBeforeWork(): void
     {
         $reserver = new PriorityReserver(
@@ -162,7 +172,9 @@ class PriorityReserverTest extends QlessTestCase
         self::assertEquals('queue-2', (string) $queues[1]);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldByMaxPriorityQueuesBeforeWork(): void
     {
         $reserver = new PriorityReserver(

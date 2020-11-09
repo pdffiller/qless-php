@@ -22,8 +22,6 @@ class BaseJobTest extends QlessTestCase
 {
     /**
      * @test
-     *
-     *
      */
     public function shouldThrowExceptionWhenSettingUnknownProperty(): void
     {
@@ -38,7 +36,9 @@ class BaseJobTest extends QlessTestCase
         $job->foo = 'bar';
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldChangeJobPriority(): void
     {
         $queue = $this->client->queues['test-queue'];
@@ -55,7 +55,9 @@ class BaseJobTest extends QlessTestCase
         self::assertEquals(18, $job->priority);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldChangeFailedFlag(): void
     {
         $queue = $this->client->queues['test-queue'];
@@ -74,7 +76,9 @@ class BaseJobTest extends QlessTestCase
         self::assertEquals(true, $job->failed);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldRequeueJob(): void
     {
         $queue = $this->client->queues['test-queue'];
@@ -90,8 +94,6 @@ class BaseJobTest extends QlessTestCase
 
     /**
      * @test
-     *
-     *
      */
     public function shouldThrowsExpectedExceptionWhenGetInstanceWithNonExistentClass(): void
     {
@@ -112,8 +114,6 @@ class BaseJobTest extends QlessTestCase
 
     /**
      * @test
-     *
-     *
      */
     public function shouldThrowsExpectedExceptionWhenGetInstanceWithNonExistentPerformMethod(): void
     {
@@ -156,7 +156,9 @@ class BaseJobTest extends QlessTestCase
         $job->getInstance();
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetWorkerInstance(): void
     {
         $queue = $this->client->queues['test-queue'];
@@ -172,7 +174,9 @@ class BaseJobTest extends QlessTestCase
         self::assertInstanceOf(JobHandler::class, $job->getInstance());
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetWorkerInstanceWithDefaultPerformMethod(): void
     {
         $queue = $this->client->queues['test-queue'];
@@ -210,8 +214,6 @@ class BaseJobTest extends QlessTestCase
 
     /**
      * @test
-     *
-     *
      */
     public function shouldThrowLostLockExceptionWhenHeartbeatFail(): void
     {
@@ -223,7 +225,9 @@ class BaseJobTest extends QlessTestCase
         $this->client->jobs['jid']->heartbeat();
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldProvideAccessToHeartbeat(): void
     {
         $this->client->config->set('heartbeat', 10);
@@ -238,7 +242,9 @@ class BaseJobTest extends QlessTestCase
         self::assertTrue($job->ttl() > $before);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldStartTrackingJob(): void
     {
         $this->client->queues['foo']->put('Foo', [], 'jid');
@@ -251,7 +257,9 @@ class BaseJobTest extends QlessTestCase
         self::assertFalse($this->client->jobs['jid']->tracked);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldRemoveOldTrackingJob(): void
     {
         $lifetime = 1;
@@ -281,8 +289,6 @@ class BaseJobTest extends QlessTestCase
 
     /**
      * @test
-     *
-     *
      */
     public function shouldThrowExceptionWhenTimeoutFail(): void
     {
@@ -292,7 +298,9 @@ class BaseJobTest extends QlessTestCase
         $this->client->jobs['jid']->timeout();
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldTimeoutJob(): void
     {
         $this->client->queues['foo']->put('Foo', [], 'jid');
@@ -306,7 +314,9 @@ class BaseJobTest extends QlessTestCase
         self::assertEquals('timed-out', $job->history[2]['what']);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetCorrectTtl(): void
     {
         $queue = $this->client->queues['test-queue'];
@@ -315,7 +325,9 @@ class BaseJobTest extends QlessTestCase
         self::assertGreaterThan(55, $queue->pop()->ttl());
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldCompleteJob(): void
     {
         $queue = $this->client->queues['test-queue'];
@@ -324,7 +336,9 @@ class BaseJobTest extends QlessTestCase
         self::assertEquals('complete', $queue->pop()->complete());
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldCompleteJobAndPutItInAnotherQueue(): void
     {
         $queue1 = $this->client->queues['test-queue-1'];
@@ -351,7 +365,9 @@ class BaseJobTest extends QlessTestCase
         self::assertEquals(1, $job2->data['size']);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldNotPopFailedJob(): void
     {
         $queue = $this->client->queues['test-queue'];
@@ -409,7 +425,9 @@ class BaseJobTest extends QlessTestCase
         self::assertNull($queue->pop());
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldCancelRemovesJob(): void
     {
         $queue = $this->client->queues['test-queue'];
@@ -420,7 +438,9 @@ class BaseJobTest extends QlessTestCase
         self::assertEquals(['jid-1'], $queue->pop()->cancel());
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldCancelRemovesJobWithDependents(): void
     {
         $queue = $this->client->queues['test-queue'];
@@ -433,8 +453,6 @@ class BaseJobTest extends QlessTestCase
 
     /**
      * @test
-     *
-     *
      */
     public function shouldThrowExceptionOnCancelWithoutDependencies(): void
     {
@@ -448,7 +466,9 @@ class BaseJobTest extends QlessTestCase
         $queue->pop()->cancel();
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldUnlockJobWhenDependenciesIsCompleted(): void
     {
         $queue = $this->client->queues['test-queue'];
@@ -510,8 +530,6 @@ class BaseJobTest extends QlessTestCase
 
     /**
      * @test
-     *
-     *
      */
     public function shouldThrowExceptionWhenGetInaccessibleProperty(): void
     {
@@ -526,7 +544,9 @@ class BaseJobTest extends QlessTestCase
         $job->foo;
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldTreatedLikeAString(): void
     {
         $queue = $this->client->queues['test-queue'];
@@ -540,7 +560,9 @@ class BaseJobTest extends QlessTestCase
         self::assertEquals($expected, $job->__toString());
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldProvideAccessToTheDataUsingArrayNotation(): void
     {
         $queue = $this->client->queues['test-queue'];

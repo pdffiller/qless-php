@@ -44,7 +44,9 @@ class RecurringJobTest extends QlessTestCase
         ];
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldChangeJobPriority(): void
     {
         $this->client->queues['test-queue']->recur('Foo', [], null, null, 'jid');
@@ -54,7 +56,9 @@ class RecurringJobTest extends QlessTestCase
         self::assertEquals(10, $this->client->jobs['jid']->priority);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldChangeJobInterval(): void
     {
         $this->client->queues['test-queue']->recur('Foo', [], null, null, 'jid');
@@ -64,7 +68,9 @@ class RecurringJobTest extends QlessTestCase
         self::assertEquals(10, $this->client->jobs['jid']->interval);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldChangeJobRetries(): void
     {
         $this->client->queues['test-queue']->recur('Foo', [], null, null, 'jid', 2);
@@ -74,7 +80,9 @@ class RecurringJobTest extends QlessTestCase
         self::assertEquals(10, $this->client->jobs['jid']->retries);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldChangeJobData(): void
     {
         $this->client->queues['test-queue']->recur('Foo', [], null, null, 'jid');
@@ -105,7 +113,9 @@ class RecurringJobTest extends QlessTestCase
         $this->client->jobs['jid']->data = 10;
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldChangeJobKlass(): void
     {
         $this->client->queues['test-queue']->recur('Foo', [], null, null, 'jid');
@@ -115,7 +125,9 @@ class RecurringJobTest extends QlessTestCase
         self::assertEquals('Bar', $this->client->jobs['jid']->klass);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldChangeJobBacklog(): void
     {
         $this->client->queues['test-queue']->recur('Foo', [], null, null, 'jid');
@@ -125,7 +137,9 @@ class RecurringJobTest extends QlessTestCase
         self::assertEquals(10, $this->client->jobs['jid']->backlog);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldRequeueJob(): void
     {
         $this->client->queues['test-queue']->recur('Foo', [], null, null, 'jid');
@@ -135,7 +149,9 @@ class RecurringJobTest extends QlessTestCase
         self::assertEquals('bar', $this->client->jobs['jid']->queue);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldCancelJob(): void
     {
         $this->client->queues['test-queue']->recur('Foo', [], null, null, 'jid');
@@ -144,7 +160,9 @@ class RecurringJobTest extends QlessTestCase
         self::assertNull($this->client->jobs['jid']);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldSetTags(): void
     {
         $this->client->queues['test-queue']->recur('Foo', [], null, null, 'jid');

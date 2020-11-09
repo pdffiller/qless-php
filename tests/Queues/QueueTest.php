@@ -13,7 +13,9 @@ use Qless\Queues\Queue;
  */
 class QueueTest extends QlessTestCase
 {
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldPutAndPopAJob(): void
     {
         $queue = new Queue('test-queue', $this->client);
@@ -26,20 +28,26 @@ class QueueTest extends QlessTestCase
         self::assertEquals('jid', $job->jid);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGenerateAJobIdIfNotProvided(): void
     {
         $queue = new Queue('test-queue', $this->client);
         self::assertRegExp('/^[[:xdigit:]]{32}$/', $queue->put('Xxx\Yyy', []));
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetNullWithoutAnyJobInTheQueue(): void
     {
         self::assertNull((new Queue('test-queue', $this->client))->pop());
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetTheQueueLength(): void
     {
         $queue = new Queue('test-queue', $this->client);
@@ -51,7 +59,9 @@ class QueueTest extends QlessTestCase
         self::assertEquals(10, $queue->length());
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldPopMultipleJobs(): void
     {
         $queue = new Queue('test-queue-2', $this->client);
@@ -63,7 +73,9 @@ class QueueTest extends QlessTestCase
         self::assertCount(10, $queue->pop(null, 10));
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldPutAndPopInTheSameOrder(): void
     {
         $queue = new Queue('test-queue', $this->client);
@@ -86,7 +98,9 @@ class QueueTest extends QlessTestCase
         self::assertEquals($putJids, $popJids);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldPutJobWithPriority(): void
     {
         $queue = new Queue('test-queue', $this->client);
@@ -106,7 +120,9 @@ class QueueTest extends QlessTestCase
         self::assertEquals(0, $job->priority);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldPopJobsWithHigherPriorityFirst(): void
     {
         $queue = new Queue('test-queue', $this->client);
@@ -133,7 +149,9 @@ class QueueTest extends QlessTestCase
         self::assertEquals(array_reverse($putJids), $popJids);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldScheduleJob(): void
     {
         $queue = new Queue('test-queue', $this->client);

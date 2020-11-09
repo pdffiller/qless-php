@@ -22,13 +22,17 @@ class ClientTest extends QlessTestCase
 {
     use RedisAwareTrait;
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetEmptyWorkersList(): void
     {
         self::assertEquals('{}', $this->client->call('workers'));
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetAWorkersList(): void
     {
         $this->client->pop('test-queue', 'w1', 1);
@@ -62,7 +66,9 @@ WRK;
         );
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldCreateASubscriber(): void
     {
         self::assertInstanceOf(WatchdogSubscriber::class, $this->client->createSubscriber([]));
@@ -93,8 +99,6 @@ WRK;
 
     /**
      * @test
-     *
-     *
      */
     public function shouldThrowExceptionWhenGetInaccessibleProperty(): void
     {
@@ -155,7 +159,9 @@ WRK;
         );
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldReturnEmptyStringWhenJobDoesNotExist(): void
     {
         self::assertEquals('{}', $this->client->pop('non-existent-queue', 'worker-1', 1));
@@ -219,7 +225,9 @@ WRK;
         ];
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldRetrieveStats(): void
     {
         $queue = new Queue('some-queue', $this->client);
@@ -247,7 +255,9 @@ WRK;
         self::assertCount(4, $stats['run']);
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldPauseTheQueue(): void
     {
         $queue = new Queue('some-queue', $this->client);
@@ -262,7 +272,9 @@ WRK;
         self::assertFalse($queue->isPaused());
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetJob(): void
     {
         $queue = new Queue('some-queue', $this->client);
@@ -276,7 +288,9 @@ WRK;
         self::assertNull($this->client->get('job-43'));
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldCorrectDetermineLength(): void
     {
         $queue = new Queue('some-queue-2', $this->client);
@@ -294,8 +308,6 @@ WRK;
 
     /**
      * @test
-     *
-     *
      */
     public function shouldThrowExpectedExceptionOnCompleteRunningJob(): void
     {
@@ -309,8 +321,6 @@ WRK;
 
     /**
      * @test
-     *
-     *
      */
     public function shouldThrowExpectedExceptionOnCompleteNonExistingJob(): void
     {
@@ -324,7 +334,9 @@ WRK;
         $this->client->complete('job-43', 'worker-1', 'some-queue', '{}');
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldCompleteJob(): void
     {
         $queue = new Queue('some-queue', $this->client);
@@ -338,7 +350,9 @@ WRK;
         );
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldReturnAListOfQueues(): void
     {
         $this->client->flush();
@@ -410,8 +424,6 @@ WRK;
 
     /**
      * @test
-     *
-     *
      */
     public function shouldThrowExceptionWhenTimeoutFail(): void
     {
@@ -420,7 +432,9 @@ WRK;
         $this->client->timeout('foo');
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetWaitingList(): void
     {
         $queueName = uniqid('waiting_test_', false);
@@ -432,7 +446,9 @@ WRK;
         self::assertEquals($jobId, array_pop($jobIds));
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldGetCompletedList(): void
     {
         $queueName = uniqid('completed_test_', false);

@@ -48,7 +48,9 @@ class ShuffledRoundRobinReserverTest extends RoundRobinReserverTest
         self::assertEquals('queue-1, queue-2 (shuffled round robin)', $reserver->getDescription());
     }
 
-    /** @test */
+    /**
+     * @test
+     */
     public function shouldShuffleQueuesBeforeWork(): void
     {
         $reserver = new ShuffledRoundRobinReserver(
