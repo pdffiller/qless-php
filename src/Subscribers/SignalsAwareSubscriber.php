@@ -79,8 +79,6 @@ class SignalsAwareSubscriber
 
                 switch ($signal) {
                     case SIGTERM:
-                        $worker->shutDownNow();
-                        break;
                     case SIGINT:
                         $worker->shutDownNow();
                         break;

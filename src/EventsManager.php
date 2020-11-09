@@ -28,7 +28,7 @@ final class EventsManager
      */
     public function attach(string $eventName, $handler, int $priority = 100): void
     {
-        if (is_object($handler) == false && is_callable($handler) == false) {
+        if (is_object($handler) === false && is_callable($handler) === false) {
             throw new InvalidArgumentException(
                 sprintf('Event handler must be either an object or a callable %s given.', gettype($handler))
             );
@@ -46,7 +46,7 @@ final class EventsManager
      */
     protected function fetchQueue(string $eventName): SplPriorityQueue
     {
-        if (isset($this->events[$eventName]) == false) {
+        if (isset($this->events[$eventName]) === false) {
             $this->events[$eventName] = $this->createQueue();
         }
 
@@ -77,13 +77,13 @@ final class EventsManager
      */
     public function detach(string $eventName, $handler): void
     {
-        if (is_object($handler) == false && is_callable($handler) == false) {
+        if (is_object($handler) === false && is_callable($handler) === false) {
             throw new InvalidArgumentException(
                 sprintf('Event handler must be either an object or a callable %s given.', gettype($handler))
             );
         }
 
-        if (isset($this->events[$eventName]) == false) {
+        if (isset($this->events[$eventName]) === false) {
             return;
         }
 

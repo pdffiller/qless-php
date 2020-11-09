@@ -132,8 +132,6 @@ final class ForkingWorker extends AbstractWorker
     }
 
     /**
-     * {@inheritdoc}
-     *
      * @return void
      */
     public function perform(): void
@@ -153,7 +151,7 @@ final class ForkingWorker extends AbstractWorker
             $this->stopWhenTimeLimitIsReached();
 
             // Don't wait on any processes if we're already in shutdown mode.
-            if ($this->isShuttingDown() == true) {
+            if ($this->isShuttingDown() === true) {
                 break;
             }
 
@@ -174,7 +172,7 @@ final class ForkingWorker extends AbstractWorker
 
             $job = $this->reserve();
             if ($job === null) {
-                if ($this->interval == 0) {
+                if ($this->interval === 0) {
                     break;
                 }
                 usleep($this->interval * 1000000);
@@ -268,7 +266,7 @@ final class ForkingWorker extends AbstractWorker
     {
         $pair = [];
 
-        $domain = (strtoupper(substr(PHP_OS, 0, 3)) == 'WIN' ? AF_INET : AF_UNIX);
+        $domain = (stripos(PHP_OS, 'WIN') === 0 ? AF_INET : AF_UNIX);
         if (\socket_create_pair($domain, SOCK_STREAM, 0, $pair) === false) {
             $error = socket_strerror(socket_last_error($pair[0] ?? null));
 
@@ -340,7 +338,7 @@ final class ForkingWorker extends AbstractWorker
                 return;
             }
 
-            if (is_resource($socket) == false) {
+            if (is_resource($socket) === false) {
                 $this->logger->warning(
                     '{type}: supplied resource is not a valid socket resource. Skip sending error to master: {message}',
                     $this->logContext + ['message' => $error['message']]
@@ -405,21 +403,21 @@ final class ForkingWorker extends AbstractWorker
     {
         switch ($childType) {
             case self::PROCESS_TYPE_JOB:
-                $childType = 'Child';
+                $childTypeName = 'Child';
                 break;
             default:
-                $childType = 'Watchdog';
+                $childTypeName = 'Watchdog';
         }
 
         if ($exitStatus === 0) {
-            $this->logger->debug("{type}: {$childType} process exited successfully", $this->logContext);
+            $this->logger->debug("{type}: {$childTypeName} process exited successfully", $this->logContext);
             return false;
         }
 
         $error = $this->readErrorFromSocket($this->sockets[$pid]);
-        $jobFailedMessage = $error ?: "{$childType} process failed with status: {$exitStatus}";
+        $jobFailedMessage = $error ?: "{$childTypeName} process failed with status: {$exitStatus}";
 
-        $this->logger->error("{type}: fatal error in {$childType} process: {$jobFailedMessage}", $this->logContext);
+        $this->logger->error("{type}: fatal error in {$childTypeName} process: {$jobFailedMessage}", $this->logContext);
 
         return $jobFailedMessage;
     }
@@ -436,7 +434,7 @@ final class ForkingWorker extends AbstractWorker
             return;
         }
 
-        if ($this->job instanceof BaseJob == false) {
+        if ($this->job instanceof BaseJob === false) {
             /**
              * @todo
              * Something went strange.
@@ -510,7 +508,7 @@ final class ForkingWorker extends AbstractWorker
      */
     private function childProcessStatus(int $status): bool
     {
-        if ($this->childPID == null) {
+        if ($this->childPID === null) {
             return false;
         }
 
@@ -545,14 +543,14 @@ final class ForkingWorker extends AbstractWorker
         }
     }
 
-    private function childProcessUnhandledSignal($sig)
+    private function childProcessUnhandledSignal($sig): void
     {
         $context = $this->logContext;
         $context['signal'] = SignalHandler::sigName($sig);
         $this->logger->notice("{type}: child terminated with unhandled signal '{signal}'", $context);
     }
 
-    private function childKill()
+    private function childKill(): void
     {
         if ($this->childPID === null) {
             return;
@@ -560,7 +558,7 @@ final class ForkingWorker extends AbstractWorker
 
         $this->logger->info('{type}: killing child at {child}', ['child' => $this->childPID, 'type' => $this->who]);
 
-        if (pcntl_waitpid($this->childPID, $status, WNOHANG) != -1) {
+        if (pcntl_waitpid($this->childPID, $status, WNOHANG) !== -1) {
             posix_kill($this->childPID, SIGKILL);
         }
 
@@ -580,7 +578,7 @@ final class ForkingWorker extends AbstractWorker
             return;
         }
 
-        if ($this->job instanceof BaseJob == false) {
+        if ($this->job instanceof BaseJob === false) {
             /**
              * @todo
              * Something went strange.
@@ -648,7 +646,7 @@ final class ForkingWorker extends AbstractWorker
         }
     }
 
-    private function watchdogKill()
+    private function watchdogKill(): void
     {
         if ($this->watchdogPID) {
             $this->logger->info(
@@ -656,7 +654,7 @@ final class ForkingWorker extends AbstractWorker
                 ['child' => $this->watchdogPID, 'type' => $this->who]
             );
 
-            if (pcntl_waitpid($this->watchdogPID, $status, WNOHANG) != -1) {
+            if (pcntl_waitpid($this->watchdogPID, $status, WNOHANG) !== -1) {
                 posix_kill($this->watchdogPID, SIGKILL);
             }
             $this->watchdogPID = null;

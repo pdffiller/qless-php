@@ -104,8 +104,8 @@ abstract class AbstractJob implements EventsManagerAwareInterface
         $this->setKlass($data['klass']);
         $this->setQueue($data['queue']);
 
-        $this->setRetries((int) $data['retries'] ?? 0);
-        $this->setPriority((int) $data['priority'] ?? 0);
+        $this->setRetries((int) ($data['retries'] ?? 0));
+        $this->setPriority((int) ($data['priority'] ?? 0));
         $this->setTags($data['tags'] ?? []);
 
         $this->setData(new JobData(json_decode($data['data'], true) ?: []));
@@ -239,7 +239,7 @@ abstract class AbstractJob implements EventsManagerAwareInterface
      */
     public function setData($data): void
     {
-        if (is_array($data) == false && is_string($data) == false && $data instanceof JobData == false) {
+        if (is_array($data) === false && is_string($data) === false && $data instanceof JobData === false) {
             throw new InvalidArgumentException(
                 sprintf(
                     "Job's data must be either an array, or a JobData instance, or a JSON string, %s given.",
@@ -248,9 +248,9 @@ abstract class AbstractJob implements EventsManagerAwareInterface
             );
         }
 
-        if (is_array($data) == true) {
+        if (is_array($data) === true) {
             $data =  new JobData($data);
-        } elseif (is_string($data) == true) {
+        } elseif (is_string($data) === true) {
             // Assume this is JSON
             $data =  new JobData(json_decode($data, true));
         }

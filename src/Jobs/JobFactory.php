@@ -26,11 +26,11 @@ final class JobFactory implements EventsManagerAwareInterface
      */
     public function create(string $className, string $performMethod = 'perform')
     {
-        if (class_exists($className) == false) {
+        if (class_exists($className) === false) {
             throw new InvalidArgumentException("Could not find job class {$className}.");
         }
 
-        if (method_exists($className, $performMethod) == false) {
+        if (method_exists($className, $performMethod) === false) {
             throw new InvalidArgumentException(
                 sprintf(
                     'Job class "%s" does not contain perform method "%s".',

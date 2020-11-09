@@ -75,10 +75,10 @@ class Collection implements ArrayAccess
      */
     public function fromSubscriptions(string $topic): array
     {
-        $response = [];
+        $responses = [];
 
         if (empty($topic)) {
-            return $response;
+            return $responses;
         }
 
         $subscriptions = $this->client->call('subscription', 'default', 'all', $topic);
@@ -87,11 +87,11 @@ class Collection implements ArrayAccess
         foreach ($subscriptions as $subscription => $queues) {
             $topicPattern = str_replace(['.', '*', '#'], ['\.', '[a-zA-z0-9^.]{1,}', '.*'], $subscription);
             if (preg_match("/^$topicPattern$/", $topic)) {
-                $response = array_merge($response, $queues);
+                $responses[] = $queues;
             }
         }
 
-        return array_unique($response);
+        return array_unique(array_merge([], ...$responses));
     }
 
     /**

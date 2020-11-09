@@ -50,13 +50,13 @@ trait PropertyAccessor
      * Do not call this method directly as it is a PHP magic method that
      * will be implicitly called when executing `$object->property = $value;`.
      *
-     * @param string $name  The property name or the event name
-     * @param mixed  $value The property value
+     * @param string $name The property name or the event name
+     * @param mixed $value The property value
      *
      * @throws UnknownPropertyException if the property is not defined
      * @throws InvalidCallException if the property is read-only
      */
-    public function __set($name, $value)
+    public function __set(string $name, $value)
     {
         $getter = 'get' . ucfirst($name);
         $setter = 'set' . ucfirst($name);

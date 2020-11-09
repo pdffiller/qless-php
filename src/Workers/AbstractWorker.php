@@ -151,8 +151,6 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     }
 
     /**
-     * {@inheritdoc}
-     *
      * @param  LoggerInterface $logger
      * @return void
      */
@@ -308,7 +306,6 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     public function killChildren(): void
     {
         // nothing to do
-        return;
     }
     // @codeCoverageIgnoreEnd
 }

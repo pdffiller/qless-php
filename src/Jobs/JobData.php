@@ -29,7 +29,7 @@ final class JobData extends ArrayObject implements JsonSerializable
      *
      * @return array
      */
-    public function toArray()
+    public function toArray(): array
     {
         return $this->getArrayCopy();
     }
