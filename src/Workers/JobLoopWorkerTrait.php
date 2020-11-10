@@ -39,7 +39,7 @@ trait JobLoopWorkerTrait
     {
         declare(ticks=1);
 
-        $this->endTime = $this->timeLimitInSeconds ? $this->timeLimitInSeconds + microtime(true) : null;
+        $this->startTimer();
         $this->getLogger()->info($logPrefix . 'worker started', $this->logContext);
 
         $reserver->beforeWork();

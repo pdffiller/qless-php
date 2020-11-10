@@ -68,6 +68,14 @@ trait ResourceLimitedWorkerTrait
     }
 
     /**
+     * Start the timer for time limited workers
+     */
+    protected function startTimer(): void
+    {
+        $this->endTime = $this->timeLimitInSeconds ? $this->timeLimitInSeconds + microtime(true) : null;
+    }
+
+    /**
      * Stop when job count is exceeded
      *
      * @return void
