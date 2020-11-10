@@ -27,6 +27,11 @@ class SignalsAwareSubscriber
         $this->logger = $logger;
     }
 
+    public function __destruct()
+    {
+        $this->clearSignalHandler();
+    }
+
     public function setLogger(LoggerInterface $logger): void
     {
         $this->logger = $logger;

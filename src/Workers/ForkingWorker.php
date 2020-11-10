@@ -4,9 +4,7 @@ namespace Qless\Workers;
 
 use Closure;
 use Psr\Log\LoggerInterface;
-use Qless\Events\User\Job as JobEvent;
 use Qless\Events\User\Worker as WorkerEvent;
-use Qless\EventsManagerAwareInterface;
 use Qless\Exceptions\ErrorFormatter;
 use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\BaseJob;
@@ -21,7 +19,7 @@ use Qless\Subscribers\WatchdogSubscriber;
  *
  * @package Qless\Workers
  */
-final class ForkingWorker extends AbstractWorker
+final class ForkingWorker extends AbstractWorker implements ResourceLimitedWorkerInterface
 {
     use JobLoopWorkerTrait;
 
@@ -55,8 +53,6 @@ final class ForkingWorker extends AbstractWorker
 
     /**
      * {@inheritdoc}
-     *
-     * @return void
      */
     public function onConstruct(): void
     {
@@ -66,9 +62,6 @@ final class ForkingWorker extends AbstractWorker
 
     /**
      * {@inheritdoc}
-     *
-     * @param  LoggerInterface $logger
-     * @return void
      */
     public function setLogger(LoggerInterface $logger): void
     {
@@ -79,8 +72,6 @@ final class ForkingWorker extends AbstractWorker
 
     /**
      * {@inheritdoc}
-     *
-     * @return void
      */
     public function perform(): void
     {
@@ -90,6 +81,9 @@ final class ForkingWorker extends AbstractWorker
         $this->doJobLoop($this->client, $this->reserver, '{type}: ');
     }
 
+    /**
+     * {@inheritdoc}
+     */
     protected function performWork(BaseJob $job): void
     {
         // fork processes
@@ -140,7 +134,6 @@ final class ForkingWorker extends AbstractWorker
         }
         $this->sockets  = [];
 
-
         $old = error_reporting();
         error_reporting($old & ~E_NOTICE);
         try {
@@ -163,7 +156,7 @@ final class ForkingWorker extends AbstractWorker
     {
         $pair = [];
 
-        $domain = (stripos(PHP_OS, 'WIN') === 0 ? AF_INET : AF_UNIX);
+        $domain = stripos(PHP_OS, 'WIN') === 0 ? AF_INET : AF_UNIX;
         if (\socket_create_pair($domain, SOCK_STREAM, 0, $pair) === false) {
             $error = socket_strerror(socket_last_error($pair[0] ?? null));
 

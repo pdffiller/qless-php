@@ -93,6 +93,9 @@ trait JobLoopWorkerTrait
         $client->getWorkers()->remove($this->getName());
     }
 
+    /**
+     * @param BaseJob $job
+     */
     abstract protected function performWork(BaseJob $job): void;
 
 }

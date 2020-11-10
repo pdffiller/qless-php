@@ -12,7 +12,7 @@ use Qless\Subscribers\SignalsAwareSubscriber;
  *
  * @package Qless\Workers
  */
-final class SimpleWorker extends AbstractWorker
+final class SimpleWorker extends AbstractWorker implements ResourceLimitedWorkerInterface
 {
     use JobLoopWorkerTrait;
 
@@ -21,8 +21,6 @@ final class SimpleWorker extends AbstractWorker
 
     /**
      * {@inheritdoc}
-     *
-     * @return void
      */
     public function onConstruct(): void
     {
@@ -31,10 +29,7 @@ final class SimpleWorker extends AbstractWorker
     }
 
     /**
-     * {@inheritdoc}
-     *
-     * @param  LoggerInterface $logger
-     * @return void
+     * @inheritdoc
      */
     public function setLogger(LoggerInterface $logger): void
     {
@@ -44,7 +39,7 @@ final class SimpleWorker extends AbstractWorker
     }
 
     /**
-     * @param BaseJob $job
+     * @inheritdoc
      */
     protected function performWork(BaseJob $job): void
     {
@@ -60,5 +55,14 @@ final class SimpleWorker extends AbstractWorker
     {
         $this->logContext = ['type' => $this->name];
         $this->doJobLoop($this->client, $this->reserver, '{type}: ');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function killChildren(): void
+    {
+        unset($this->signalsSubscriber);
+        posix_kill(\posix_getpid(), SIGINT);
     }
 }

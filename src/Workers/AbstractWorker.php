@@ -162,6 +162,8 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     }
 
     /**
+     * {@inheritdoc}
+     *
      * @param  LoggerInterface $logger
      * @return void
      */
@@ -249,8 +251,6 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
 
     /**
      * {@inheritdoc}
-     *
-     * @return void
      */
     final public function run(): void
     {
@@ -259,12 +259,15 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
         $this->perform();
     }
 
+    /**
+     * Start doing work.
+     *
+     * @return void
+     */
     abstract public function perform(): void;
 
     /**
      * {@inheritdoc}
-     *
-     * @return void
      */
     public function shutdown(): void
     {
@@ -275,8 +278,6 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
 
     /**
      * {@inheritdoc}
-     *
-     * @return void
      */
     public function pauseProcessing(): void
     {
@@ -286,8 +287,6 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
 
     /**
      * {@inheritdoc}
-     *
-     * @return void
      */
     public function unPauseProcessing(): void
     {
@@ -295,14 +294,16 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
         $this->paused = false;
     }
 
-    public function isPaused(): bool {
+    /**
+     * @return bool
+     */
+    public function isPaused(): bool
+    {
         return $this->paused;
     }
 
     /**
      * {@inheritdoc}
-     *
-     * @return void
      */
     public function shutdownNow(): void
     {
@@ -316,7 +317,6 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
      * {@inheritdoc}
      *
      * @codeCoverageIgnoreStart
-     * @return void
      */
     public function killChildren(): void
     {
