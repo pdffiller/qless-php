@@ -242,6 +242,38 @@ class BaseJobTest extends QlessTestCase
         self::assertTrue($job->ttl() > $before);
     }
 
+   /**
+     * @test
+     */
+    public function shouldDefaultToCurrentDataDuringHeartbeat(): void
+    {
+        $jobData = ['foo' => 'bar'];
+        $this->client->queues['foo']->put('Foo', $jobData, 'jid');
+
+        $job = $this->client->queues['foo']->pop();
+
+        $job->heartbeat();
+
+        self::assertSame($jobData, $this->client->jobs['jid']->getData()->toArray());
+    }
+
+   /**
+     * @test
+     */
+    public function shouldRecordNewDataDuringHeartbeat(): void
+    {
+        $jobData = ['foo' => 'bar'];
+        $this->client->queues['foo']->put('Foo', $jobData, 'jid');
+
+        $job = $this->client->queues['foo']->pop();
+
+        $jobData2 = ['baz' => 'foo-bar'];
+
+        $job->heartbeat($jobData2);
+
+        self::assertSame($jobData2, $this->client->jobs['jid']->getData()->toArray());
+    }
+
     /**
      * @test
      */
