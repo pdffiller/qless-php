@@ -387,13 +387,13 @@ class BaseJob extends AbstractJob implements \ArrayAccess
      *
      * @throws LostLockException
      */
-    public function heartbeat(array $data = []): float
+    public function heartbeat(?array $data = null): float
     {
         try {
             $this->expires = $this->client->heartbeat(
                 $this->jid,
                 $this->worker,
-                json_encode($data, JSON_UNESCAPED_SLASHES)
+                json_encode(\is_array($data) ? $data : $this->data, JSON_UNESCAPED_SLASHES)
             );
         } catch (QlessException $e) {
             throw new LostLockException($e->getMessage(), 'Heartbeat', $this->jid, $e->getCode(), $e);
