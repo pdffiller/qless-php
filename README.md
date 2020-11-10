@@ -316,7 +316,7 @@ The following POSIX-compliant signals are supported in the parent process:
 - `INT`:  Shutdown immediately, stop processing jobs
 - `QUIT`: Shutdown after the current job has finished processing
 - `USR1`: Forking Worker: Kill the forked child immediately, continue processing jobs
-- `USR1`: Non-Forking Worker: Restart itself immediately, continue processing jobs
+- `USR1`: Non-Forking Worker: Abandon progress on the current job immediately, continue processing jobs
 - `USR2`: Don't process any new jobs, and dump the current backtrace
 - `CONT`: Start processing jobs again after a `USR2`
 
@@ -326,7 +326,10 @@ When using the Forking Worker, you should send these to the master process, not 
 
 The child process supports the `USR2` signal, which causes it to dump its current backtrace.
 
-
+When using the Non-Forking worker, proper handling of `USR1` signals requires that Exceptions of class
+`\Qless\Exceptions\SimpleWorkerContinuationException` are **not** caught. If your Job class, or JobPerformer
+catches all Exceptions or all Throwables, you will need to re-throw instances of
+`\Qless\Exceptions\SimpleWorkerContinuationException`, or `USR1` signals will be ignored.
 
 #### Job Reservers
 

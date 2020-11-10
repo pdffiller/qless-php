@@ -9,6 +9,7 @@ use Qless\Events\User\Job as JobEvent;
 use Qless\Events\User\Worker as WorkerEvent;
 use Qless\EventsManagerAwareInterface;
 use Qless\EventsManagerAwareTrait;
+use Qless\Exceptions\SimpleWorkerContinuationException;
 use Qless\Jobs\BaseJob;
 use Qless\Jobs\PerformAwareInterface;
 use Qless\Jobs\Reservers\ReserverInterface;
@@ -328,6 +329,8 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
      * @param BaseJob $job
      * @param array $loggerContext
      * @param string $loggerPrefix
+     *
+     * @throws SimpleWorkerContinuationException
      */
     protected function performJob(BaseJob $job, array $loggerContext, ?string $loggerPrefix = null): void
     {
@@ -353,6 +356,9 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
             }
 
             $this->logger->notice($loggerPrefix . 'job {job} has finished', $loggerContext);
+        }
+        catch (SimpleWorkerContinuationException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             $loggerContext['stack'] = $e->getMessage();
             $this->logger->critical($loggerPrefix . 'job {job} has failed {stack}', $loggerContext);
