@@ -63,6 +63,10 @@ final class SimpleWorker extends AbstractWorker implements ResourceLimitedWorker
     public function killChildren(): void
     {
         unset($this->signalsSubscriber);
-        posix_kill(\posix_getpid(), SIGINT);
+        if ($this->isShuttingDown()) {
+            posix_kill(\posix_getpid(), SIGINT);
+        } else {
+            pcntl_exec($_SERVER['_'], $_SERVER['argv']);
+        }
     }
 }

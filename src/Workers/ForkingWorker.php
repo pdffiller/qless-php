@@ -522,8 +522,6 @@ final class ForkingWorker extends AbstractWorker implements ResourceLimitedWorke
 
     /**
      * {@inheritdoc}
-     *
-     * @return void
      */
     public function shutdown(): void
     {
@@ -539,8 +537,6 @@ final class ForkingWorker extends AbstractWorker implements ResourceLimitedWorke
 
     /**
      * {@inheritdoc}
-     *
-     * @return void
      */
     public function killChildren(): void
     {

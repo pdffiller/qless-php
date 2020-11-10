@@ -29,6 +29,7 @@ Documentation is borrowed from [seomoz/qless](https://github.com/seomoz/qless).
   - [Running A Worker](#running-a-worker)
     - [Forking Worker](#forking-worker)
     - [Non-Forking Worker](#non-forking-worker)
+    - [Signal Handling](#signal-handling)
     - [Job Reservers](#job-reservers)
     - [Custom Job Handler](#custom-job-handler)
   - [Web Interface](#web-interface)
@@ -281,26 +282,11 @@ $worker = new ForkingWorker($reserver, $client);
 $worker->run();
 ```
 
-The following POSIX-compliant signals are supported in the parent process:
-
-- `TERM`: Shutdown immediately, stop processing jobs
-- `INT`:  Shutdown immediately, stop processing jobs
-- `QUIT`: Shutdown after the current job has finished processing
-- `USR1`: Kill the forked child immediately, continue processing jobs
-- `USR2`: Don't process any new jobs, and dump the current backtrace
-- `CONT`: Start processing jobs again after a `USR2`
-
-_For detailed info regarding the signals refer to [`signal(7)`](http://man7.org/linux/man-pages/man7/signal.7.html)._
-
-You should send these to the master process, not the child.
-
-The child process supports the `USR2` signal, which causes it to dump its current backtrace.
-
 #### Non-Forking Worker
 
-In addition to the forking worker, Qless PHP includes a non-forking worker. Coupled with an external service manager
-such as systemd, this can alleviate a number of issues related to external connectsions (such as to Redis or MySQL)
-from worker processes. Usage is very similar to the forking worker:
+Qless PHP also includes a non-forking worker. This can alleviate a number of issues related to external connections (such as to Redis or MySQL)
+from worker processes, and may give better results when using an external service manager such as systemd to manage the worker process.
+Usage is very similar to the forking worker:
 
  ```php
  // The autoloader line is omitted
@@ -321,6 +307,26 @@ from worker processes. Usage is very similar to the forking worker:
  $worker = new SimpleWorker($reserver, $client);
  $worker->run();
  ```
+
+#### Signal Handling
+
+The following POSIX-compliant signals are supported in the parent process:
+
+- `TERM`: Shutdown immediately, stop processing jobs
+- `INT`:  Shutdown immediately, stop processing jobs
+- `QUIT`: Shutdown after the current job has finished processing
+- `USR1`: Forking Worker: Kill the forked child immediately, continue processing jobs
+- `USR1`: Non-Forking Worker: Restart itself immediately, continue processing jobs
+- `USR2`: Don't process any new jobs, and dump the current backtrace
+- `CONT`: Start processing jobs again after a `USR2`
+
+_For detailed info regarding the signals refer to [`signal(7)`](http://man7.org/linux/man-pages/man7/signal.7.html)._
+
+When using the Forking Worker, you should send these to the master process, not the child.
+
+The child process supports the `USR2` signal, which causes it to dump its current backtrace.
+
+
 
 #### Job Reservers
 
