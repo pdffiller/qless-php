@@ -29,7 +29,7 @@ Documentation is borrowed from [seomoz/qless](https://github.com/seomoz/qless).
   - [Running A Worker](#running-a-worker)
     - [Forking Worker](#forking-worker)
     - [Non-Forking Worker](#non-forking-worker)
-    - [Job Reservers] (#job-reservers)
+    - [Job Reservers](#job-reservers)
     - [Custom Job Handler](#custom-job-handler)
   - [Web Interface](#web-interface)
   - [Job Dependencies](#job-dependencies)
