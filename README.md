@@ -27,6 +27,9 @@ Documentation is borrowed from [seomoz/qless](https://github.com/seomoz/qless).
 - [Usage](#usage)
   - [Enqueuing Jobs](#enqueuing-jobs)
   - [Running A Worker](#running-a-worker)
+    - [Forking Worker](#forking-worker)
+    - [Non-Forking Worker](#non-forking-worker)
+    - [Job Reservers] (#job-reservers)
     - [Custom Job Handler](#custom-job-handler)
   - [Web Interface](#web-interface)
   - [Job Dependencies](#job-dependencies)
@@ -233,9 +236,11 @@ $job->untrack();                   // stop tracking current job
 
 ### Running A Worker
 
-The Qless PHP worker was heavily inspired by [Resque](https://github.com/chrisboulton/php-resque)'s worker, but thanks
-to the power of the qless-core lua scripts, it is much simpler, and you are welcome to write your own (e.g. if you'd
-rather save memory by not forking the worker for each job).
+The Qless PHP [forking worker](#forking-worker) was heavily inspired by [Resque](https://github.com/chrisboulton/php-resque)'s worker, but thanks
+to the power of the qless-core lua scripts, it is much simpler and you are welcome to write your own or use the included 
+[non-forking worker](#non-forking-worker) (e.g. if you'd rather save memory by not forking the worker for each job).
+
+#### Forking Worker
 
 As with resque...
 
@@ -276,14 +281,6 @@ $worker = new ForkingWorker($reserver, $client);
 $worker->run();
 ```
 
-There are different job reservers.
-
-* `DefaultReserver`: A default job reserver
-* `OrderedReserver`: Orders queues by its name
-* `PriorityReserver`: Orders queues by its priority
-* `RoundRobinReserver`: Round-robins through all the provided queues
-* `ShuffledRoundRobin`: Like RoundRobinReserver but shuffles the order of the queues
-
 The following POSIX-compliant signals are supported in the parent process:
 
 - `TERM`: Shutdown immediately, stop processing jobs
@@ -298,6 +295,42 @@ _For detailed info regarding the signals refer to [`signal(7)`](http://man7.org/
 You should send these to the master process, not the child.
 
 The child process supports the `USR2` signal, which causes it to dump its current backtrace.
+
+#### Non-Forking Worker
+
+In addition to the forking worker, Qless PHP includes a non-forking worker. Coupled with an external service manager
+such as systemd, this can alleviate a number of issues related to external connectsions (such as to Redis or MySQL)
+from worker processes. Usage is very similar to the forking worker:
+
+ ```php
+ // The autoloader line is omitted
+ 
+ use Qless\Client;
+ use Qless\Jobs\Reservers\OrderedReserver;
+ use Qless\Workers\SimpleWorker;
+ 
+ // Create a client
+ $client = new Client();
+ 
+ // Get the queues you use.
+ //
+ // Create a job reserver; different reservers use different
+ // strategies for which order jobs are popped off of queues
+ $reserver = new OrderedReserver($client->queues, ['testing', 'testing-2', 'testing-3']);
+ 
+ $worker = new SimpleWorker($reserver, $client);
+ $worker->run();
+ ```
+
+#### Job Reservers
+
+There are different job reservers.
+
+* `DefaultReserver`: A default job reserver
+* `OrderedReserver`: Orders queues by its name
+* `PriorityReserver`: Orders queues by its priority
+* `RoundRobinReserver`: Round-robins through all the provided queues
+* `ShuffledRoundRobin`: Like RoundRobinReserver but shuffles the order of the queues
 
 #### Custom Job Handler
 
@@ -781,7 +814,7 @@ $client->config->set('sync-enabled', true);
 ``` 
 Now you all job will be process without a worker, synchronously.
 
-**Note**: Use it feature for testing your job in development environment.
+**Note**: Use this feature for testing your job in development environment.
 
 ### Heartbeating
 
