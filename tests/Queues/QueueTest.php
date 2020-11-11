@@ -3,6 +3,7 @@
 namespace Qless\Tests\Queues;
 
 use Qless\Exceptions\QlessException;
+use Qless\Queues\JobCollection;
 use Qless\Tests\QlessTestCase;
 use Qless\Queues\Queue;
 
@@ -287,5 +288,13 @@ class QueueTest extends QlessTestCase
         } finally {
             self::assertTrue(isset($this->client->queues['test-queue']));
         }
+    }
+
+    public function testJobsPropertyInstance()
+    {
+        $queue = new Queue('test-queue', $this->client);
+        $jobCollection = $queue->jobs;
+
+        self::assertInstanceOf(JobCollection::class, $jobCollection, 'jobs is a JobCollection instance');
     }
 }
