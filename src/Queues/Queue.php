@@ -202,7 +202,7 @@ class Queue implements EventsManagerAwareInterface
         ?array $tags = null
     ): string {
         try {
-            $jid = $jid ?: Uuid::uuid4()->toString();
+            $jid = $jid ?: str_replace('-', '', Uuid::uuid4()->toString());
         } catch (\Exception $e) {
             throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
         }
