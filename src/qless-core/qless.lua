@@ -1276,7 +1276,14 @@ function QlessQueue:pop(now, worker, count)
   local state
   for index, jid in ipairs(jids) do
     local job = Qless.job(jid)
-    state = unpack(job:data('state'))
+
+    local statePacked = job:data('state');
+
+    state = '';
+    if type(statePacked) == 'table' then
+      state = unpack(job:data('state'))
+    end
+
     job:history(now, 'popped', {worker = worker})
 
     local time = tonumber(
