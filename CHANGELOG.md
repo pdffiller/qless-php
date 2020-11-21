@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [3.12.1]
 ### Fixed
-- Fix nil state of job
+- Fix nil state of job 
 
 ## [3.12.0]
 ### Added
