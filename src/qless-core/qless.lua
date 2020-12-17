@@ -1,5 +1,4 @@
 -- Current SHA: a72cf289fef9a2345060911e982f53b02d69724c
--- This is a generated file
 local Qless = {
   ns = 'ql:'
 }
