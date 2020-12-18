@@ -689,8 +689,21 @@ function QlessJob:fail(now, worker, group, message, data)
   redis.call('sadd', 'ql:failures', group)
   redis.call('lpush', 'ql:f:' .. group, self.jid)
 
-  -- local time = Qless.config.get('jobs-failed-history')
-  -- redis.call('zremrangebyscore', QlessJob.ns, 0, now - time)
+  redis.call('zadd', expiredSetName, now, self.jid)
+  local timeOffset = Qless.config.get('jobs-failed-history')
+  local expiredJids = redis.call('zrangebyscore', 'ql:failures-list', 0, now - timeOffset)
+
+  for index, jid in ipairs(expiredJids) do
+    local tags = cjson.decode(
+      redis.call('hget', QlessJob.ns .. jid, 'tags') or '{}')
+    for i, tag in ipairs(tags) do
+      redis.call('zrem', 'ql:t:' .. tag, jid)
+      redis.call('zincrby', 'ql:tags', -1, tag)
+    end
+    redis.call('del', QlessJob.ns .. jid)
+    redis.call('del', QlessJob.ns .. jid .. '-history')
+  end
+  redis.call('zremrangebyscore', 'ql:failures-list', 0, now - timeOffset)
 
   return self.jid
 end
