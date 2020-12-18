@@ -768,15 +768,18 @@ function QlessJob:retry(now, queue, worker, delay, group, message)
           ['worker']  = unpack(self:data('worker'))
         }))
     end
-    redis.call('zadd', 'ql:failed-jobs-list', now, self.jid)
 
     redis.call('sadd', 'ql:failures', group)
     redis.call('lpush', 'ql:f:' .. group, self.jid)
+
+    redis.call('zadd', 'ql:failed-jobs-list', now, self.jid)
+
+    clearOldFailedJobs(now)
+
     local bin = now - (now % 86400)
     redis.call('hincrby', 'ql:s:stats:' .. bin .. ':' .. queue, 'failures', 1)
     redis.call('hincrby', 'ql:s:stats:' .. bin .. ':' .. queue, 'failed'  , 1)
 
-    clearOldFailedJobs(now)
   else
     local queue_obj = Qless.queue(queue)
     if delay > 0 then
