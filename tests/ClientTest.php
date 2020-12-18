@@ -493,10 +493,6 @@ WRK;
 
         $actualJob = $this->client->jobs->get('my-test-jid-failed');
 
-        if ($keepJob === true) {
-            $this->assertNotNull($actualJob);
-        } else {
-            $this->assertNull($actualJob);
-        }
+        $this->assertEquals($keepJob, $actualJob !== null);
     }
 }
