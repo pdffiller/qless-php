@@ -689,8 +689,8 @@ function QlessJob:fail(now, worker, group, message, data)
   redis.call('sadd', 'ql:failures', group)
   redis.call('lpush', 'ql:f:' .. group, self.jid)
 
-  local time = Qless.config.get('jobs-failed-history')
-  redis.call('zremrangebyscore', queue:prefix('failed'), 0, now - time)
+  -- local time = Qless.config.get('jobs-failed-history')
+  -- redis.call('zremrangebyscore', QlessJob.ns, 0, now - time)
 
   return self.jid
 end
