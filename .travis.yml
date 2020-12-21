@@ -58,7 +58,7 @@ before_script:
   - composer diagnose || true
 
 script:
-  - ./vendor/bin/phpunit --disallow-test-output
+  - ./vendor/bin/phpunit --disallow-test-output --no-coverage
 
 after_success:
   - if [[ ! -z "${CODECOV_TOKEN}" ]]; then (bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"); fi;
@@ -76,7 +76,7 @@ jobs:
     - stage: Mutation Testing
       php: 7.2
       script:
-        - ./vendor/bin/phpunit --disallow-test-output --no-coverage
+        - ./vendor/bin/phpunit --disallow-test-output
         - $HOME/bin/infection --threads=4
     - stage: Static Code Analysis
       php: 7.2
