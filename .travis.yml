@@ -76,7 +76,7 @@ jobs:
     - stage: Mutation Testing
       php: 7.2
       script:
-        - ./vendor/bin/phpunit --disallow-test-output
+        - ./vendor/bin/phpunit --disallow-test-output --no-coverage
         - $HOME/bin/infection --threads=4
     - stage: Static Code Analysis
       php: 7.2
