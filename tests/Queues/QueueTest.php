@@ -35,6 +35,7 @@ class QueueTest extends QlessTestCase
     {
         $queue = new Queue('test-queue', $this->client);
         self::assertRegExp('/^[[:xdigit:]]{32}$/', $queue->put('Xxx\Yyy', []));
+        self::assertRegExp('/^[[:xdigit:]]{32}$/', $queue->recur('Xxx\Yyy', []));
     }
 
     /**
