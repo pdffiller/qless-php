@@ -466,4 +466,33 @@ WRK;
 
         self::assertEquals($jobId, array_pop($jobIds));
     }
+
+    public function failedJobsTtlProvider(): array
+    {
+        return [    // ttl, keep job?
+            'no ttl' => [0, false],
+            'ttl exists' => [100, true],
+        ];
+    }
+
+    /**
+     * @dataProvider failedJobsTtlProvider
+     * @test
+     * @param int $ttl
+     * @param bool $keepJob
+     */
+    public function removeFailedJobsByTtl(int $ttl, bool $keepJob): void
+    {
+        $queue = $this->client->queues['test-queue'];
+        $this->client->config->set('jobs-failed-history', $ttl);
+
+        $queue->put('SampleHandler', [], 'my-test-jid-failed');
+
+        $job = $queue->popByJid('my-test-jid-failed');
+        $job->fail('test', 'Testing');
+
+        $actualJob = $this->client->jobs->get('my-test-jid-failed');
+
+        $this->assertEquals($keepJob, $actualJob !== null);
+    }
 }

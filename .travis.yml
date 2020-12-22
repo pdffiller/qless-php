@@ -58,7 +58,7 @@ before_script:
   - composer diagnose || true
 
 script:
-  - ./vendor/bin/phpunit --disallow-test-output
+  - ./vendor/bin/phpunit --disallow-test-output --no-coverage
 
 after_success:
   - if [[ ! -z "${CODECOV_TOKEN}" ]]; then (bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"); fi;

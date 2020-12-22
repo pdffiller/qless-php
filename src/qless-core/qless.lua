@@ -1,5 +1,4 @@
 -- Current SHA: a72cf289fef9a2345060911e982f53b02d69724c
--- This is a generated file
 local Qless = {
   ns = 'ql:'
 }
@@ -348,7 +347,8 @@ Qless.config.defaults = {
   ['stats-history']      = 30,
   ['histogram-history']  = 7,
   ['jobs-history-count'] = 50000,
-  ['jobs-history']       = 604800
+  ['jobs-history']       = 604800,
+  ['jobs-failed-history'] = 604800
 }
 
 Qless.config.get = function(key, default)
@@ -624,6 +624,23 @@ function QlessJob:complete(now, worker, queue, raw_data, ...)
   end
 end
 
+local function clearOldFailedJobs(now)
+  local timeOffset = Qless.config.get('jobs-failed-history')
+  local expiredJids = redis.call('zrangebyscore', 'ql:failed-jobs-list', 0, now - timeOffset)
+
+  for index, jid in ipairs(expiredJids) do
+    local tags = cjson.decode(
+      redis.call('hget', QlessJob.ns .. jid, 'tags') or '{}')
+    for i, tag in ipairs(tags) do
+      redis.call('zrem', 'ql:t:' .. tag, jid)
+      redis.call('zincrby', 'ql:tags', -1, tag)
+    end
+    redis.call('del', QlessJob.ns .. jid)
+    redis.call('del', QlessJob.ns .. jid .. '-history')
+  end
+  redis.call('zremrangebyscore', 'ql:failed-jobs-list', 0, now - timeOffset)
+end
+
 function QlessJob:fail(now, worker, group, message, data)
   local worker  = assert(worker           , 'Fail(): Arg "worker" missing')
   local group   = assert(group            , 'Fail(): Arg "group" missing')
@@ -689,6 +706,10 @@ function QlessJob:fail(now, worker, group, message, data)
   redis.call('sadd', 'ql:failures', group)
   redis.call('lpush', 'ql:f:' .. group, self.jid)
 
+  -- store failed jobs time
+  redis.call('zadd', 'ql:failed-jobs-list', now, self.jid)
+
+  clearOldFailedJobs(now)
 
   return self.jid
 end
@@ -750,9 +771,15 @@ function QlessJob:retry(now, queue, worker, delay, group, message)
 
     redis.call('sadd', 'ql:failures', group)
     redis.call('lpush', 'ql:f:' .. group, self.jid)
+
+    redis.call('zadd', 'ql:failed-jobs-list', now, self.jid)
+
+    clearOldFailedJobs(now)
+
     local bin = now - (now % 86400)
     redis.call('hincrby', 'ql:s:stats:' .. bin .. ':' .. queue, 'failures', 1)
     redis.call('hincrby', 'ql:s:stats:' .. bin .. ':' .. queue, 'failed'  , 1)
+
   else
     local queue_obj = Qless.queue(queue)
     if delay > 0 then
@@ -1829,17 +1856,18 @@ function QlessQueue:invalidate_locks(now, count)
         local group = 'failed-retries-' .. Qless.job(jid):data()['queue']
         local job = Qless.job(jid)
         job:history(now, 'failed', {group = group})
-        redis.call('hmset', QlessJob.ns .. jid, 'state', 'failed',
+        redis.call('hmset', QlessJob.ns .. jid,
+          'state', 'failed',
           'worker', '',
-          'expires', '')
-        redis.call('hset', QlessJob.ns .. jid,
+          'expires', '',
           'failure', cjson.encode({
             ['group']   = group,
             ['message'] =
             'Job exhausted retries in queue "' .. self.name .. '"',
             ['when']    = now,
             ['worker']  = unpack(job:data('worker'))
-          }))
+          })
+        )
 
         redis.call('sadd', 'ql:failures', group)
         redis.call('lpush', 'ql:f:' .. group, jid)
@@ -1861,6 +1889,8 @@ function QlessQueue:invalidate_locks(now, count)
           'ql:s:stats:' .. bin .. ':' .. self.name, 'failures', 1)
         redis.call('hincrby',
           'ql:s:stats:' .. bin .. ':' .. self.name, 'failed'  , 1)
+        redis.call('zadd', 'ql:failed-jobs-list', now, jid)
+        clearOldFailedJobs(now)
       else
         table.insert(jids, jid)
       end
