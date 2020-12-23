@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.13.0]
+### Added
+ - TTL for failed jobs
+### Changed
+ - Recur JID is consistent with normal JID
+
 ## [3.12.1]
 ### Fixed
 - Fix nil state of job 
@@ -252,7 +258,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
  - Initial stable release
 
-[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.12.1...HEAD
+[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.13.0...HEAD
+[3.13.0]: https://github.com/pdffiller/qless-php/compare/v3.12.1...v3.13.0
 [3.12.1]: https://github.com/pdffiller/qless-php/compare/v3.12.0...v3.12.1
 [3.12.0]: https://github.com/pdffiller/qless-php/compare/v3.11.1...v3.12.0
 [3.11.1]: https://github.com/pdffiller/qless-php/compare/v3.11.0...v3.11.1
