@@ -47,7 +47,7 @@ class Queue implements EventsManagerAwareInterface
         $this->client = $client;
         $this->name   = $name;
 
-        $this->jobs = new JobCollection($this, $client);
+        $this->jobs = new JobCollection($this->name, $client);
 
         $this->setEventsManager($this->client->getEventsManager());
 

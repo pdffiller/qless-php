@@ -17,7 +17,7 @@ class JobCollection
     /**
      * @var string
      */
-    protected $name;
+    protected $queueName;
 
     /** @var Client */
     private $client;
@@ -25,12 +25,12 @@ class JobCollection
     /**
      * Collection constructor.
      *
-     * @param string $name
+     * @param string $queueName
      * @param Client $client
      */
-    public function __construct(string $name, Client $client)
+    public function __construct(string $queueName, Client $client)
     {
-        $this->name = $name;
+        $this->queueName = $queueName;
         $this->client = $client;
     }
 
@@ -101,7 +101,7 @@ class JobCollection
     }
 
     /**
-     * @param string $function
+     * @param string $state
      * @param int $offset
      * @param int $count
      *
@@ -109,14 +109,12 @@ class JobCollection
      *
      * @return array
      */
-    protected function getJobs(string $function, int $offset = 0, $count = 25, bool $multiGet = true): array
+    protected function getJobs(string $state, int $offset = 0, $count = 25, bool $multiGet = true): array
     {
-        $jids = $this->client->jobs($function, $this->name, $offset, $count);
+        $jids = $this->client->jobs($state, $this->queueName, $offset, $count);
 
         if ($multiGet) {
-            return $this->client->jobs->multiget(
-                $jids
-            );
+            return $this->client->jobs->multiget($jids);
         }
 
         $res = [];
