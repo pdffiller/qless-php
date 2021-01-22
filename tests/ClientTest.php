@@ -493,6 +493,38 @@ WRK;
 
         $actualJob = $this->client->jobs->get('my-test-jid-failed');
 
-        $this->assertEquals($keepJob, $actualJob !== null);
+        self::assertEquals($keepJob, $actualJob !== null);
+    }
+
+    /**
+     * @test
+     */
+    public function removeOldFailedJobsFromClient(): void
+    {
+        $queue = $this->client->queues['test-queue'];
+        $this->client->config->set('jobs-failed-history', 1);
+
+        $queue->put('SampleHandler', [], 'my-test-jid-failed');
+        $job = $queue->popByJid('my-test-jid-failed');
+        $job->fail('test', 'Testing');
+
+        self::assertEquals(json_encode(['test' => 1]), $this->client->failed());
+
+        $queue->put('SampleHandler', [], 'my-test-jid-failed2');
+        $job = $queue->popByJid('my-test-jid-failed2');
+        $job->fail('test', 'Testing');
+
+        self::assertEquals(json_encode(['test' => 2]), $this->client->failed());
+
+        sleep(1);
+
+        $queue->put('SampleHandler', [], 'my-test-jid-failed3');
+        $job = $queue->popByJid('my-test-jid-failed3');
+        $job->fail('test', 'Testing');
+
+        self::assertEquals(json_encode(['test' => 1]), $this->client->failed());
+        self::assertNotContains('my-test-jid-failed', $this->client->getJobs()->failed());
+        self::assertNotContains('my-test-jid-failed2', $this->client->getJobs()->failed());
+        self::assertContains('my-test-jid-failed3', $this->client->getJobs()->failed());
     }
 }
