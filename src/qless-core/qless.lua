@@ -629,23 +629,26 @@ local function clearOldFailedJobs(now)
   local expiredJids = redis.call('zrangebyscore', 'ql:failed-jobs-list', 0, now - timeOffset)
 
   for index, jid in ipairs(expiredJids) do
-    local failure, queue = unpack(redis.call('hmget', QlessJob.ns .. jid, 'failure', 'queue'))
+    local queue = redis.call('hget', QlessJob.ns .. jid, 'queue')
+    local jidGroup = cjson.decode(redis.call('hget', QlessJob.ns .. jid, 'failure')).group
     local tags = cjson.decode(redis.call('hget', QlessJob.ns .. jid, 'tags') or '{}')
 
     for i, tag in ipairs(tags) do
       redis.call('zrem', 'ql:t:' .. tag, jid)
       redis.call('zincrby', 'ql:tags', -1, tag)
     end
-    local deletedJobs = redis.call('del', QlessJob.ns .. jid)
+    local deletedJobs = redis.call('del', QlessJob.ns .. jid) -- return count of deleted jobs
     redis.call('del', QlessJob.ns .. jid .. '-history')
 
     local bin = now - (now % 86400)
-    redis.call('hincrby', 'ql:s:stats:' .. bin .. ':' .. queue, 'failed', (-1 * deletedJobs))
+    if (deletedJobs > 0) then
+      redis.call('hincrby', 'ql:s:stats:' .. bin .. ':' .. queue, 'failed', (-1 * deletedJobs))
 
-    if (failure.group ~= nil) then
-      redis.call('lrem', 'ql:f:' .. failure.group, 0, jid)
-      if redis.call('llen', 'ql:f:' .. failure.group) == 0 then
-        redis.call('srem', 'ql:failures', failure.group)
+      if (jidGroup ~= nil) then
+        redis.call('lrem', 'ql:f:' .. jidGroup, 0, jid)
+        if redis.call('llen', 'ql:f:' .. jidGroup) == 0 then
+          redis.call('srem', 'ql:failures', jidGroup)
+        end
       end
     end
 

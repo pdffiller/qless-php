@@ -523,8 +523,8 @@ WRK;
         $job->fail('test', 'Testing');
 
         self::assertEquals(json_encode(['test' => 1]), $this->client->failed());
-        self::assertNotContains('my-test-jid-failed', $this->client->getJobs()->failed());
-        self::assertNotContains('my-test-jid-failed2', $this->client->getJobs()->failed());
-        self::assertContains('my-test-jid-failed3', $this->client->getJobs()->failed());
+        self::assertFalse($this->client->getJobs()->offsetExists('my-test-jid-failed'));
+        self::assertFalse($this->client->getJobs()->offsetExists('my-test-jid-failed2'));
+        self::assertTrue($this->client->getJobs()->offsetExists('my-test-jid-failed3'));
     }
 }
