@@ -640,8 +640,8 @@ local function clearOldFailedJobs(now)
     local deletedJobs = redis.call('del', QlessJob.ns .. jid)
     redis.call('del', QlessJob.ns .. jid .. '-history')
 
-    local bin = now - (now % 86400)
     if (deletedJobs > 0) then
+      local bin = now - (now % 86400)
       redis.call('hincrby', 'ql:s:stats:' .. bin .. ':' .. queue, 'failed', (-1 * deletedJobs))
 
       if (jidGroup ~= nil) then
