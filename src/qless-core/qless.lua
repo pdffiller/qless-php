@@ -637,7 +637,7 @@ local function clearOldFailedJobs(now)
       redis.call('zrem', 'ql:t:' .. tag, jid)
       redis.call('zincrby', 'ql:tags', -1, tag)
     end
-    local deletedJobs = redis.call('del', QlessJob.ns .. jid) -- return count of deleted jobs
+    local deletedJobs = redis.call('del', QlessJob.ns .. jid)
     redis.call('del', QlessJob.ns .. jid .. '-history')
 
     local bin = now - (now % 86400)
