@@ -12,6 +12,7 @@ use Qless\Exceptions\RuntimeException;
 use Qless\Exceptions\UnknownPropertyException;
 use Qless\Jobs\BaseJob;
 use Qless\Jobs\JobData;
+use Qless\Support\PropertyAccessor;
 use Ramsey\Uuid\Uuid;
 
 /**
@@ -20,16 +21,20 @@ use Ramsey\Uuid\Uuid;
  * @package Qless\Queues
  *
  * @property int $heartbeat get / set the heartbeat timeout for the queue
+ * @property-read JobCollection $jobs
  */
 class Queue implements EventsManagerAwareInterface
 {
-    use EventsManagerAwareTrait;
+    use EventsManagerAwareTrait, PropertyAccessor;
 
     /** @var Client */
     private $client;
 
     /** @var string */
     private $name;
+
+    /** @var JobCollection */
+    private $jobs;
 
     /**
      * Queue constructor.
@@ -41,6 +46,8 @@ class Queue implements EventsManagerAwareInterface
     {
         $this->client = $client;
         $this->name   = $name;
+
+        $this->jobs = new JobCollection($this->name, $client);
 
         $this->setEventsManager($this->client->getEventsManager());
 
@@ -273,74 +280,6 @@ class Queue implements EventsManagerAwareInterface
     }
 
     /**
-     * @param  string $name
-     * @return int
-     *
-     * @throws UnknownPropertyException
-     * @throws QlessException
-     */
-    public function __get(string $name)
-    {
-        switch ($name) {
-            case 'heartbeat':
-                $fallback = $this->client->config->get('heartbeat', 60);
-
-                return (int) $this->client->config->get("{$this->name}-heartbeat", $fallback);
-            default:
-                throw new UnknownPropertyException('Getting unknown property: ' . self::class . '::' . $name);
-        }
-    }
-
-    /**
-     * The magic setter to update Queue's properties.
-     *
-     * @param  string $name
-     * @param  mixed  $value
-     * @return void
-     *
-     * @throws UnknownPropertyException
-     * @throws InvalidArgumentException
-     * @throws QlessException
-     */
-    public function __set(string $name, $value): void
-    {
-        switch ($name) {
-            case 'heartbeat':
-                if (!is_int($value)) {
-                    throw new InvalidArgumentException('heartbeat must be an int');
-                }
-
-                $this->client
-                    ->config
-                    ->set("{$this->name}-heartbeat", $value);
-                break;
-            default:
-                throw new UnknownPropertyException('Setting unknown property: ' . self::class . '::' . $name);
-        }
-    }
-
-    /**
-     * @param  string $name
-     * @return void
-     */
-    public function __unset(string $name): void
-    {
-        switch ($name) {
-            case 'heartbeat':
-                try {
-                    $this->client
-                        ->config
-                        ->clear("{$this->name}-heartbeat");
-                } catch (\Throwable $e) {
-                    // The unset shouldn't throw any exception. Thus do nothing
-                }
-                break;
-            default:
-                // The unset shouldn't throw any exception. Thus do nothing
-        }
-    }
-
-    /**
      * Return the current statistics for a given queue on a given date.
      *
      * The results are returned are a JSON blob:
@@ -449,6 +388,48 @@ class Queue implements EventsManagerAwareInterface
     public function unSubscribe(string $topicPattern): bool
     {
         return $this->client->subscription($this->name, 'remove', $topicPattern) === 'true';
+    }
+
+    /**
+     * @return int
+     */
+    public function getHeartbeat(): int
+    {
+        $fallback = $this->client->config->get('heartbeat', 60);
+
+        return (int) $this->client->config->get("{$this->name}-heartbeat", $fallback);
+    }
+
+    /**
+     * @param int $value
+     */
+    public function setHeartbeat(int $value): void
+    {
+        $this->client
+            ->config
+            ->set("{$this->name}-heartbeat", $value);
+    }
+
+    /**
+     * @return JobCollection
+     */
+    public function getJobs(): JobCollection
+    {
+        return $this->jobs;
+    }
+
+    /**
+     *
+     */
+    protected function unsetHeartbeat(): void
+    {
+        try {
+            $this->client
+                ->config
+                ->clear("{$this->name}-heartbeat");
+        } catch (\Throwable $e) {
+            // The unset shouldn't throw any exception. Thus do nothing
+        }
     }
 
     /**

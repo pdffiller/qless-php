@@ -77,4 +77,36 @@ trait PropertyAccessor
             sprintf('Setting unknown property: %s::%s.', get_class($this), $name)
         );
     }
+
+    /**
+     * Unsets value of an object property.
+     *
+     * Do not call this method directly as it is a PHP magic method that
+     * will be implicitly called when executing `unset($object->property);`.
+     *
+     * @param string $name The property name or the event name
+     *
+     * @throws UnknownPropertyException if the property is not defined
+     * @throws InvalidCallException if the property is read-only
+     */
+    public function __unset(string $name)
+    {
+        $getter = 'get' . ucfirst($name);
+        $unsetter = 'unset' . ucfirst($name);
+
+        if (method_exists($this, $unsetter)) {
+            $this->$unsetter();
+            return;
+        }
+
+        if (method_exists($this, $getter)) {
+            throw new InvalidCallException(
+                sprintf('Unsetting read-only property: %s::%s.', get_class($this), $name)
+            );
+        }
+
+        throw new UnknownPropertyException(
+            sprintf('Unsetting unknown property: %s::%s.', get_class($this), $name)
+        );
+    }
 }
