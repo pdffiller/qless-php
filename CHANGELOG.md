@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.14.0]
+### Added
+- Jobs Collection
+### Changed
+- Change heartbeat signature to match other binding defaults
+### Fixed
+- Fixed count failed jobs after removing
+
 ## [3.13.0]
 ### Added
  - TTL for failed jobs
@@ -258,7 +266,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
  - Initial stable release
 
-[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.13.0...HEAD
+[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.14.0...HEAD
+[3.14.0]: https://github.com/pdffiller/qless-php/compare/v3.3.0...v3.14.0
 [3.13.0]: https://github.com/pdffiller/qless-php/compare/v3.12.1...v3.13.0
 [3.12.1]: https://github.com/pdffiller/qless-php/compare/v3.12.0...v3.12.1
 [3.12.0]: https://github.com/pdffiller/qless-php/compare/v3.11.1...v3.12.0
