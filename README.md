@@ -503,12 +503,14 @@ You can get and set global (read: in the context of the same Redis instance) con
 heartbeating, and so forth. There aren't a tremendous number of configuration options, but an important one is how
 long job data is kept around. Job data is expired after it has been completed for `jobs-history` seconds, but is limited
 to the last `jobs-history-count` completed jobs. These default to 50k jobs, and 30 days, but depending on volume,
-your needs may change. To only keep the last 500 jobs for up to 7 days:
+your needs may change. There is also possible to configure failed job in history,
+using `jobs-failed-history` parameter. To only keep the last 500 jobs for up to 7 days and failed jobs for 3 days:
 
 ```php
 /** @var \Qless\Client $client */
 $client->config['jobs-history'] = 7 * 86400;
 $client->config['jobs-history-count'] = 500;
+$client->config['jobs-failed-history'] = 3 * 86400;
 ```
 
 ### Tagging / Tracking
