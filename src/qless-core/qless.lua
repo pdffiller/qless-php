@@ -630,7 +630,13 @@ local function clearOldFailedJobs(now)
 
   for index, jid in ipairs(expiredJids) do
     local queue = redis.call('hget', QlessJob.ns .. jid, 'queue')
-    local jidGroup = cjson.decode(redis.call('hget', QlessJob.ns .. jid, 'failure')).group
+    local jobData = redis.call('hget', QlessJob.ns .. jid, 'failure')
+
+    local jidGroup = nil
+    if type(jobData) == 'string' then
+      jidGroup = cjson.decode(jobData).group
+    end
+
     local tags = cjson.decode(redis.call('hget', QlessJob.ns .. jid, 'tags') or '{}')
 
     for i, tag in ipairs(tags) do
