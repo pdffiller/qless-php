@@ -1,0 +1,68 @@
+name: PR checks and tests
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    container: shivammathur/node
+    services:
+      redis:
+        image: redis:5-alpine
+        # Set health checks to wait until redis has started
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    strategy:
+      matrix:
+        php-versions: ['7.1', '7.2', '7.3', '7.4', '8.0']
+    name: PHP ${{ matrix.php-versions }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+          coverage: xdebug
+
+      - name: Get composer cache directory
+        id: composercache
+        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.composercache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: |
+          composer install --no-interaction --no-ansi --no-progress
+
+      - name: Run phpcs
+        run: |
+          ./vendor/bin/phpcs
+
+      - name: Run phpstan
+        run: |
+          ./vendor/bin/phpstan analyse src
+
+      - name: Run phpunit tests
+        env:
+          REDIS_HOST: redis
+          REDIS_PORT: 6379
+          REDIS_TIMEOUT: 0.0
+        run: |
+          ./vendor/bin/phpunit --disallow-test-output --no-coverage
+
+#      - name: Run mutation tests
+#        run: |
+#          $HOME/bin/infection --threads=4

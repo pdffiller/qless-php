@@ -24,24 +24,24 @@
         }
     ],
     "require": {
-        "php": ">=7.1 <8.0",
+        "php": ">=7.1 <8.1",
         "ext-json": "*",
         "ext-pcntl": "*",
         "ext-pcre": "*",
         "ext-posix": "*",
         "ext-sockets": "*",
-        "monolog/monolog": "^1.23",
+        "monolog/monolog": "^2.0",
         "predis/predis": "1.1.*",
         "psr/log": "^1",
-        "ramsey/uuid": "3.7.* || 3.8.*",
+        "ramsey/uuid": "3.7.* || 3.8.* || ^4",
         "seld/signal-handler": "1.1.*"
     },
     "conflict": {
         "contatta/qless-php": "*"
     },
     "require-dev": {
-        "phpstan/phpstan": "0.10.*",
-        "phpunit/phpunit": ">=7.5 <8.0",
+        "phpstan/phpstan": "^0.12.87",
+        "phpunit/phpunit": "^7.5 || ^8.5",
         "squizlabs/php_codesniffer": "3.*"
     },
     "suggest": {

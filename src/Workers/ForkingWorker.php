@@ -60,7 +60,7 @@ final class ForkingWorker extends AbstractWorker
     private $numberExecutedJobs = 0;
 
     /**
-     * @var int
+     * @var float|null
      */
     private $endTime;
 
@@ -325,7 +325,6 @@ final class ForkingWorker extends AbstractWorker
             $error = error_get_last();
 
             if ($error === null) {
-                unset($reserved);
                 return;
             }
 

@@ -21,14 +21,17 @@ class WorkerLimitTest extends QlessTestCase
         self::assertEquals(99, $queue->length());
     }
 
+    /**
+     * Very weird test. On powerful computer worker can consume all queue for that second
+     */
     public function testTimeLimitWorker(): void
     {
-        $queue = $this->getQueue();
+        $queue = $this->getQueue(1000);
         $worker = $this->getWorker();
         $worker->setTimeLimit(1);
         $worker->run();
 
-        self::assertNotEmpty($queue->length());
+        self::assertNotEmpty($queue->length(), 'Queue length is '.$queue->length());
     }
 
     public function testMemoryLimitWorker(): void
@@ -42,10 +45,10 @@ class WorkerLimitTest extends QlessTestCase
     }
 
 
-    private function getQueue(): Queue
+    private function getQueue(int $length = 100): Queue
     {
         $queue = new Queue('test-queue', $this->client);
-        for ($i = 0; $i < 100; $i++) {
+        for ($i = 0; $i < $length; $i++) {
             $queue->put(JobHandler::class, []);
         }
 

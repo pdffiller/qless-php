@@ -367,7 +367,8 @@ class BaseJob extends AbstractJob implements \ArrayAccess
      *
      * @return int remaining retries available
      */
-    public function retry(string $group, string $message, int $delay = 0): int {
+    public function retry(string $group, string $message, int $delay = 0): int
+    {
         return $this->client
             ->retry(
                 $this->jid,

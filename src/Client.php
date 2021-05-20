@@ -243,4 +243,14 @@ class Client implements EventsManagerAwareInterface
         $this->redis->disconnect();
         $this->redis->connect();
     }
+
+    /**
+     * Call to disconnect from Redis server.
+     *
+     * @return void
+     */
+    public function disconnect(): void
+    {
+        $this->redis->disconnect();
+    }
 }
