@@ -197,7 +197,13 @@ class BaseJobTest extends QlessTestCase
      */
     public function shouldThrowIOnCallingHeartbeatForInvalidJob(): void
     {
-        $this->expectExceptionMessageRegExp('~Job .* given out to another worker: worker-2~');
+        // If runs on phpunit/phpunit:^8.5 call new method, else - fallback to old method
+        if (method_exists($this, 'expectExceptionMessageMatches')) {
+            $this->expectExceptionMessageMatches('~Job .* given out to another worker: worker-2~');
+        } else {
+            $this->expectExceptionMessageRegExp('~Job .* given out to another worker: worker-2~');
+        }
+
         $this->expectException(LostLockException::class);
         $queue = $this->client->queues['test-queue'];
 

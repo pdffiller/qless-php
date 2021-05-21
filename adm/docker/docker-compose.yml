@@ -25,7 +25,8 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile.development
+      dockerfile: Dockerfile.php72.development # If you want PHP8 use Dockerfile.php8.development
+    image: pdffiller/qless-php:latest
     command: tail -f /dev/null
     container_name: qless-app
     environment:

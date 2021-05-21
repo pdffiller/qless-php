@@ -101,7 +101,7 @@ Prerequisite PHP extensions are:
 - [`pcre`](http://php.net/manual/en/book.pcre.php)
 - [`sockets`](http://php.net/manual/en/book.sockets.php)
 
-Supported PHP versions are: **7.1**, **7.2** and **7.3**.
+Supported PHP versions are: **7.1**, **7.2**, **7.3**, **8.0**.
 
 Qless PHP can be installed via Composer:
 
@@ -891,7 +891,7 @@ qless-php is open-sourced software licensed under the MIT License.
 See the [`LICENSE.txt`](https://github.com/pdffiller/qless-php/blob/master/LICENSE.txt) file for more.
 
 
-© 2018-2019 PDFfiller<br>
+© 2018-2021 PDFfiller<br>
 © 2013-2015 Ryver, Inc <br>
 
 All rights reserved.

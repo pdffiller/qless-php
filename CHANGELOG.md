@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.15.0]
+
+### Added
+- `\Qless\Client::disconnect` method to close Redis connection
+### Changed
+- PHP8 support
+- Bump `monolog/monolog` verions to `^2.0`
+- Bump `ramsey/uuid` version to `^4.1`
+- Bump `phpstan/phpstan` version `^0.12.87`
+- Bump `phpunit/phpunit` version to `^8.5`
+
 ## [3.14.0]
 ### Added
 - Jobs Collection

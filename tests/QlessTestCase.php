@@ -55,6 +55,7 @@ abstract class QlessTestCase extends TestCase
     public function tearDown(): void
     {
         $this->client->flush();
+        $this->client->disconnect();
     }
 
     /**
