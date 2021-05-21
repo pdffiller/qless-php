@@ -1,7 +1,6 @@
 # qless-php
 
 [![Build Status](https://travis-ci.org/pdffiller/qless-php.svg?branch=master)](https://travis-ci.org/pdffiller/qless-php)
-[![Code Coverage](https://codecov.io/gh/pdffiller/qless-php/branch/master/graph/badge.svg)](https://codecov.io/gh/pdffiller/qless-php)
 [![Infection MSI](https://badge.stryker-mutator.io/github.com/pdffiller/qless-php/master)](https://infection.github.io)
 
 PHP Bindings for qless.
@@ -26,7 +25,7 @@ Documentation is borrowed from [seomoz/qless](https://github.com/seomoz/qless).
 - [Installation](#installation)
   - [Requirements](#requirements)
 - [Usage](#usage)
-  - [Enqueing Jobs](#enqueing-jobs)
+  - [Enqueuing Jobs](#enqueuing-jobs)
   - [Running A Worker](#running-a-worker)
     - [Custom Job Handler](#custom-job-handler)
   - [Web Interface](#web-interface)
@@ -75,7 +74,7 @@ a job if the error is likely not a transient one; otherwise, that worker should 
 - **Job Dependencies** — One job might need to wait for another job to complete,
 - **Stats** — `qless` automatically keeps statistics about how long jobs wait to be processed and how long they take to
   be processed. Currently, we keep track of the count, mean, standard deviation, and a histogram of these times.
-- **Job data is stored temporarily** — Job info sticks around for a configurable amount of time so you can still look
+- **Job data is stored temporarily** — Job info sticks around for a configurable amount of time, so you can still look
   back on a job's history, data, etc.
 - **Priority** — Jobs with the same priority get popped in the order they were inserted; a higher priority means that
   it gets popped faster.
@@ -84,7 +83,7 @@ a job if the error is likely not a transient one; otherwise, that worker should 
 - **Web App** — With the advent of a Ruby client, there is a Sinatra-based web app that gives you control over certain
   operational issues.
 - **Scheduled Work** — Until a job waits for a specified delay (defaults to 0), jobs cannot be popped by workers.
-- **Recurring Jobs** — Scheduling's all well and good, but we also support jobs that need to recur periodically.
+- **Recurring Jobs** — Scheduling is all well and good, but we also support jobs that need to recur periodically.
 - **Notifications** — Tracked jobs emit events on [pubsub](https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern)
   channels as they get completed, failed, put, popped, etc. Use these events to get notified of
   progress on jobs you're interested in.
@@ -126,7 +125,7 @@ The `adm` directory contains the configuration examples useful for system admini
 
 ## Usage
 
-### Enqueing Jobs
+### Enqueuing Jobs
 
 First things first, create a Qless Client. The Client accepts all the same arguments that you'd use when constructing
 a [Predis\Client](https://github.com/nrk/predis#connecting-to-redis) client.
@@ -135,10 +134,10 @@ a [Predis\Client](https://github.com/nrk/predis#connecting-to-redis) client.
 use Qless\Client;
 
 // Connect to localhost
-$client = new Client();
+$client1 = new Client();
 
 // Connect to somewhere else
-$client = new Client('127.0.0.99:1234');
+$client2 = new Client('127.0.0.99:1234');
 ```
 
 Jobs should be classes that define a `perform` method, which must accept a single `Qless\Jobs\BaseJob` argument:
@@ -169,6 +168,7 @@ Now you can access a queue, and add a job to that queue.
 /**
  * This references a new or existing queue 'testing'.
  * @var \Qless\Queues\Queue $queue
+ * @var \Qless\Client $client
  */
 $queue = $client->queues['testing'];
 
@@ -195,7 +195,11 @@ The argument returned by `queue->put()` is the `jid` (Job ID).
 Every Qless job has a unique `jid`, and it provides a means to interact with an existing job:
 
 ```php
-// find an existing job by it's JID
+/**
+ * Find an existing job by it's JID
+ * @var string $jid 
+ * @var \Qless\Client $client 
+ */
 $job = $client->jobs[$jid];
 
 // query it to find out details about it:
@@ -230,7 +234,7 @@ $job->untrack();                   // stop tracking current job
 ### Running A Worker
 
 The Qless PHP worker was heavily inspired by [Resque](https://github.com/chrisboulton/php-resque)'s worker, but thanks
-to the power of the qless-core lua scripts, it is much simpler and you are welcome to write your own (e.g. if you'd
+to the power of the qless-core lua scripts, it is much simpler, and you are welcome to write your own (e.g. if you'd
 rather save memory by not forking the worker for each job).
 
 As with resque...
@@ -238,7 +242,7 @@ As with resque...
 - The worker forks a child process for each job in order to provide resilience against memory leaks
   (Pass the `RUN_AS_SINGLE_PROCESS` environment variable to force Qless to not fork the child process.
   Single process mode should only be used in some test/dev environments.)
-- The worker updates its procline with its status so you can see what workers are doing using `ps`
+- The worker updates its procline with its status, so you can see what workers are doing using `ps`
 - The worker registers signal handlers so that you can control it by sending it signals
 - The worker is given a list of queues to pop jobs off of
 - The worker logs out put based on setting of the `Psr\Log\LoggerInterface` instance passed to worker
@@ -322,9 +326,9 @@ $worker->run();
 
 ### Web Interface
 
-The Qless PHP does not ships with a web app. However there is a resque-inspired web app provided by
+The Qless PHP does not ship with a web app. However, there is a resque-inspired web app provided by
 [seomoz/qless](https://github.com/seomoz/qless#web-interface). In addition, you can take advantage of
-[docker based](https://github.com/seomoz/qless-docker) dashboard. We're plan to create a robust and elegant web
+[docker based](https://github.com/seomoz/qless-docker) dashboard. We're planning to create a robust and elegant web
 interface using PHP framework, but that task does not have the highest priority.
 
 ### Job Dependencies
@@ -333,7 +337,10 @@ Let's say you have one job that depends on another, but the task definitions are
 You need to bake a turkey, and you need to make stuffing, but you can't make the turkey until the stuffing is made:
 
 ```php
-/** @var \Qless\Queues\Queue $queue */
+/**
+ * @var \Qless\Queues\Queue $queue
+ * @var \Qless\Client $client
+ */
 $queue = $client->queues['cook'];
 
 $jid = $queue->put(MakeStuffing::class, ['lots' => 'of butter']);
@@ -400,7 +407,7 @@ $queue->put(MyJobClass::class, ['foo' => 'bar'], null, 600, null, 100);
 ### Recurring Jobs
 
 Sometimes it's not enough simply to schedule one job, but you want to run jobs regularly.
-In particular, maybe you have some batch operation that needs to get run once an hour and you don't care what
+In particular, maybe you have some batch operation that needs to get run once an hour, and you don't care what
 worker runs it. Recurring jobs are specified much like other jobs:
 
 ```php
@@ -466,7 +473,7 @@ echo count($jobs), ' jobs got popped'; // 5 jobs got popped
 
 ### Topics
 Topic help you to put job to different queues. 
-First, you must to create subscription. You can use pattern for name of topics. 
+First, you must create subscription. You can use pattern for a name of topics. 
 Symbol `*` - one word, `#` - few words divided by point `.`. 
 Examples: `first.second.*`, `*.second.*`, `#.third`.
 
@@ -474,7 +481,9 @@ Examples: `first.second.*`, `*.second.*`, `#.third`.
 /**
  * Subscribe
  *
- * @var \Qless\Queues\Queue $queue
+ * @var \Qless\Queues\Queue $queue1
+ * @var \Qless\Queues\Queue $queue2
+ * @var \Qless\Queues\Queue $queue3
  */
 $queue1->subscribe('*.*.apples');
 $queue2->subscribe('big.*.apples');
@@ -482,14 +491,17 @@ $queue3->subscribe('#.apples');
 
 ```
 
-Than you can put job to all subscribers.
+Then you can put job to all subscribers.
 
 ```php
 /**
  * Put to few queues
  *
  * @var \Qless\Topics\Topic
+ * @var \Qless\Client $client
  */
+use Qless\Topics\Topic;
+ 
 $topic = new Topic('big.green.apples', $client);
 $topic->put('ClassName', ['key' => 'value']); // Put to $queue1, $queue2 and $queue3
 
@@ -503,7 +515,7 @@ You can get and set global (read: in the context of the same Redis instance) con
 heartbeating, and so forth. There aren't a tremendous number of configuration options, but an important one is how
 long job data is kept around. Job data is expired after it has been completed for `jobs-history` seconds, but is limited
 to the last `jobs-history-count` completed jobs. These default to 50k jobs, and 30 days, but depending on volume,
-your needs may change. There is also possible to configure failed job in history,
+your needs may change. There is also possible to configure a failed job in history,
 using `jobs-failed-history` parameter. To only keep the last 500 jobs for up to 7 days and failed jobs for 3 days:
 
 ```php
@@ -595,11 +607,11 @@ The possible event types match those defined by [Qless-core](ttps://github.com/s
 
 #### Event System
 
-Qless also has a basic event system that can be used by your application to customize how some of the qless internals
+Qless also has a basic event system that can be used by your application to customize how some qless internals
 behave. Events can be used to inject logic before, after or around the processing of a single job in the child process.
 This can be useful, for example, when you need to re-establish a connection to your database for each job.
 
-Events has few main concepts - `entity`, `happening`, `source`.
+Event has few main concepts - `entity`, `happening`, `source`.
 - `entity` is an object type (component) with whom event is taking place, for example `entity` can be `job`, `worker`, `queue`.
 - `happening` is an act that is taking place, for example it can be `beforeFork` or `beforePerform`
 - `source` is an object who fired an event
@@ -610,16 +622,15 @@ you can get full name of event (made of `entity` and `happening`) by calling sta
 `source` you can get with `getSource()`.
 
 Also, there are subscribers for events. Subscriber can be any class with methods named as event's `happening` (example: `beforeFork(AbstractEvent $event)`).
-Also subscriber can be a closure. Handling method of subscriber will receive only one parameter - event, you can get all data you need from that event. 
+Also, subscriber can be a closure. Handling method of subscriber will receive only one parameter - event, you can get all data you need from that event. 
 
-You can attach subscriber to a specific event or events group (grouped bye events `entity`) 
+You can attach a subscriber to a specific event or events group (grouped bye events `entity`) 
 
 Example: Define a subscriber with an `beforeFork` method that will be called where you want the job to be processed:
 
 ```php
 use Acme\Database\Connection;
 use Qless\Events\User\AbstractEvent;
-use Qless\Workers\ForkingWorker;
 
 class ReEstablishDBConnection
 {
@@ -637,7 +648,7 @@ class ReEstablishDBConnection
 }
 ```
 
-Then, attach subscriber to the `worker` events group:
+Then, attach a subscriber to the `worker` events group:
 
 ```php
 use Qless\Events\User\Worker\AbstractWorkerEvent;
@@ -646,7 +657,7 @@ use Qless\Events\User\Worker\AbstractWorkerEvent;
 $worker->getEventsManager()->attach(AbstractWorkerEvent::getEntityName(), new ReEstablishDBConnection());
 ```
 
-To attach subscriber to a specific event you can do:
+To attach a subscriber to a specific event you can do:
 
 ```php
 use \Qless\Events\User\Worker\BeforeFork;
@@ -655,7 +666,7 @@ use \Qless\Events\User\Worker\BeforeFork;
 $worker->getEventsManager()->attach(BeforeFork::getName(), new ReEstablishDBConnection());
 ```
 
-You can attach subscribers as many as you want. Qless events system supports priories so you can change default priority:
+You can attach subscribers as many as you want. Qless events system supports priories, so you can change default priority:
 
 ```php
 use Qless\Events\User\Worker\AbstractWorkerEvent;
@@ -670,7 +681,7 @@ $worker->getEventsManager()->attach(AbstractWorkerEvent::getEntityName(), new My
 
 As it was mentioned above, Qless supports events on a per-entity basis. 
 So per-job events are available if you have some orthogonal logic to run in the context of some (but not all) jobs. 
-Every Job Event class is an descendant of `\Qless\Events\User\Job\AbstractJobEvent` and contains entity of `\Qless\Jobs\BaseJob`.
+Every Job Event class is a descendant of `\Qless\Events\User\Job\AbstractJobEvent` and contains entity of `\Qless\Jobs\BaseJob`.
 To get the job from event you can use `$event->getJob()` method.
 
 Per-job subscribes can be defined the same way as worker's subscribers:
@@ -768,7 +779,7 @@ If you want your job to be processed without worker, you can set sync mode for q
 /** @var \Qless\Client $client */
 $client->config->set('sync-enabled', true);
 ``` 
-Now you all job will be process without worker, synchronously.
+Now you all job will be process without a worker, synchronously.
 
 **Note**: Use it feature for testing your job in development environment.
 
@@ -832,12 +843,12 @@ $client->stats('queue_name', time());
 ### Time
 
 Redis doesn't allow access to the system time if you're going to be making any manipulations to data. 
-But Qless have heartbeating. When the client making most requests, it actually send the current time. 
+However, Qless have heartbeating. When the client making most requests, it actually sends the current time. 
 So, all workers must be synchronized.
 
 ### Ensuring Job Uniqueness
 
-Qless generate Job Id automatically, but you can set it manually.
+Qless generate Job ID automatically, but you can set it manually.
 
 ``` php
 // automatically
@@ -847,7 +858,7 @@ $queue->put($className, $data);
 $queue->put($className, $data, 'abcdef123456');
 ```
 
-For example, Job Id can be based on className and payload. It'll guaranteed that Qless won't have 
+For example, Job ID can be based on className and payload. It'll guaranteed that Qless won't have 
 multiple jobs with the same class and data.
 Also, it helps for debugging on dev environment. 
 
@@ -860,7 +871,7 @@ Also, it helps for debugging on dev environment.
 * retries
 * depends
 
-All of this options have default value. Also, you can define default job 
+All of these options have default value. Also, you can define default job 
 options directly on the job class:
 
 ``` php
@@ -878,7 +889,7 @@ $queue->put(
 
 ### Testing Jobs
 
-You can use [syncronize](#sync-job-processing) to handle jobs for testing.
+You can use [synchronize](#sync-job-processing) to handle jobs for testing.
 In this regime, all jobs will be running immediately.
 
 ## Contributing and Developing
