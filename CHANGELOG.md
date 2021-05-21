@@ -6,84 +6,91 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-## [3.15.0]
-
+## [3.15.0] - 2021-05-21
 ### Added
 - `\Qless\Client::disconnect` method to close Redis connection
+
 ### Changed
 - PHP8 support
-- Bump `monolog/monolog` verions to `^2.0`
+- Bump `monolog/monolog` version to `^2.0`
 - Bump `ramsey/uuid` version to `^4.1`
 - Bump `phpstan/phpstan` version `^0.12.87`
 - Bump `phpunit/phpunit` version to `^8.5`
 
-## [3.14.0]
+## [3.14.1] - 2021-05-19
+### Added
+- Added additional check of type in Lua
+
+## [3.14.0] - 2021-02-22
 ### Added
 - Jobs Collection
+
 ### Changed
 - Change heartbeat signature to match other binding defaults
+
 ### Fixed
 - Fixed count failed jobs after removing
 
-## [3.13.0]
+## [3.13.0] - 2020-12-23
 ### Added
  - TTL for failed jobs
+
 ### Changed
  - Recur JID is consistent with normal JID
 
-## [3.12.1]
+## [3.12.1] - 2020-11-21
 ### Fixed
 - Fix nil state of job 
 
-## [3.12.0]
+## [3.12.0] - 2020-11-09
 ### Added
  - Add support for forgetting a queue
 ### Fixed
  - Cleanup a heap of small code quality issues
  - Cleanup unit tests 
 
-## [3.11.1]
+## [3.11.1] - 2020-08-28
 ### Fixed
  - Add syncCompleteEvent only if needed
  
-## [3.11.0]
+## [3.11.0] - 2020-04-15
 ### Added
  - Added PubSub Manager
 ### Fixed
  - Force check worker variable type
 
-## [3.10.1]
+## [3.10.1] - 2019-11-25
 ### Fixed
  - Clear old data of removed tracked jobs 
 
-## [3.10.0]
+## [3.10.0] - 2019-11-06
 ### Added
  - Added getting queues by priority range
  
-## [3.9.1]
+## [3.9.1] - 2019-08-08
 ### Fixed
 -fixed stop worker if limit time is reached after running
 
-## [3.9.0]
+## [3.9.0] - 2019-08-07
 ### Added
 - Added limits for workers by memory, execution time and tasks count.
 
-## [3.8.3]
+## [3.8.3] - 2019-07-19
 ### Fixed
 - Fixed removing completed jobs history
 
-## [3.8.2]
+## [3.8.2] - 2019-07-05
 ### Fixed
 - Fire event BeforeFork before fork
 - Added deregister worker for SIGQUIT
 - Fix method name beforeFirstWork
  
-## [3.8.1]
+## [3.8.1] - 2019-05-07
 ### Added
 - Added getting workers by range.
 - Added getting total count of registered workers.
 
-## [3.8.0]
+## [3.8.0] - 2019-04-24
 ### Added
 - Added getter of tracked jobs list.
 - Added remove worker feature.
@@ -277,8 +284,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
  - Initial stable release
 
-[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.14.0...HEAD
-[3.14.0]: https://github.com/pdffiller/qless-php/compare/v3.3.0...v3.14.0
+[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.15.0...HEAD
+[3.15.0]: https://github.com/pdffiller/qless-php/compare/v3.14.1...v3.15.0
+[3.14.1]: https://github.com/pdffiller/qless-php/compare/v3.14.0...v3.14.1
+[3.14.0]: https://github.com/pdffiller/qless-php/compare/v3.13.0...v3.14.0
 [3.13.0]: https://github.com/pdffiller/qless-php/compare/v3.12.1...v3.13.0
 [3.12.1]: https://github.com/pdffiller/qless-php/compare/v3.12.0...v3.12.1
 [3.12.0]: https://github.com/pdffiller/qless-php/compare/v3.11.1...v3.12.0
