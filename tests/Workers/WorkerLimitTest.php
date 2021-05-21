@@ -8,9 +8,11 @@ use Qless\Workers\ResourceLimitedWorkerInterface;
 
 abstract class WorkerLimitTest extends QlessTestCase
 {
+    protected const QUEUE_SIZE = 100;
+
     public function testNumberJobs(): void
     {
-        $queue = $this->getQueue(100);
+        $queue = $this->getQueue();
         $worker = $this->getWorker();
         $worker->setMaximumNumberJobs(1);
         $worker->run();
@@ -23,7 +25,7 @@ abstract class WorkerLimitTest extends QlessTestCase
      */
     public function testTimeLimitWorker(): void
     {
-        $queue = $this->getQueue(1000);
+        $queue = $this->getQueue(true);
         $worker = $this->getWorker();
         $worker->setTimeLimit(1);
         $worker->run();
@@ -33,7 +35,7 @@ abstract class WorkerLimitTest extends QlessTestCase
 
     public function testMemoryLimitWorker(): void
     {
-        $queue = $this->getQueue(100);
+        $queue = $this->getQueue();
         $worker = $this->getWorker();
         $worker->setMemoryLimit(1);
         $worker->run();
@@ -42,11 +44,11 @@ abstract class WorkerLimitTest extends QlessTestCase
     }
 
 
-    private function getQueue(int $length = 100): Queue
+    private function getQueue(bool $sleep = false): Queue
     {
         $queue = new Queue('test-queue', $this->client);
-        for ($i = 0; $i < $length; $i++) {
-            $queue->put(JobHandler::class, []);
+        for ($i = 0; $i < self::QUEUE_SIZE; $i++) {
+            $queue->put(JobHandler::class, \compact('sleep'));
         }
 
         return $queue;
