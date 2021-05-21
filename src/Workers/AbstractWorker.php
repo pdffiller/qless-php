@@ -356,8 +356,7 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
             }
 
             $this->logger->notice($loggerPrefix . 'job {job} has finished', $loggerContext);
-        }
-        catch (SimpleWorkerContinuationException $e) {
+        } catch (SimpleWorkerContinuationException $e) {
             throw $e;
         } catch (\Throwable $e) {
             $loggerContext['stack'] = $e->getMessage();

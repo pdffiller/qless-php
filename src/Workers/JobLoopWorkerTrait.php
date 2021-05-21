@@ -97,5 +97,4 @@ trait JobLoopWorkerTrait
      * @param BaseJob $job
      */
     abstract protected function performWork(BaseJob $job): void;
-
 }
