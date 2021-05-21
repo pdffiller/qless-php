@@ -39,7 +39,7 @@ trait ResourceLimitedWorkerTrait
     protected $numberExecutedJobs = 0;
 
     /**
-     * @var int
+     * @var int|null
      */
     protected $endTime;
 
@@ -72,7 +72,7 @@ trait ResourceLimitedWorkerTrait
      */
     protected function startTimer(): void
     {
-        $this->endTime = $this->timeLimitInSeconds ? $this->timeLimitInSeconds + microtime(true) : null;
+        $this->endTime = $this->timeLimitInSeconds ? $this->timeLimitInSeconds + \time() : null;
     }
 
     /**
@@ -106,7 +106,7 @@ trait ResourceLimitedWorkerTrait
         if ($this->timeLimitInSeconds === null || $this->isShuttingDown()) {
             return;
         }
-        if ($this->endTime < microtime(true)) {
+        if ($this->endTime < \time()) {
             $this->getLogger()->info(
                 'Worker stopped due to time limit of {timeLimit}s reached',
                 [
