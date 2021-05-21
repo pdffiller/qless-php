@@ -13,6 +13,7 @@ use Qless\Exceptions\SimpleWorkerContinuationException;
 use Qless\Jobs\BaseJob;
 use Qless\Jobs\PerformAwareInterface;
 use Qless\Jobs\Reservers\ReserverInterface;
+use Qless\Subscribers\SignalsAwareSubscriber;
 
 /**
  * Qless\Workers\AbstractWorker
@@ -366,6 +367,31 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
                 'system:fatal',
                 sprintf('%s: %s in %s on line %d', get_class($e), $e->getMessage(), $e->getFile(), $e->getLine())
             );
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function handleSignal(int $signal, string $signalName, SignalsAwareSubscriber $signalsAwareSubscriber): void
+    {
+        switch ($signal) {
+            case SIGTERM:
+            case SIGINT:
+                $this->shutDownNow();
+                break;
+            case SIGQUIT:
+                $this->shutdown();
+                break;
+            case SIGUSR1:
+                $this->killChildren();
+                break;
+            case SIGUSR2:
+                $this->pauseProcessing();
+                break;
+            case SIGCONT:
+                $this->unPauseProcessing();
+                break;
         }
     }
 }

@@ -82,24 +82,7 @@ class SignalsAwareSubscriber
                     'signal' => $signalName,
                 ]);
 
-                switch ($signal) {
-                    case SIGTERM:
-                    case SIGINT:
-                        $worker->shutDownNow();
-                        break;
-                    case SIGQUIT:
-                        $worker->shutdown();
-                        break;
-                    case SIGUSR1:
-                        $worker->killChildren();
-                        break;
-                    case SIGUSR2:
-                        $worker->pauseProcessing();
-                        break;
-                    case SIGCONT:
-                        $worker->unPauseProcessing();
-                        break;
-                }
+                $worker->handleSignal($signal, $signalName, $this);
             }
         );
     }
