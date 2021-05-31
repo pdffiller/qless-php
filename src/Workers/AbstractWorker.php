@@ -5,9 +5,11 @@ namespace Qless\Workers;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qless\Client;
+use Qless\Events\User\Job as JobEvent;
 use Qless\Events\User\Worker as WorkerEvent;
 use Qless\EventsManagerAwareInterface;
 use Qless\EventsManagerAwareTrait;
+use Qless\Exceptions\SimpleWorkerContinuationException;
 use Qless\Jobs\BaseJob;
 use Qless\Jobs\PerformAwareInterface;
 use Qless\Jobs\Reservers\ReserverInterface;
@@ -139,6 +141,11 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     {
     }
 
+    protected function getLogger(): LoggerInterface
+    {
+        return $this->logger;
+    }
+
     /**
      * {@inheritdoc}
      *
@@ -150,7 +157,14 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
         $this->interval = abs($interval);
     }
 
+    final public function getInterval(): int
+    {
+        return $this->interval;
+    }
+
     /**
+     * {@inheritdoc}
+     *
      * @param  LoggerInterface $logger
      * @return void
      */
@@ -238,8 +252,6 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
 
     /**
      * {@inheritdoc}
-     *
-     * @return void
      */
     final public function run(): void
     {
@@ -248,12 +260,15 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
         $this->perform();
     }
 
+    /**
+     * Start doing work.
+     *
+     * @return void
+     */
     abstract public function perform(): void;
 
     /**
      * {@inheritdoc}
-     *
-     * @return void
      */
     public function shutdown(): void
     {
@@ -264,8 +279,6 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
 
     /**
      * {@inheritdoc}
-     *
-     * @return void
      */
     public function pauseProcessing(): void
     {
@@ -275,8 +288,6 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
 
     /**
      * {@inheritdoc}
-     *
-     * @return void
      */
     public function unPauseProcessing(): void
     {
@@ -285,9 +296,15 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
     }
 
     /**
+     * @return bool
+     */
+    public function isPaused(): bool
+    {
+        return $this->paused;
+    }
+
+    /**
      * {@inheritdoc}
-     *
-     * @return void
      */
     public function shutdownNow(): void
     {
@@ -301,11 +318,54 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
      * {@inheritdoc}
      *
      * @codeCoverageIgnoreStart
-     * @return void
      */
     public function killChildren(): void
     {
         // nothing to do
     }
     // @codeCoverageIgnoreEnd
+
+    /**
+     * @param BaseJob $job
+     * @param array $loggerContext
+     * @param string $loggerPrefix
+     *
+     * @throws SimpleWorkerContinuationException
+     */
+    protected function performJob(BaseJob $job, array $loggerContext, ?string $loggerPrefix = null): void
+    {
+        try {
+            if ($this->jobPerformHandler) {
+                if ($this->jobPerformHandler instanceof EventsManagerAwareInterface) {
+                    $this->jobPerformHandler->setEventsManager($this->client->getEventsManager());
+                }
+
+                if (method_exists($this->jobPerformHandler, 'setUp')) {
+                    $this->jobPerformHandler->setUp();
+                }
+
+                $this->getEventsManager()->fire(new JobEvent\BeforePerform($this->jobPerformHandler, $job));
+                $this->jobPerformHandler->perform($job);
+                $this->getEventsManager()->fire(new JobEvent\AfterPerform($this->jobPerformHandler, $job));
+
+                if (method_exists($this->jobPerformHandler, 'tearDown')) {
+                    $this->jobPerformHandler->tearDown();
+                }
+            } else {
+                $job->perform();
+            }
+
+            $this->logger->notice($loggerPrefix . 'job {job} has finished', $loggerContext);
+        } catch (SimpleWorkerContinuationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            $loggerContext['stack'] = $e->getMessage();
+            $this->logger->critical($loggerPrefix . 'job {job} has failed {stack}', $loggerContext);
+
+            $job->fail(
+                'system:fatal',
+                sprintf('%s: %s in %s on line %d', get_class($e), $e->getMessage(), $e->getFile(), $e->getLine())
+            );
+        }
+    }
 }

@@ -13,6 +13,10 @@ use RuntimeException;
  */
 class PerformClassAwareWorker extends AbstractWorker
 {
+
+    /**
+     * {@inheritdoc}
+     */
     public function perform(): void
     {
         if (!$this->jobPerformHandler) {

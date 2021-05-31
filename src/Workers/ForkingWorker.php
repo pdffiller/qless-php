@@ -4,9 +4,7 @@ namespace Qless\Workers;
 
 use Closure;
 use Psr\Log\LoggerInterface;
-use Qless\Events\User\Job as JobEvent;
 use Qless\Events\User\Worker as WorkerEvent;
-use Qless\EventsManagerAwareInterface;
 use Qless\Exceptions\ErrorFormatter;
 use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\BaseJob;
@@ -21,8 +19,10 @@ use Qless\Subscribers\WatchdogSubscriber;
  *
  * @package Qless\Workers
  */
-final class ForkingWorker extends AbstractWorker
+final class ForkingWorker extends AbstractWorker implements ResourceLimitedWorkerInterface
 {
+    use JobLoopWorkerTrait;
+
     private const PROCESS_TYPE_MASTER = 0;
     private const PROCESS_TYPE_JOB = 1;
     private const PROCESS_TYPE_WATCHDOG = 2;
@@ -45,9 +45,6 @@ final class ForkingWorker extends AbstractWorker
     /** @var string */
     private $who = 'master';
 
-    /** @var array */
-    private $logContext = [];
-
     /** @var resource[] */
     private $sockets = [];
 
@@ -55,38 +52,7 @@ final class ForkingWorker extends AbstractWorker
     private $signalsSubscriber;
 
     /**
-     * @var int
-     */
-    private $numberExecutedJobs = 0;
-
-    /**
-     * @var float|null
-     */
-    private $endTime;
-
-    /**
-     * Memory limit execution
-     *
-     * @var int
-     */
-    private $memoryLimit;
-
-    /**
-     * @var int
-     */
-    private $maximumNumberOfJobs;
-
-    /**
-     * Time limit execution
-     *
-     * @var int
-     */
-    private $timeLimitInSeconds;
-
-    /**
      * {@inheritdoc}
-     *
-     * @return void
      */
     public function onConstruct(): void
     {
@@ -96,9 +62,6 @@ final class ForkingWorker extends AbstractWorker
 
     /**
      * {@inheritdoc}
-     *
-     * @param  LoggerInterface $logger
-     * @return void
      */
     public function setLogger(LoggerInterface $logger): void
     {
@@ -108,151 +71,78 @@ final class ForkingWorker extends AbstractWorker
     }
 
     /**
-     * @param int $bytes
-     */
-    public function setMemoryLimit(int $bytes): void
-    {
-        $this->memoryLimit = $bytes;
-    }
-
-    /**
-     * @param int $seconds
-     */
-    public function setTimeLimit(int $seconds): void
-    {
-        $this->timeLimitInSeconds = $seconds;
-    }
-
-    /**
-     * @param int $number
-     */
-    public function setMaximumNumberJobs(int $number): void
-    {
-        $this->maximumNumberOfJobs = $number;
-    }
-
-    /**
-     * @return void
+     * {@inheritdoc}
      */
     public function perform(): void
     {
-        declare(ticks=1);
-
-        $this->endTime = $this->timeLimitInSeconds ? $this->timeLimitInSeconds + microtime(true) : null;
         $this->who = 'master:' . $this->name;
         $this->logContext = ['type' => $this->who, 'job.identifier' => null];
-        $this->logger->info('{type}: worker started', $this->logContext);
 
-        $this->reserver->beforeWork();
+        $this->doJobLoop($this->client, $this->reserver, '{type}: ');
+    }
 
-        $didWork = false;
+    /**
+     * {@inheritdoc}
+     */
+    protected function performWork(BaseJob $job): void
+    {
+        // fork processes
+        $this->childStart();
+        $this->watchdogStart($this->client->createSubscriber(['ql:log']));
 
-        while (true) {
-            $this->stopWhenTimeLimitIsReached();
+        $this->title(sprintf('Forked %d at %s', $this->childPID, strftime('%F %T')));
 
-            // Don't wait on any processes if we're already in shutdown mode.
-            if ($this->isShuttingDown() === true) {
-                break;
-            }
-
-            while ($this->paused) {
-                usleep(250000);
-            }
-
-            if ($didWork) {
-                $this->title(
-                    sprintf(
-                        'Waiting for %s with interval %d sec',
-                        implode(',', $this->reserver->getQueues()),
-                        $this->interval
-                    )
-                );
-                $didWork = false;
-            }
-
-            $job = $this->reserve();
-            if ($job === null) {
-                if ($this->interval === 0) {
-                    break;
+        // Parent process, sit and wait
+        while ($this->childProcesses > 0) {
+            $status = null;
+            $pid   = pcntl_wait($status, WUNTRACED);
+            if ($pid > 0) {
+                if ($pid === $this->childPID) {
+                    $exited = $this->childProcessStatus($status);
+                } elseif ($pid === $this->watchdogPID) {
+                    $exited = $this->watchdogProcessStatus($status);
+                } else {
+                    if ($this->isShuttingDown()) {
+                        break;
+                    }
+                    // unexpected?
+                    $this->logger->info(sprintf("master received status for unknown PID %d; exiting\n", $pid));
+                    exit(1);
                 }
-                usleep($this->interval * 1000000);
-                continue;
-            }
 
-            $this->setCurrentJob($job);
-            $this->logContext['job.identifier'] = $job->jid;
-
-            // fork processes
-            $this->childStart();
-            $this->watchdogStart($this->client->createSubscriber(['ql:log']));
-
-            $this->title(sprintf('Forked %d at %s', $this->childPID, strftime('%F %T')));
-
-            // Parent process, sit and wait
-            while ($this->childProcesses > 0) {
-                $status = null;
-                $pid   = pcntl_wait($status, WUNTRACED);
-                if ($pid > 0) {
-                    if ($pid === $this->childPID) {
-                        $exited = $this->childProcessStatus($status);
-                    } elseif ($pid === $this->watchdogPID) {
-                        $exited = $this->watchdogProcessStatus($status);
-                    } else {
-                        if ($this->isShuttingDown()) {
+                if ($exited) {
+                    --$this->childProcesses;
+                    switch ($pid) {
+                        case $this->childPID:
+                            $this->childPID = null;
+                            if ($this->watchdogPID) {
+                                // shutdown watchdog immediately if child has exited
+                                posix_kill($this->watchdogPID, SIGKILL);
+                            }
                             break;
-                        }
-                        // unexpected?
-                        $this->logger->info(sprintf("master received status for unknown PID %d; exiting\n", $pid));
-                        exit(1);
-                    }
 
-                    if ($exited) {
-                        --$this->childProcesses;
-                        switch ($pid) {
-                            case $this->childPID:
-                                $this->childPID = null;
-                                if ($this->watchdogPID) {
-                                    // shutdown watchdog immediately if child has exited
-                                    posix_kill($this->watchdogPID, SIGKILL);
-                                }
-                                break;
-
-                            case $this->watchdogPID:
-                                $this->watchdogPID = null;
-                                break;
-                        }
+                        case $this->watchdogPID:
+                            $this->watchdogPID = null;
+                            break;
                     }
                 }
-            }
-
-            foreach ($this->sockets as $socket) {
-                socket_close($socket);
-            }
-
-            $this->sockets  = [];
-            $this->setCurrentJob(null);
-            $this->logContext['job.identifier'] = null;
-            $didWork = true;
-
-            $this->stopWhenJobCountIsExceeded();
-            $this->stopWhenMemoryUsageIsExceeded();
-
-            /**
-             * We need to reconnect due to bug in Redis library that always sends QUIT on destruction of \Redis
-             * rather than just leaving socket around. This call will sometimes generate a broken pipe notice
-             */
-            $old = error_reporting();
-            error_reporting($old & ~E_NOTICE);
-            try {
-                $this->client->reconnect();
-            } finally {
-                error_reporting($old);
             }
         }
 
-        $this->logger->info("Deregistering worker {name}", ['name' => $this->name]);
-        $this->client->getWorkers()->remove($this->name);
+        foreach ($this->sockets as $socket) {
+            socket_close($socket);
+        }
+        $this->sockets  = [];
+
+        $old = error_reporting();
+        error_reporting($old & ~E_NOTICE);
+        try {
+            $this->client->reconnect();
+        } finally {
+            error_reporting($old);
+        }
     }
+
 
     /**
      * Forks and creates a socket pair for communication between parent and child process
@@ -266,7 +156,7 @@ final class ForkingWorker extends AbstractWorker
     {
         $pair = [];
 
-        $domain = (stripos(PHP_OS, 'WIN') === 0 ? AF_INET : AF_UNIX);
+        $domain = stripos(PHP_OS, 'WIN') === 0 ? AF_INET : AF_UNIX;
         if (\socket_create_pair($domain, SOCK_STREAM, 0, $pair) === false) {
             $error = socket_strerror(socket_last_error($pair[0] ?? null));
 
@@ -372,7 +262,7 @@ final class ForkingWorker extends AbstractWorker
             $error .= $res;
         }
 
-        $error = unserialize($error);
+        $error = unserialize($error, false);
 
         if (is_array($error)) {
             $handler = new ErrorFormatter();
@@ -468,37 +358,7 @@ final class ForkingWorker extends AbstractWorker
     {
         $loggerContext = ['job' => $job->jid, 'type' => $this->who];
 
-        try {
-            if ($this->jobPerformHandler) {
-                if ($this->jobPerformHandler instanceof EventsManagerAwareInterface) {
-                    $this->jobPerformHandler->setEventsManager($this->client->getEventsManager());
-                }
-
-                if (method_exists($this->jobPerformHandler, 'setUp')) {
-                    $this->jobPerformHandler->setUp();
-                }
-
-                $this->getEventsManager()->fire(new JobEvent\BeforePerform($this->jobPerformHandler, $job));
-                $this->jobPerformHandler->perform($job);
-                $this->getEventsManager()->fire(new JobEvent\AfterPerform($this->jobPerformHandler, $job));
-
-                if (method_exists($this->jobPerformHandler, 'tearDown')) {
-                    $this->jobPerformHandler->tearDown();
-                }
-            } else {
-                $job->perform();
-            }
-
-            $this->logger->notice('{type}: job {job} has finished', $loggerContext);
-        } catch (\Throwable $e) {
-            $loggerContext['stack'] = $e->getMessage();
-            $this->logger->critical('{type}: job {job} has failed {stack}', $loggerContext);
-
-            $job->fail(
-                'system:fatal',
-                sprintf('%s: %s in %s on line %d', get_class($e), $e->getMessage(), $e->getFile(), $e->getLine())
-            );
-        }
+        $this->performJob($job, $loggerContext, '{type}: ');
     }
 
     /**
@@ -597,7 +457,7 @@ final class ForkingWorker extends AbstractWorker
         $subscriber->watchdog($this->job->jid, $this->name, $this->childPID);
 
         socket_close($socket);
-        $this->logger->info("{type}: done", $this->logContext);
+        $this->logger->info('{type}: done', $this->logContext);
 
         exit(0);
     }
@@ -662,8 +522,6 @@ final class ForkingWorker extends AbstractWorker
 
     /**
      * {@inheritdoc}
-     *
-     * @return void
      */
     public function shutdown(): void
     {
@@ -679,8 +537,6 @@ final class ForkingWorker extends AbstractWorker
 
     /**
      * {@inheritdoc}
-     *
-     * @return void
      */
     public function killChildren(): void
     {
@@ -690,59 +546,5 @@ final class ForkingWorker extends AbstractWorker
 
         $this->childKill();
         $this->watchdogKill();
-    }
-
-    /**
-     * Stop when job count is exceeded
-     *
-     * @return void
-     */
-    private function stopWhenJobCountIsExceeded(): void
-    {
-        if ($this->isShuttingDown() || !($this->maximumNumberOfJobs > 0)) {
-            return;
-        }
-        if (++$this->numberExecutedJobs >= $this->maximumNumberOfJobs) {
-            $this->logger->info('Worker stopped due to maximum count of {count} exceeded', [
-                'count' => $this->maximumNumberOfJobs
-            ]);
-            $this->shutdown();
-        }
-    }
-
-    /**
-     * Stop when time limit is reached
-     *
-     * @return void
-     */
-    private function stopWhenTimeLimitIsReached(): void
-    {
-        if ($this->isShuttingDown() || $this->timeLimitInSeconds === null) {
-            return;
-        }
-        if ($this->endTime < microtime(true)) {
-            $this->logger->info('Worker stopped due to time limit of {timeLimit}s reached', [
-                'timeLimit' => $this->timeLimitInSeconds
-            ]);
-            $this->shutdown();
-        }
-    }
-
-    /**
-     * Stop when memory usage is exceeded
-     *
-     * @return void
-     */
-    private function stopWhenMemoryUsageIsExceeded(): void
-    {
-        if ($this->isShuttingDown() || $this->memoryLimit === null) {
-            return;
-        }
-        if ($this->memoryLimit < memory_get_usage(true)) {
-            $this->logger->info('Worker stopped due to memory limit of {limit} exceeded', [
-                'limit' => $this->memoryLimit
-            ]);
-            $this->shutdown();
-        }
     }
 }

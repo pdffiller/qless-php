@@ -21,8 +21,11 @@ class JobHandler implements PerformAwareInterface
      */
     public function perform(BaseJob $job): void
     {
-        $job->data['stack'][] = __METHOD__;
+        if ($job->data['sleep'] ?? false) {
+            \sleep(1);
+        }
 
+        $job->data['stack'][] = __METHOD__;
         $job->complete();
     }
 

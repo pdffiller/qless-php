@@ -27,6 +27,10 @@ Documentation is borrowed from [seomoz/qless](https://github.com/seomoz/qless).
 - [Usage](#usage)
   - [Enqueuing Jobs](#enqueuing-jobs)
   - [Running A Worker](#running-a-worker)
+    - [Forking Worker](#forking-worker)
+    - [Non-Forking Worker](#non-forking-worker)
+    - [Signal Handling](#signal-handling)
+    - [Job Reservers](#job-reservers)
     - [Custom Job Handler](#custom-job-handler)
   - [Web Interface](#web-interface)
   - [Job Dependencies](#job-dependencies)
@@ -233,9 +237,11 @@ $job->untrack();                   // stop tracking current job
 
 ### Running A Worker
 
-The Qless PHP worker was heavily inspired by [Resque](https://github.com/chrisboulton/php-resque)'s worker, but thanks
-to the power of the qless-core lua scripts, it is much simpler, and you are welcome to write your own (e.g. if you'd
-rather save memory by not forking the worker for each job).
+The Qless PHP [forking worker](#forking-worker) was heavily inspired by [Resque](https://github.com/chrisboulton/php-resque)'s worker, but thanks
+to the power of the qless-core lua scripts, it is much simpler and you are welcome to write your own or use the included 
+[non-forking worker](#non-forking-worker) (e.g. if you'd rather save memory by not forking the worker for each job).
+
+#### Forking Worker
 
 As with resque...
 
@@ -276,6 +282,57 @@ $worker = new ForkingWorker($reserver, $client);
 $worker->run();
 ```
 
+#### Non-Forking Worker
+
+Qless PHP also includes a non-forking worker. This can alleviate a number of issues related to external connections (such as to Redis or MySQL)
+from worker processes, and may give better results when using an external service manager such as systemd to manage the worker process.
+Usage is very similar to the forking worker:
+
+ ```php
+ // The autoloader line is omitted
+ 
+ use Qless\Client;
+ use Qless\Jobs\Reservers\OrderedReserver;
+ use Qless\Workers\SimpleWorker;
+ 
+ // Create a client
+ $client = new Client();
+ 
+ // Get the queues you use.
+ //
+ // Create a job reserver; different reservers use different
+ // strategies for which order jobs are popped off of queues
+ $reserver = new OrderedReserver($client->queues, ['testing', 'testing-2', 'testing-3']);
+ 
+ $worker = new SimpleWorker($reserver, $client);
+ $worker->run();
+ ```
+
+#### Signal Handling
+
+The following POSIX-compliant signals are supported in the parent process:
+
+- `TERM`: Shutdown immediately, stop processing jobs
+- `INT`:  Shutdown immediately, stop processing jobs
+- `QUIT`: Shutdown after the current job has finished processing
+- `USR1`: Forking Worker: Kill the forked child immediately, continue processing jobs
+- `USR1`: Non-Forking Worker: Abandon progress on the current job immediately, continue processing jobs
+- `USR2`: Don't process any new jobs, and dump the current backtrace
+- `CONT`: Start processing jobs again after a `USR2`
+
+_For detailed info regarding the signals refer to [`signal(7)`](http://man7.org/linux/man-pages/man7/signal.7.html)._
+
+When using the Forking Worker, you should send these to the master process, not the child.
+
+The child process supports the `USR2` signal, which causes it to dump its current backtrace.
+
+When using the Non-Forking worker, proper handling of `USR1` signals requires that Exceptions of class
+`\Qless\Exceptions\SimpleWorkerContinuationException` are **not** caught. If your Job class, or JobPerformer
+catches all Exceptions or all Throwables, you will need to re-throw instances of
+`\Qless\Exceptions\SimpleWorkerContinuationException`, or `USR1` signals will be ignored.
+
+#### Job Reservers
+
 There are different job reservers.
 
 * `DefaultReserver`: A default job reserver
@@ -283,21 +340,6 @@ There are different job reservers.
 * `PriorityReserver`: Orders queues by its priority
 * `RoundRobinReserver`: Round-robins through all the provided queues
 * `ShuffledRoundRobin`: Like RoundRobinReserver but shuffles the order of the queues
-
-The following POSIX-compliant signals are supported in the parent process:
-
-- `TERM`: Shutdown immediately, stop processing jobs
-- `INT`:  Shutdown immediately, stop processing jobs
-- `QUIT`: Shutdown after the current job has finished processing
-- `USR1`: Kill the forked child immediately, continue processing jobs
-- `USR2`: Don't process any new jobs, and dump the current backtrace
-- `CONT`: Start processing jobs again after a `USR2`
-
-_For detailed info regarding the signals refer to [`signal(7)`](http://man7.org/linux/man-pages/man7/signal.7.html)._
-
-You should send these to the master process, not the child.
-
-The child process supports the `USR2` signal, which causes it to dump its current backtrace.
 
 #### Custom Job Handler
 
@@ -781,7 +823,7 @@ $client->config->set('sync-enabled', true);
 ``` 
 Now you all job will be process without a worker, synchronously.
 
-**Note**: Use it feature for testing your job in development environment.
+**Note**: Use this feature for testing your job in development environment.
 
 ### Heartbeating
 

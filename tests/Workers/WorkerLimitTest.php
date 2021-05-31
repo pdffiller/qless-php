@@ -1,16 +1,15 @@
 <?php
-
-
 namespace Qless\Tests\Workers;
 
-use Qless\Jobs\Reservers\OrderedReserver;
 use Qless\Queues\Queue;
 use Qless\Tests\QlessTestCase;
 use Qless\Tests\Stubs\JobHandler;
-use Qless\Workers\ForkingWorker;
+use Qless\Workers\ResourceLimitedWorkerInterface;
 
-class WorkerLimitTest extends QlessTestCase
+abstract class WorkerLimitTest extends QlessTestCase
 {
+    protected const QUEUE_SIZE = 100;
+
     public function testNumberJobs(): void
     {
         $queue = $this->getQueue();
@@ -26,7 +25,7 @@ class WorkerLimitTest extends QlessTestCase
      */
     public function testTimeLimitWorker(): void
     {
-        $queue = $this->getQueue(1000);
+        $queue = $this->getQueue(true);
         $worker = $this->getWorker();
         $worker->setTimeLimit(1);
         $worker->run();
@@ -45,21 +44,15 @@ class WorkerLimitTest extends QlessTestCase
     }
 
 
-    private function getQueue(int $length = 100): Queue
+    private function getQueue(bool $sleep = false): Queue
     {
         $queue = new Queue('test-queue', $this->client);
-        for ($i = 0; $i < $length; $i++) {
-            $queue->put(JobHandler::class, []);
+        for ($i = 0; $i < self::QUEUE_SIZE; $i++) {
+            $queue->put(JobHandler::class, \compact('sleep'));
         }
 
         return $queue;
     }
 
-    private function getWorker(): ForkingWorker
-    {
-        return new ForkingWorker(
-            new OrderedReserver($this->client->queues, ['test-queue']),
-            $this->client
-        );
-    }
+    abstract protected function getWorker(): ResourceLimitedWorkerInterface;
 }
