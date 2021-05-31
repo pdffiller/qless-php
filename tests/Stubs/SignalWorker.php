@@ -2,12 +2,10 @@
 
 namespace Qless\Tests\Stubs;
 
-use Qless\Events\User\Job as JobEvent;
-use Qless\Subscribers\SignalsAwareSubscriber;
-use Qless\Workers\AbstractWorker;
-use RuntimeException;
+use Qless\Workers\WorkerInterface;
 
-interface SignalWorker
+interface SignalWorker extends WorkerInterface
 {
+
     public function getLastSignalAction();
 }

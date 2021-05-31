@@ -2,11 +2,10 @@
 
 namespace Qless\Tests\Stubs;
 
-use Qless\Events\User\Job as JobEvent;
+use Qless\Events\User\Worker\AbstractWorkerEvent;
 use Qless\Subscribers\SignalsAwareSubscriber;
 use Qless\Tests\Support\SignalWorkerTrait;
 use Qless\Workers\AbstractWorker;
-use RuntimeException;
 
 /**
  * Qless\Tests\Stubs\DefaultSignalWorker
@@ -18,12 +17,12 @@ class DefaultSignalWorker extends AbstractWorker implements SignalWorker
 
     use SignalWorkerTrait;
 
-    /** @var SignalsAwareSubscriber */
-    private $signalsSubscriber;
-
     public function onConstruct(): void
     {
-        $this->signalsSubscriber = new SignalsAwareSubscriber($this->logger);
+        $this->getEventsManager()->attach(
+            AbstractWorkerEvent::getEntityName(),
+            new SignalsAwareSubscriber($this->logger)
+        );
     }
 
     /**
@@ -58,5 +57,4 @@ class DefaultSignalWorker extends AbstractWorker implements SignalWorker
     {
         $this->setLastSignalAction(__FUNCTION__);
     }
-
 }
