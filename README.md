@@ -331,6 +331,8 @@ When using the Non-Forking worker, proper handling of `USR1` signals requires th
 catches all Exceptions or all Throwables, you will need to re-throw instances of
 `\Qless\Exceptions\SimpleWorkerContinuationException`, or `USR1` signals will be ignored.
 
+If you wish to change how signals are handled, you can sub-class the `Worker` class you wish to use, and override the `handleSignal` method.
+
 #### Job Reservers
 
 There are different job reservers.
