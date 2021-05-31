@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.16.0] - 2021-05-31
+### Added
+- Simple worker
+
 ## [3.15.0] - 2021-05-21
 ### Added
 - `\Qless\Client::disconnect` method to close Redis connection
@@ -284,7 +288,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
  - Initial stable release
 
-[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.15.0...HEAD
+[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.16.0...HEAD
+[3.16.0]: https://github.com/pdffiller/qless-php/compare/v3.15.0...v3.16.0
 [3.15.0]: https://github.com/pdffiller/qless-php/compare/v3.14.1...v3.15.0
 [3.14.1]: https://github.com/pdffiller/qless-php/compare/v3.14.0...v3.14.1
 [3.14.0]: https://github.com/pdffiller/qless-php/compare/v3.13.0...v3.14.0
