@@ -6,6 +6,7 @@ use Psr\Log\LoggerAwareInterface;
 use Qless\Exceptions\RuntimeException;
 use Qless\Jobs\BaseJob;
 use Qless\Jobs\PerformAwareInterface;
+use Qless\Subscribers\SignalsAwareSubscriber;
 
 /**
  * Qless\Workers\WorkerInterface
@@ -110,4 +111,13 @@ interface WorkerInterface extends LoggerAwareInterface
      * @return void
      */
     public function unPauseProcessing(): void;
+
+    /**
+     * Handle a Signal
+     *
+     * @param int $signal
+     * @param string $signalName
+     * @param SignalsAwareSubscriber $signalsAwareSubscriber
+     */
+    public function handleSignal(int $signal, string $signalName, SignalsAwareSubscriber $signalsAwareSubscriber): void;
 }
