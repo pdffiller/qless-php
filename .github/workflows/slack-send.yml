@@ -1,0 +1,14 @@
+name: slack-send
+on:
+  pull_request:
+      types: [opened, synchronize, reopened]
+jobs:
+  build:
+    name: Send message
+    runs-on: ubuntu-latest
+    steps:
+      - uses: slackapi/slack-github-action@v1.15.0
+        with:
+          channel-id: 'C02DNGE5HV4'
+          slack-message: 'New PR created'
+        env:
