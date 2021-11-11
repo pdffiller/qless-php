@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.17.0] - 2021-11-11
+### Added
+- Method for getting all tags
+
 ## [3.16.0] - 2021-05-31
 ### Added
 - Simple worker
@@ -288,7 +292,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
  - Initial stable release
 
-[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.16.0...HEAD
+[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.17.0...HEAD
+[3.17.0]: https://github.com/pdffiller/qless-php/compare/v3.16.0...v3.17.0
 [3.16.0]: https://github.com/pdffiller/qless-php/compare/v3.15.0...v3.16.0
 [3.15.0]: https://github.com/pdffiller/qless-php/compare/v3.14.1...v3.15.0
 [3.14.1]: https://github.com/pdffiller/qless-php/compare/v3.14.0...v3.14.1
