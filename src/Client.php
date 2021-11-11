@@ -45,6 +45,7 @@ use Predis\Client as Redis;
  * @method string workers(?string $workerName = null, ?int $start = null, ?int $last = null)
  * @method string workerJobs(string $worker, ?int $minScoreTime = null)
  * @method string subscription(string $queue, $op, $topic)
+ * @method string tags(int $offset = 0, int $count = 10000)
  *
  * @property-read JobsCollection $jobs
  * @property-read WorkersCollection $workers

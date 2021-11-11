@@ -189,6 +189,16 @@ function Qless.subscription(now, queue, command, topic)
   end
 end
 
+function Qless.tags(cursor, count)
+  local tags = redis.call('scan', cursor, 'match', 'ql:t:*', 'count', count)
+
+  for i=1,#tags[2] do
+    tags[2][i] = tags[2][i]:gsub("ql:t:", "")
+  end
+
+  return tags[2]
+end
+
 function Qless.tag(now, command, ...)
   assert(command,
     'Tag(): Arg "command" must be "add", "remove", "get" or "top"')
@@ -2192,6 +2202,10 @@ end
 
 QlessAPI.track = function(now, command, jid)
   return cjson.encode(Qless.track(now, command, jid))
+end
+
+QlessAPI.tags = function(now, cursor, count)
+  return cjson.encode(Qless.tags(cursor, count))
 end
 
 QlessAPI.tag = function(now, command, ...)
