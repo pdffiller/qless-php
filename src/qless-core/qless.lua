@@ -33,17 +33,17 @@ function string.trim(s)
   return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
-local tagUtils = {}
-
-function tagUtils.isEmpty(tag)
-  local _trimmed = string.trim(tag)
+function string.isEmptyOrSpaces(s)
+  local _trimmed = string.trim(s)
   return (_trimmed == '' or _trimmed == nil)
 end
 
-function tagUtils.removeEmpty(tags)
+local utils = {}
+
+function utils.filterEmptyItems (items)
   local results = {}
-  for _,tag in ipairs(tags) do
-    if not tagUtils.isEmpty(tag) then table.insert(results, tag) end
+  for _,item in ipairs(items) do
+    if not string.isEmptyOrSpaces(item) then table.insert(results, item) end
   end
   return results
 end
@@ -232,7 +232,7 @@ function Qless.tag(now, command, ...)
 
       for i=2,#arg do
         local tag = arg[i]
-        if not tagUtils.isEmpty(tag) then
+        if not string.isEmptyOrSpaces(tag) then
           if _tags[tag] == nil or _tags[tag] == false then
             _tags[tag] = true
             table.insert(tags, tag)
@@ -1506,7 +1506,7 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
     'Put(): Arg "retries" not a number: ' .. tostring(options['retries']))
   tags     = assert(cjson.decode(options['tags'] or tags or '[]' ),
     'Put(): Arg "tags" not JSON'          .. tostring(options['tags']))
-  tags = tagUtils.removeEmpty(tags)
+  tags = utils.filterEmptyItems(tags)
   priority = assert(tonumber(options['priority'] or priority or 0),
     'Put(): Arg "priority" not a number'  .. tostring(options['priority']))
   local depends = assert(cjson.decode(options['depends'] or '[]') ,
@@ -1679,7 +1679,7 @@ function QlessQueue:recur(now, jid, klass, raw_data, spec, ...)
     options.tags = assert(cjson.decode(options.tags or '{}'),
       'Recur(): Arg "tags" must be JSON string array: ' .. tostring(
         options.tags))
-    options.tags = tagUtils.removeEmpty(options.tags)
+    options.tags = utils.filterEmptyItems(options.tags)
     options.priority = assert(tonumber(options.priority or 0),
       'Recur(): Arg "priority" not a number: ' .. tostring(
         options.priority))
@@ -2058,7 +2058,7 @@ function QlessRecurringJob:tag(...)
     for i,v in ipairs(tags) do _tags[v] = true end
 
     for i=1,#arg do
-      if (not tagUtils.isEmpty(arg[i])) and (_tags[arg[i]] == nil or _tags[arg[i]] == false) then
+      if (not string.isEmptyOrSpaces(arg[i])) and (_tags[arg[i]] == nil or _tags[arg[i]] == false) then
         table.insert(tags, arg[i])
       end
     end
