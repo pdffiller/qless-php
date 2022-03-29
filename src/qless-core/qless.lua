@@ -1095,7 +1095,7 @@ function Qless.queue(name)
       end
       local indexStart = offset
       if indexStart == nil then
-        indexStart = 1
+        indexStart = 0
       end
       local jids = {}
       local indexEnd = indexStart + count - 1

@@ -260,6 +260,40 @@ class CollectionTest extends QlessTestCase
         self::assertCount(3, $jobs);
     }
 
+    public function returnCorrectWaitingJobsDataProvider(): array
+    {
+        return [
+            [1, 1],
+            [1, 10],
+            [10, 1],
+            [10, 10],
+            [20, 5],
+        ];
+    }
+
+    private const TEST_JOBS_COUNT = 15;
+
+    /**
+     * @dataProvider returnCorrectWaitingJobsDataProvider
+     */
+    public function testReturnCorrectWaitingJobsOnCountSmallerThenOffsetWithoutParameters(int $offset, int $count): void
+    {
+        $queueName = 'test_waiting_queue';
+        $jobPrefix = 'job-test-return-correct-waiting-jobs-';
+
+        $queue = new Queue($queueName, $this->client);
+
+        for ($i = 0; $i < self::TEST_JOBS_COUNT; $i++) {
+            $queue->put('Xxx\Yyy', ['test' => 'some-data'], $jobPrefix . $i);
+        }
+
+        $jobIds = $this->client->jobs('waiting', $queueName, $offset, $count);
+
+        $jobsWithoutSkipped = self::TEST_JOBS_COUNT - $offset;
+        $expectedJobsCount = $jobsWithoutSkipped > 0 ? min($count, $jobsWithoutSkipped) : 0;
+
+        self::assertCount($expectedJobsCount, $jobIds);
+    }
 
     private function put($jid, $opts = []): void
     {
