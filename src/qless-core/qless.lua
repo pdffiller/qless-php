@@ -29,6 +29,25 @@ function table.extend(self, other)
   end
 end
 
+function string.trim(s)
+  return (s:gsub("^%s*(.-)%s*$", "%1"))
+end
+
+function string.isEmptyOrSpaces(s)
+  local _trimmed = string.trim(s)
+  return (_trimmed == '' or _trimmed == nil)
+end
+
+local utils = {}
+
+function utils.filterEmptyItems (items)
+  local results = {}
+  for _,item in ipairs(items) do
+    if not string.isEmptyOrSpaces(item) then table.insert(results, item) end
+  end
+  return results
+end
+
 function Qless.publish(channel, message)
   redis.call('publish', Qless.ns .. channel, message)
 end
@@ -189,6 +208,16 @@ function Qless.subscription(now, queue, command, topic)
   end
 end
 
+function Qless.tags(cursor, count)
+  local tags = redis.call('scan', cursor, 'match', 'ql:t:*', 'count', count)
+
+  for i=1,#tags[2] do
+    tags[2][i] = tags[2][i]:gsub("ql:t:", "")
+  end
+
+  return tags[2]
+end
+
 function Qless.tag(now, command, ...)
   assert(command,
     'Tag(): Arg "command" must be "add", "remove", "get" or "top"')
@@ -203,12 +232,14 @@ function Qless.tag(now, command, ...)
 
       for i=2,#arg do
         local tag = arg[i]
-        if _tags[tag] == nil or _tags[tag] == false then
-          _tags[tag] = true
-          table.insert(tags, tag)
+        if not string.isEmptyOrSpaces(tag) then
+          if _tags[tag] == nil or _tags[tag] == false then
+            _tags[tag] = true
+            table.insert(tags, tag)
+          end
+          redis.call('zadd', 'ql:t:' .. tag, now, jid)
+          redis.call('zincrby', 'ql:tags', 1, tag)
         end
-        redis.call('zadd', 'ql:t:' .. tag, now, jid)
-        redis.call('zincrby', 'ql:tags', 1, tag)
       end
 
       redis.call('hset', QlessJob.ns .. jid, 'tags', cjson.encode(tags))
@@ -1478,6 +1509,7 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
     'Put(): Arg "retries" not a number: ' .. tostring(options['retries']))
   tags     = assert(cjson.decode(options['tags'] or tags or '[]' ),
     'Put(): Arg "tags" not JSON'          .. tostring(options['tags']))
+  tags = utils.filterEmptyItems(tags)
   priority = assert(tonumber(options['priority'] or priority or 0),
     'Put(): Arg "priority" not a number'  .. tostring(options['priority']))
   local depends = assert(cjson.decode(options['depends'] or '[]') ,
@@ -1650,6 +1682,7 @@ function QlessQueue:recur(now, jid, klass, raw_data, spec, ...)
     options.tags = assert(cjson.decode(options.tags or '{}'),
       'Recur(): Arg "tags" must be JSON string array: ' .. tostring(
         options.tags))
+    options.tags = utils.filterEmptyItems(options.tags)
     options.priority = assert(tonumber(options.priority or 0),
       'Recur(): Arg "priority" not a number: ' .. tostring(
         options.priority))
@@ -2027,7 +2060,11 @@ function QlessRecurringJob:tag(...)
     local _tags = {}
     for i,v in ipairs(tags) do _tags[v] = true end
 
-    for i=1,#arg do if _tags[arg[i]] == nil or _tags[arg[i]] == false then table.insert(tags, arg[i]) end end
+    for i=1,#arg do
+      if (not string.isEmptyOrSpaces(arg[i])) and (_tags[arg[i]] == nil or _tags[arg[i]] == false) then
+        table.insert(tags, arg[i])
+      end
+    end
 
     tags = cjson.encode(tags)
     redis.call('hset', 'ql:r:' .. self.jid, 'tags', tags)
@@ -2195,6 +2232,10 @@ end
 
 QlessAPI.track = function(now, command, jid)
   return cjson.encode(Qless.track(now, command, jid))
+end
+
+QlessAPI.tags = function(now, cursor, count)
+  return cjson.encode(Qless.tags(cursor, count))
 end
 
 QlessAPI.tag = function(now, command, ...)

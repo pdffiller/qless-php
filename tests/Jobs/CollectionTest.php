@@ -312,6 +312,18 @@ class CollectionTest extends QlessTestCase
         self::assertCount($defaultLimit, $jobIds);
     }
 
+    public function testTagsList(): void
+    {
+        $queue = $this->client->queues['test-queue'];
+        $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0, 0, ['tag-a', 'tag-b']);
+        $queue->put('SampleJobPerformClass', [], 'jid-2', 0, 0, 0, ['tag-a', 'tag-c']);
+
+        $data = $this->client->jobs->tagsList();
+        sort($data);
+
+        self::assertEquals(['tag-a', 'tag-b', 'tag-c'], $data);
+    }
+
     private function put($jid, $opts = []): void
     {
         $opts = array_merge([

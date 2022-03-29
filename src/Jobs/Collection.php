@@ -87,8 +87,8 @@ class Collection implements ArrayAccess
      * Fetches a report of failed jobs for the specified group
      *
      * @param string|bool $group
-     * @param int         $start
-     * @param int         $limit
+     * @param int $start
+     * @param int $limit
      *
      * @return array
      */
@@ -228,5 +228,16 @@ class Collection implements ArrayAccess
     public function offsetUnset($offset)
     {
         throw new UnsupportedFeatureException('Deleting a job is not supported using Jobs collection.');
+    }
+
+    /**
+     * @param int $offset
+     * @param int $count
+     *
+     * @return array
+     */
+    public function tagsList(int $offset = 0, int $count = 10000): array
+    {
+        return json_decode($this->client->tags($offset, $count), true) ?: [];
     }
 }
