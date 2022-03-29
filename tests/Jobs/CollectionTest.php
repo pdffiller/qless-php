@@ -271,28 +271,45 @@ class CollectionTest extends QlessTestCase
         ];
     }
 
-    private const TEST_JOBS_COUNT = 15;
-
     /**
      * @dataProvider returnCorrectWaitingJobsDataProvider
      */
-    public function testReturnCorrectWaitingJobsOnCountSmallerThenOffsetWithoutParameters(int $offset, int $count): void
+    public function testReturnCorrectWaitingJobsOnCountSmallerThenOffsetWithParameters(int $offset, int $count): void
     {
-        $queueName = 'test_waiting_queue';
-        $jobPrefix = 'job-test-return-correct-waiting-jobs-';
+        $queueName = 'test_waiting_queue_with_parameters';
+        $jobPrefix = 'job-test-return-correct-waiting-jobs-with-parameters-';
 
         $queue = new Queue($queueName, $this->client);
 
-        for ($i = 0; $i < self::TEST_JOBS_COUNT; $i++) {
+        $testJobsCount = 15;
+        for ($i = 0; $i < $testJobsCount; $i++) {
             $queue->put('Xxx\Yyy', ['test' => 'some-data'], $jobPrefix . $i);
         }
 
         $jobIds = $this->client->jobs('waiting', $queueName, $offset, $count);
 
-        $jobsWithoutSkipped = self::TEST_JOBS_COUNT - $offset;
+        $jobsWithoutSkipped = $testJobsCount - $offset;
         $expectedJobsCount = $jobsWithoutSkipped > 0 ? min($count, $jobsWithoutSkipped) : 0;
 
         self::assertCount($expectedJobsCount, $jobIds);
+    }
+
+    public function testReturnCorrectWaitingJobsOnCountSmallerThenOffsetWithoutParameters(): void
+    {
+        $queueName = 'test_waiting_queue_without_parameters';
+        $jobPrefix = 'job-test-return-correct-waiting-jobs-without-parameters-';
+
+        $queue = new Queue($queueName, $this->client);
+
+        $testJobsCount = 30;
+        for ($i = 0; $i < $testJobsCount; $i++) {
+            $queue->put('Xxx\Yyy', ['test' => 'some-data'], $jobPrefix . $i);
+        }
+
+        $jobIds = $this->client->jobs('waiting', $queueName);
+
+        $defaultLimit = 25;
+        self::assertCount($defaultLimit, $jobIds);
     }
 
     private function put($jid, $opts = []): void
