@@ -33,7 +33,7 @@
         "monolog/monolog": "^2.0",
         "predis/predis": "1.1.*",
         "psr/log": "^1",
-        "ramsey/uuid": "3.7.* || 3.8.* || ^4",
+        "ramsey/uuid": "^3.7 || ^4",
         "seld/signal-handler": "1.1.*"
     },
     "conflict": {
