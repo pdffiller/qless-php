@@ -1124,12 +1124,15 @@ function Qless.queue(name)
       if count == 0 then
         return {}
       end
-      if offset == nil then
-        offset = 0
+      local indexStart = offset
+      if indexStart == nil then
+        indexStart = 0
       end
       local jids = {}
-      for index, jid in ipairs(redis.call(
-        'zrevrange', queue:prefix('work'), offset, count - 1)) do
+      local indexEnd = indexStart + count - 1
+      for index, jid in ipairs(
+        redis.call('zrevrange', queue:prefix('work'), indexStart, indexEnd)
+      ) do
         table.insert(jids, jid)
       end
       return jids

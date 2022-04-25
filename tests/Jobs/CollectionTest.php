@@ -260,6 +260,58 @@ class CollectionTest extends QlessTestCase
         self::assertCount(3, $jobs);
     }
 
+    public function returnCorrectWaitingJobsDataProvider(): array
+    {
+        return [
+            [1, 1],
+            [1, 10],
+            [10, 1],
+            [10, 10],
+            [20, 5],
+        ];
+    }
+
+    /**
+     * @dataProvider returnCorrectWaitingJobsDataProvider
+     */
+    public function testReturnCorrectWaitingJobsOnCountSmallerThenOffsetWithParameters(int $offset, int $count): void
+    {
+        $queueName = 'test_waiting_queue_with_parameters';
+        $jobPrefix = 'job-test-return-correct-waiting-jobs-with-parameters-';
+
+        $queue = new Queue($queueName, $this->client);
+
+        $testJobsCount = 15;
+        for ($i = 0; $i < $testJobsCount; $i++) {
+            $queue->put('Xxx\Yyy', ['test' => 'some-data'], $jobPrefix . $i);
+        }
+
+        $jobIds = $this->client->jobs('waiting', $queueName, $offset, $count);
+
+        $jobsWithoutSkipped = $testJobsCount - $offset;
+        $expectedJobsCount = $jobsWithoutSkipped > 0 ? min($count, $jobsWithoutSkipped) : 0;
+
+        self::assertCount($expectedJobsCount, $jobIds);
+    }
+
+    public function testReturnCorrectWaitingJobsOnCountSmallerThenOffsetWithoutParameters(): void
+    {
+        $queueName = 'test_waiting_queue_without_parameters';
+        $jobPrefix = 'job-test-return-correct-waiting-jobs-without-parameters-';
+
+        $queue = new Queue($queueName, $this->client);
+
+        $testJobsCount = 30;
+        for ($i = 0; $i < $testJobsCount; $i++) {
+            $queue->put('Xxx\Yyy', ['test' => 'some-data'], $jobPrefix . $i);
+        }
+
+        $jobIds = $this->client->jobs('waiting', $queueName);
+
+        $defaultLimit = 25;
+        self::assertCount($defaultLimit, $jobIds);
+    }
+
     public function testTagsList(): void
     {
         $queue = $this->client->queues['test-queue'];
@@ -271,7 +323,6 @@ class CollectionTest extends QlessTestCase
 
         self::assertEquals(['tag-a', 'tag-b', 'tag-c'], $data);
     }
-
 
     private function put($jid, $opts = []): void
     {
