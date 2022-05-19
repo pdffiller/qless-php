@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.15.0]
+
+### Changed
+- PHP 8.1 support
+- Bump `phpunit/phpunit` version to `^9.0`
+
 ## [3.18.0] - 2022-04-25
 ### Fixes
 - Fix (offset, count) parameters on queue.work.peek
