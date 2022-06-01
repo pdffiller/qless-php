@@ -1,4 +1,36 @@
--- Current SHA: a72cf289fef9a2345060911e982f53b02d69724c
+if #KEYS > 0 then error('No Keys should be provided') end
+
+-- StringUtils module start
+local stringUtils = {}
+
+function stringUtils.trim(s)
+  return (s:gsub("^%s*(.-)%s*$", "%1"))
+end
+
+function stringUtils.isEmptyOrSpaces(s)
+  local _trimmed = stringUtils.trim(s)
+  return (_trimmed == '' or _trimmed == nil)
+end
+-- StringUtils module end
+
+-- TableUtils module start
+local tableUtils = {}
+
+function tableUtils.extend(self, other)
+  for i, v in ipairs(other) do
+    table.insert(self, v)
+  end
+end
+
+function tableUtils.filterEmptyItems (items)
+  local results = {}
+  for _,item in ipairs(items) do
+    if not stringUtils.isEmptyOrSpaces(item) then table.insert(results, item) end
+  end
+  return results
+end
+-- TableUtils module end
+
 local Qless = {
   ns = 'ql:'
 }
@@ -21,38 +53,11 @@ QlessJob.__index = QlessJob
 local QlessRecurringJob = {}
 QlessRecurringJob.__index = QlessRecurringJob
 
-Qless.config = {}
-
-function table.extend(self, other)
-  for i, v in ipairs(other) do
-    table.insert(self, v)
-  end
-end
-
-function string.trim(s)
-  return (s:gsub("^%s*(.-)%s*$", "%1"))
-end
-
-function string.isEmptyOrSpaces(s)
-  local _trimmed = string.trim(s)
-  return (_trimmed == '' or _trimmed == nil)
-end
-
-local utils = {}
-
-function utils.filterEmptyItems (items)
-  local results = {}
-  for _,item in ipairs(items) do
-    if not string.isEmptyOrSpaces(item) then table.insert(results, item) end
-  end
-  return results
-end
-
-function Qless.publish(channel, message)
+Qless.publish = function(channel, message)
   redis.call('publish', Qless.ns .. channel, message)
 end
 
-function Qless.job(jid)
+Qless.job = function(jid)
   assert(jid, 'Job(): no jid provided')
   local job = {}
   setmetatable(job, QlessJob)
@@ -60,7 +65,7 @@ function Qless.job(jid)
   return job
 end
 
-function Qless.recurring(jid)
+Qless.recurring = function(jid)
   assert(jid, 'Recurring(): no jid provided')
   local job = {}
   setmetatable(job, QlessRecurringJob)
@@ -68,7 +73,7 @@ function Qless.recurring(jid)
   return job
 end
 
-function Qless.failed(group, start, limit)
+Qless.failed = function(group, start, limit)
   start = assert(tonumber(start or 0),
     'Failed(): Arg "start" is not a number: ' .. (start or 'nil'))
   limit = assert(tonumber(limit or 25),
@@ -89,7 +94,7 @@ function Qless.failed(group, start, limit)
   end
 end
 
-function Qless.jobs(now, state, ...)
+Qless.jobs = function(now, state, ...)
   assert(state, 'Jobs(): Arg "state" missing')
 
   local offset = assert(tonumber(arg[2] or 0),
@@ -128,7 +133,7 @@ function Qless.jobs(now, state, ...)
   end
 end
 
-function Qless.track(now, command, jid)
+Qless.track = function(now, command, jid)
   if command ~= nil then
     assert(jid, 'Track(): Arg "jid" missing')
     assert(Qless.job(jid):exists(), 'Track(): Job does not exist')
@@ -159,7 +164,7 @@ function Qless.track(now, command, jid)
   end
 end
 
-function Qless.subscription(now, queue, command, topic)
+Qless.subscription = function(now, queue, command, topic)
   assert(command,
     'Tag(): Arg "command" must be "add", "remove", "get", "all", "exists"')
 
@@ -208,7 +213,7 @@ function Qless.subscription(now, queue, command, topic)
   end
 end
 
-function Qless.tags(cursor, count)
+Qless.tags = function(cursor, count)
   local tags = redis.call('scan', cursor, 'match', 'ql:t:*', 'count', count)
 
   for i=1,#tags[2] do
@@ -218,7 +223,7 @@ function Qless.tags(cursor, count)
   return tags[2]
 end
 
-function Qless.tag(now, command, ...)
+Qless.tag = function(now, command, ...)
   assert(command,
     'Tag(): Arg "command" must be "add", "remove", "get" or "top"')
 
@@ -232,7 +237,7 @@ function Qless.tag(now, command, ...)
 
       for i=2,#arg do
         local tag = arg[i]
-        if not string.isEmptyOrSpaces(tag) then
+        if not stringUtils.isEmptyOrSpaces(tag) then
           if _tags[tag] == nil or _tags[tag] == false then
             _tags[tag] = true
             table.insert(tags, tag)
@@ -289,7 +294,7 @@ function Qless.tag(now, command, ...)
   end
 end
 
-function Qless.cancel(...)
+Qless.cancel = function(...)
   local dependents = {}
   for _, jid in ipairs(arg) do
     dependents[jid] = redis.call(
@@ -370,6 +375,7 @@ function Qless.cancel(...)
   return arg
 end
 
+Qless.config = {}
 
 Qless.config.defaults = {
   ['application']        = 'qless',
@@ -1072,6 +1078,7 @@ function QlessJob:history(now, what, item)
       cjson.encode({math.floor(now), what, item}))
   end
 end
+
 function Qless.queue(name)
   assert(name, 'Queue(): no queue name provided')
   local queue = {}
@@ -1304,7 +1311,7 @@ function QlessQueue:peek(now, count)
 
   self:check_scheduled(now, count - #jids)
 
-  table.extend(jids, self.work.peek(0, count - #jids))
+  tableUtils.extend(jids, self.work.peek(0, count - #jids))
 
   return jids
 end
@@ -1313,11 +1320,11 @@ function QlessQueue:paused()
   return redis.call('sismember', 'ql:paused_queues', self.name) == 1
 end
 
-function QlessQueue.pause(now, ...)
+QlessQueue.pause = function(now, ...)
   redis.call('sadd', 'ql:paused_queues', unpack(arg))
 end
 
-function QlessQueue.unpause(...)
+QlessQueue.unpause = function(...)
   redis.call('srem', 'ql:paused_queues', unpack(arg))
 end
 
@@ -1353,7 +1360,7 @@ function QlessQueue:pop(now, worker, count)
 
   self:check_scheduled(now, count - #jids)
 
-  table.extend(jids, self.work.peek(0, count - #jids))
+  tableUtils.extend(jids, self.work.peek(0, count - #jids))
 
   local state
   for index, jid in ipairs(jids) do
@@ -1509,7 +1516,7 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
     'Put(): Arg "retries" not a number: ' .. tostring(options['retries']))
   tags     = assert(cjson.decode(options['tags'] or tags or '[]' ),
     'Put(): Arg "tags" not JSON'          .. tostring(options['tags']))
-  tags = utils.filterEmptyItems(tags)
+  tags = tableUtils.filterEmptyItems(tags)
   priority = assert(tonumber(options['priority'] or priority or 0),
     'Put(): Arg "priority" not a number'  .. tostring(options['priority']))
   local depends = assert(cjson.decode(options['depends'] or '[]') ,
@@ -1682,7 +1689,7 @@ function QlessQueue:recur(now, jid, klass, raw_data, spec, ...)
     options.tags = assert(cjson.decode(options.tags or '{}'),
       'Recur(): Arg "tags" must be JSON string array: ' .. tostring(
         options.tags))
-    options.tags = utils.filterEmptyItems(options.tags)
+    options.tags = tableUtils.filterEmptyItems(options.tags)
     options.priority = assert(tonumber(options.priority or 0),
       'Recur(): Arg "priority" not a number: ' .. tostring(
         options.priority))
@@ -1797,7 +1804,6 @@ function QlessQueue:check_scheduled(now, count)
   end
 end
 
-
 function QlessQueue:invalidate_lock_jid(now, jid)
   local worker, failure = unpack(
           redis.call('hmget', QlessJob.ns .. jid, 'worker', 'failure'))
@@ -1851,7 +1857,6 @@ function QlessQueue:invalidate_lock_jid(now, jid)
 
   return jid
 end
-
 
 function QlessQueue:invalidate_locks(now, count)
   local jids = {}
@@ -1957,11 +1962,11 @@ function QlessQueue:invalidate_locks(now, count)
   return jids
 end
 
-function QlessQueue.deregister(...)
+QlessQueue.deregister = function(...)
   redis.call('zrem', Qless.ns .. 'queues', unpack(arg))
 end
 
-function QlessQueue.counts(now, name)
+QlessQueue.counts = function(now, name)
   if name then
     local queue = Qless.queue(name)
     local stalled = queue.locks.length(now)
@@ -1985,6 +1990,7 @@ function QlessQueue.counts(now, name)
     return response
   end
 end
+
 function QlessRecurringJob:data()
   local job = redis.call(
     'hmget', 'ql:r:' .. self.jid, 'jid', 'klass', 'state', 'queue',
@@ -2061,7 +2067,7 @@ function QlessRecurringJob:tag(...)
     for i,v in ipairs(tags) do _tags[v] = true end
 
     for i=1,#arg do
-      if (not string.isEmptyOrSpaces(arg[i])) and (_tags[arg[i]] == nil or _tags[arg[i]] == false) then
+      if (not stringUtils.isEmptyOrSpaces(arg[i])) and (_tags[arg[i]] == nil or _tags[arg[i]] == false) then
         table.insert(tags, arg[i])
       end
     end
@@ -2102,11 +2108,11 @@ function QlessRecurringJob:unrecur()
   end
 end
 
-function QlessWorker.deregister(...)
+QlessWorker.deregister = function(...)
   return redis.call('zrem', 'ql:workers', unpack(arg))
 end
 
-function QlessWorker.counts(now, worker, start, last)
+QlessWorker.counts = function(now, worker, start, last)
   local interval = tonumber(Qless.config.get('max-worker-age', 86400))
 
   local workers  = redis.call('zrangebyscore', 'ql:workers', 0, now - interval)
@@ -2135,7 +2141,7 @@ function QlessWorker.counts(now, worker, start, last)
   end
 end
 
-function QlessWorker.jobs(worker, minScore)
+QlessWorker.jobs = function(worker, minScore)
   minScore = minScore or 0
   if worker == nil then
     return nil
@@ -2149,7 +2155,7 @@ end
 
 local QlessAPI = {}
 
-function QlessAPI.get(now, jid)
+QlessAPI.get = function(now, jid)
   local data = Qless.job(jid):data()
   if not data then
     return nil
@@ -2157,7 +2163,7 @@ function QlessAPI.get(now, jid)
   return cjson.encode(data)
 end
 
-function QlessAPI.multiget(now, ...)
+QlessAPI.multiget = function(now, ...)
   local results = {}
   for i, jid in ipairs(arg) do
     table.insert(results, Qless.job(jid):data())
@@ -2364,15 +2370,10 @@ QlessAPI['queue.forget'] = function(now, ...)
   QlessQueue.deregister(unpack(arg))
 end
 
-
-if #KEYS > 0 then error('No Keys should be provided') end
-
 local command_name = assert(table.remove(ARGV, 1), 'Must provide a command')
-local command      = assert(
-  QlessAPI[command_name], 'Unknown command ' .. command_name)
+local command = assert(QlessAPI[command_name], 'Unknown command ' .. command_name)
 
-local now          = tonumber(table.remove(ARGV, 1))
-local now          = assert(
-  now, 'Arg "now" missing or not a number: ' .. (now or 'nil'))
+local now = tonumber(table.remove(ARGV, 1))
+local now = assert(now, 'Arg "now" missing or not a number: ' .. (now or 'nil'))
 
 return command(now, unpack(ARGV))
