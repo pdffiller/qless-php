@@ -9,26 +9,28 @@ jobs:
   run:
     runs-on: ubuntu-latest
     container: shivammathur/node
+    services:
+      redis:
+        image: redis:5-alpine
+        # Set health checks to wait until redis has started
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     strategy:
       matrix:
         php-versions: ['7.1', '7.2', '7.3', '7.4', '8.0']
-        redis-versions: ['5', 'latest']
     name: PHP ${{ matrix.php-versions }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Setup PHP:${{ matrix.php-versions }}
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-versions }}
           coverage: xdebug
-
-      - name: Setup redis:${{ matrix.redis }} on PHP:${{ matrix.php-versions }}
-        uses: supercharge/redis-github-action@1.4.0
-        with:
-          redis-version: ${{ matrix.redis-versions }}
-        run: redis-cli ping
 
       - name: Get composer cache directory
         id: composercache
