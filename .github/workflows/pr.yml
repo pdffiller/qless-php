@@ -9,20 +9,19 @@ jobs:
   run:
     runs-on: ubuntu-latest
     container: shivammathur/node
-    services:
-      redis:
-        image: redis:5-alpine
-        # Set health checks to wait until redis has started
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     strategy:
       matrix:
         php-versions: ['7.1', '7.2', '7.3', '7.4', '8.0']
+        redis-version: [5, 6, 7]
     name: PHP ${{ matrix.php-versions }}
     steps:
+      - name: Start Redis
+        uses: supercharge/redis-github-action@1.4.0
+        with:
+          redis-version: ${{ matrix.redis-version }}
+          redis-container-name: redis
+        run: redis-cli ping
+
       - name: Checkout
         uses: actions/checkout@v2
 
