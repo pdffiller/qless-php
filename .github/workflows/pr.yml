@@ -21,7 +21,7 @@ jobs:
     strategy:
       matrix:
         php-versions: ['7.1', '7.2', '7.3', '7.4', '8.0']
-        redis-versions: ['5', '6', 'latest']
+        redis-versions: ['5', '6', '7']
     name: PHP ${{ matrix.php-versions }} (Redis ${{ matrix.redis-versions }})
     steps:
       - name: Checkout
