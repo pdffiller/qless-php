@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.19.0] - 2022-06-03
+### Changes
+- Support redis>=6.2.7
+
 ## [3.18.0] - 2022-04-25
 ### Fixes
 - Fix (offset, count) parameters on queue.work.peek
@@ -304,7 +308,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
  - Initial stable release
 
-[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.18.0...HEAD
+[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.19.0...HEAD
+[3.19.0]: https://github.com/pdffiller/qless-php/compare/v3.18.2...v3.19.0
 [3.18.0]: https://github.com/pdffiller/qless-php/compare/v3.17.2...v3.18.0
 [3.17.2]: https://github.com/pdffiller/qless-php/compare/v3.17.1...v3.17.2
 [3.17.1]: https://github.com/pdffiller/qless-php/compare/v3.17.0...v3.17.1
