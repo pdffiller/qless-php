@@ -3,7 +3,7 @@ version: '3'
 services:
 
   redis:
-    image: redis:5-alpine
+    image: redis:7-alpine
     container_name: qless-redis
     ports:
       - "6380:6379"
