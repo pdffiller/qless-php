@@ -11,7 +11,7 @@ jobs:
     container: shivammathur/node
     services:
       redis:
-        image: redis:5-alpine
+        image: redis:${{ matrix.redis-versions }}-alpine
         # Set health checks to wait until redis has started
         options: >-
           --health-cmd "redis-cli ping"
@@ -21,7 +21,8 @@ jobs:
     strategy:
       matrix:
         php-versions: ['7.1', '7.2', '7.3', '7.4', '8.0', '8.1']
-    name: PHP ${{ matrix.php-versions }}
+        redis-versions: ['5', '6', '7']
+    name: PHP ${{ matrix.php-versions }} (Redis ${{ matrix.redis-versions }})
     steps:
       - name: Checkout
         uses: actions/checkout@v2
