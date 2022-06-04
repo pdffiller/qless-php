@@ -5,7 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
-
+### Changed
+- PHP 8.1 support
+- Bump `phpunit/phpunit` version to `^9.0`
+- 
 ## [3.19.0] - 2022-06-03
 ### Changes
 - Support redis>=6.2.7
