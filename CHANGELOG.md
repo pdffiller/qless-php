@@ -5,10 +5,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
-### Changed
+
+## [3.20.0] - 2022-06-04
+### Changes
 - PHP 8.1 support
 - Bump `phpunit/phpunit` version to `^9.0`
-- 
+
 ## [3.19.0] - 2022-06-03
 ### Changes
 - Support redis>=6.2.7
@@ -311,7 +313,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
  - Initial stable release
 
-[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.19.0...HEAD
+[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.20.0...HEAD
+[3.20.0]: https://github.com/pdffiller/qless-php/compare/v3.19.0...v3.20.0
 [3.19.0]: https://github.com/pdffiller/qless-php/compare/v3.18.2...v3.19.0
 [3.18.0]: https://github.com/pdffiller/qless-php/compare/v3.17.2...v3.18.0
 [3.17.2]: https://github.com/pdffiller/qless-php/compare/v3.17.1...v3.17.2
