@@ -105,58 +105,82 @@ class WatchdogSubscriber implements LoggerAwareInterface
 
         call_user_func_array($callable, $this->channels);
 
-        /** @var \stdClass $message */
-        foreach ($pubsub as $message) {
-            if ($message->kind !== 'message' || empty($message->payload)) {
-                continue;
-            }
+        try {
+            /** @var \stdClass $message */
+            foreach ($pubsub as $message) {
+                if ($message->kind !== 'message' || empty($message->payload)) {
+                    continue;
+                }
 
-            $payload = json_decode($message->payload, true);
-            if (empty($payload)) {
-                continue;
-            }
+                $payload = json_decode($message->payload, true);
+                if (empty($payload)) {
+                    continue;
+                }
 
-            if (empty($payload['event']) || !is_array($payload)) {
-                continue;
-            }
+                if (empty($payload['event']) || !is_array($payload)) {
+                    continue;
+                }
 
-            if (!in_array($payload['event'], self::WATCHDOG_EVENTS, true) || empty($payload['jid'])) {
-                continue;
-            }
+                if (!in_array($payload['event'], self::WATCHDOG_EVENTS, true) || empty($payload['jid'])) {
+                    continue;
+                }
 
-            if ($payload['jid'] !== $jid) {
-                continue;
-            }
+                if ($payload['jid'] !== $jid) {
+                    continue;
+                }
 
-            $who = 'watchdog:' . $worker;
+                switch ($payload['event']) {
+                    case self::LOCK_LOST:
+                        if (!empty($payload['worker']) && $payload['worker'] === $worker) {
+                            $this->logger->info(
+                                "{type}: sending SIGKILL to child {$pid}; job {jid} handed out to another worker",
+                                [
+                                    'type' => 'watchdog:' . $worker,
+                                    'jid' => $jid,
+                                ]
+                            );
 
-            switch ($payload['event']) {
-                case self::LOCK_LOST:
-                    if (!empty($payload['worker']) && $payload['worker'] === $worker) {
-                        $this->logger->info(
-                            "{type}: sending SIGKILL to child {$pid}; job {jid} handed out to another worker",
-                            ['type' => $who, 'jid' => $jid]
-                        );
-
-                        $this->system->posixKill($pid, SIGKILL);
+                            $this->system->posixKill($pid, SIGKILL);
+                            $pubsub->stop();
+                        }
+                        break;
+                    case self::CANCELED:
+                        if (!empty($payload['worker']) && $payload['worker'] === $worker) {
+                            $this->logger->info(
+                                "{type}: sending SIGKILL to child {$pid}; job {jid} canceled",
+                                [
+                                    'type' => 'watchdog:' . $worker,
+                                    'jid' => $jid,
+                                ]
+                            );
+                            $this->system->posixKill($pid, SIGKILL);
+                            $pubsub->stop();
+                        }
+                        break;
+                    case self::COMPLETED:
+                    case self::FAILED:
                         $pubsub->stop();
-                    }
-                    break;
-                case self::CANCELED:
-                    if (!empty($payload['worker']) && $payload['worker'] === $worker) {
-                        $this->logger->info(
-                            "{type}: sending SIGKILL to child {$pid}; job {jid} canceled",
-                            ['type' => $who, 'jid' => $jid]
-                        );
-                        $this->system->posixKill($pid, SIGKILL);
-                        $pubsub->stop();
-                    }
-                    break;
-                case self::COMPLETED:
-                case self::FAILED:
-                    $pubsub->stop();
-                    break;
+                        break;
+                }
             }
+        } catch (\Throwable $exception) {
+            $this->logger->critical(
+                "Critical error",
+                [
+                    'type' => 'watchdog:' . $worker,
+                    'jid' => $jid,
+                    'exception' => $exception
+                ]
+            );
+            $this->logger->info(
+                "{type}: sending SIGKILL to child {$pid}; job {jid} canceled due to exception",
+                [
+                    'type' => 'watchdog:' . $worker,
+                    'jid' => $jid,
+                ]
+            );
+            $this->system->posixKill($pid, SIGKILL);
+            $pubsub->stop();
         }
 
         // Always unset the pubsub consumer instance when you are done! The

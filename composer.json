@@ -30,8 +30,8 @@
         "ext-pcre": "*",
         "ext-posix": "*",
         "ext-sockets": "*",
-        "monolog/monolog": "^2.0",
-        "predis/predis": "1.1.*",
+        "monolog/monolog": "^1.23 || ^2.0",
+        "predis/predis": "^1.1.10",
         "psr/log": "^1",
         "ramsey/uuid": "^3.7 || ^4",
         "seld/signal-handler": "1.1.*"
