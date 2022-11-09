@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.21.0] - 2022-11-09
+### Changes
+- predis -> ^1.1.10 with ErrorResponse handling
+- added exception handling to the pub/sub message loop
+- added monolog/monolog ^1.23 to backward compatibility
+
 ## [3.20.0] - 2022-06-04
 ### Changes
 - PHP 8.1 support
@@ -313,7 +319,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
  - Initial stable release
 
-[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.20.0...HEAD
+[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.21.0...HEAD
+[3.21.0]: https://github.com/pdffiller/qless-php/compare/v3.20.0...v3.21.0
 [3.20.0]: https://github.com/pdffiller/qless-php/compare/v3.19.0...v3.20.0
 [3.19.0]: https://github.com/pdffiller/qless-php/compare/v3.18.2...v3.19.0
 [3.18.0]: https://github.com/pdffiller/qless-php/compare/v3.17.2...v3.18.0
