@@ -2,6 +2,8 @@
 
 namespace Qless\Exceptions;
 
+use Throwable;
+
 /**
  * Qless\Exceptions\UnsupportedMethodException
  *
