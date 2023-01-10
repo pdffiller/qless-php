@@ -51,6 +51,7 @@ Documentation is borrowed from [seomoz/qless](https://github.com/seomoz/qless).
   - [Ensuring Job Uniqueness](#ensuring-job-uniqueness)
   - [Setting Default Job Options](#setting-default-job-options)
   - [Testing Jobs](#testing-jobs)
+  - [Light core script](#light-core-script)
 - [Contributing and Developing](#contributing-and-developing)
 - [License](#license)
 
@@ -936,6 +937,27 @@ $queue->put(
 
 You can use [synchronize](#sync-job-processing) to handle jobs for testing.
 In this regime, all jobs will be running immediately.
+
+### Light core script
+
+This version of core Lua script has less functionality compared to the standard one. It works faster
+thanks to this.
+
+The following features were disabled:
+* Job Dependencies
+* Job Priority
+* Recurring Jobs
+* Tagging
+
+If you try to call the methods of these, you will get `\Qless\Exceptions\UnsupportedMethodException`
+
+To use light script, call method `Client::lua::useLightScript()` right after the client creation:
+``` php
+use \Qless\Client;
+
+$client = new Client($parameters, $options);
+$client->getLua()->useLightScript();
+```
 
 ## Contributing and Developing
 

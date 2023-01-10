@@ -6,6 +6,7 @@ use Qless\Exceptions\ExceptionFactory;
 use Qless\Exceptions\QlessException;
 use Qless\Exceptions\RuntimeException;
 use Predis\Client as Redis;
+use Qless\Exceptions\UnsupportedMethodException;
 
 /**
  * Qless\LuaScript
@@ -18,14 +19,21 @@ use Predis\Client as Redis;
  */
 class LuaScript
 {
-    /** @var Redis */
-    private $redis;
+    private const BASE_SCRIPT = 'base';
+    private const LIGHT_SCRIPT = 'light';
+    private const SCRIPT_PATHS = [
+        self::BASE_SCRIPT => __DIR__ . '/qless-core/qless.lua',
+        self::LIGHT_SCRIPT => __DIR__ . '/qless-core/qless-light.lua',
+    ];
 
-    /** @var ?string */
-    private $sha;
+    /** @var array */
+    private $scriptHashes = [];
 
     /** @var string */
-    private $corePath;
+    private $activeScript;
+
+    /** @var Redis */
+    private $redis;
 
     /**
      * Lua constructor.
@@ -35,7 +43,9 @@ class LuaScript
     public function __construct(Redis $redis)
     {
         $this->redis = $redis;
-        $this->corePath = __DIR__ . '/qless-core/qless.lua';
+
+        $this->loadScripts();
+        $this->useBaseScript();
     }
 
     /**
@@ -47,13 +57,10 @@ class LuaScript
      *
      * @throws RuntimeException
      * @throws QlessException
+     * @throws UnsupportedMethodException
      */
     public function run(string $command, array $args)
     {
-        if (empty($this->sha)) {
-            $this->reload();
-        }
-
         $arguments = $this->normalizeCommandArgs($command, $args);
 
         try {
@@ -62,6 +69,26 @@ class LuaScript
         } catch (\Exception $exception) {
             throw ExceptionFactory::fromErrorMessage($exception->getMessage());
         }
+    }
+
+    /**
+     * Use base Lua script as core script
+     *
+     * @return void
+     */
+    public function useBaseScript(): void
+    {
+        $this->activeScript = self::BASE_SCRIPT;
+    }
+
+    /**
+     * Use light Lua script as core script
+     *
+     * @return void
+     */
+    public function useLightScript(): void
+    {
+        $this->activeScript = self::LIGHT_SCRIPT;
     }
 
     /**
@@ -76,32 +103,36 @@ class LuaScript
         $arguments = array_merge([$command, microtime(true)], $args);
 
         array_unshift($arguments, 0);
-        array_unshift($arguments, $this->sha);
+        array_unshift($arguments, $this->scriptHashes[$this->activeScript]);
 
         return $arguments;
     }
 
     /**
-     * Reloads the qless-core code.
+     * Load all scripts
      *
      * @return void
      *
      * @throws RuntimeException
      */
-    private function reload(): void
+    private function loadScripts()
     {
-        $this->sha = (string) @sha1_file($this->corePath);
+        foreach (self::SCRIPT_PATHS as $name => $scriptPath) {
+            $hash = (string) @sha1_file($scriptPath);
 
-        if (empty($this->sha)) {
-            throw new RuntimeException(
-                'Unable to locate qless-core file at path: ' . $this->corePath
-            );
-        }
+            if (empty($hash)) {
+                throw new RuntimeException(
+                    'Unable to locate qless-core file at path: ' . $scriptPath
+                );
+            }
 
-        $res = $this->redis->script('exists', $this->sha);
+            $result = $this->redis->script('exists', $hash);
 
-        if ($res[0] !== 1) {
-            $this->sha = $this->redis->script('load', file_get_contents($this->corePath));
+            if ($result[0] !== 1) {
+                $hash = $this->redis->script('load', file_get_contents($scriptPath));
+            }
+
+            $this->scriptHashes[$name] = $hash;
         }
     }
 }

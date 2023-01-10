@@ -9,15 +9,15 @@ namespace Qless\Exceptions;
  */
 class ExceptionFactory
 {
-    const ERROR_MESSAGE_RE = '/^ERR.*user_script:\d+:\s*(?<area>[\w.]+)\(\):\s*(?<message>.*)/';
+    const ERROR_MESSAGE_RE = '/^ERR.*user_script:\d+:\s*(?<area>[\w.:]+)\(\):\s*(?<message>.*)/';
 
     /**
      * Factory method to create an exception instance from an error message.
      *
      * @param  string $error
-     * @return InvalidJobException|JobLostException|QlessException
+     * @return UnsupportedMethodException|InvalidJobException|JobLostException|QlessException
      */
-    public static function fromErrorMessage(string $error): QlessException
+    public static function fromErrorMessage(string $error): ExceptionInterface
     {
         $area = null;
         $message = $error;
@@ -28,6 +28,8 @@ class ExceptionFactory
         }
 
         switch (true) {
+            case (stripos($message, 'This method is not supported in light version of script') !== false):
+                return new UnsupportedMethodException($message, $area);
             case ($area === 'Requeue' && stripos($message, 'does not exist') !== false):
             case (stripos($message, 'Job does not exist') !== false):
                 return new InvalidJobException($message, $area);
