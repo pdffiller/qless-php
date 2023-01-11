@@ -70,7 +70,11 @@ Qless.job = function(jid)
 end
 
 Qless.recurring = function(jid)
-  errorMethodNotSupported('Qless.recurring')
+  assert(jid, 'Recurring(): no jid provided')
+  local job = {}
+  setmetatable(job, QlessRecurringJob)
+  job.jid = jid
+  return job
 end
 
 Qless.failed = function(group, start, limit)
@@ -1302,6 +1306,8 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
     'jid'      , jid,
     'klass'    , klass,
     'data'     , raw_data,
+    'priority' , 0,
+    'tags'     , '{}',
     'state'    , ((delay > 0) and 'scheduled') or 'waiting',
     'worker'   , '',
     'expires'  , 0,
@@ -1562,7 +1568,7 @@ QlessQueue.counts = function(now, name)
 end
 
 function QlessRecurringJob:data()
-  errorMethodNotSupported('QlessRecurringJob:data')
+  return nil
 end
 
 function QlessRecurringJob:update(now, ...)
