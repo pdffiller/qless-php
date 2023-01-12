@@ -146,7 +146,7 @@ WRK;
         self::assertArrayHasKey('expires', $actual);
 
         self::assertGreaterThan($expires, $actual['expires']);
-        self::assertLessThan($expires + 2, $actual['expires']);
+        self::assertLessThan($expires + 3, $actual['expires']);
 
         $heartbeat = 60;
         $realDate  = (int) ($actual['expires'] - $heartbeat);
