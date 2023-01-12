@@ -30,15 +30,12 @@ class QueueLightTest extends QueueTest
     /**
      * @test
      */
-    public function shouldPutAndPopInTheSameOrder(): void
+    public function shouldPopJobsWithHigherPriorityFirst(): void
     {
         $this->markTestSkipped('Unsupported feature');
     }
 
-    /**
-     * @test
-     */
-    public function shouldPopJobsWithHigherPriorityFirst(): void
+    public function testHighPriorityJobPoppedBeforeLowerPriorityJobs(): void
     {
         $this->markTestSkipped('Unsupported feature');
     }

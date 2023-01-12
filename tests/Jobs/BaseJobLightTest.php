@@ -61,19 +61,6 @@ class BaseJobLightTest extends BaseJobTest
     /**
      * @test
      */
-    public function shouldCancelRemovesJob(): void
-    {
-        $queue = $this->client->queues['test-queue'];
-
-        $queue->put('SampleJobPerformClass', [], 'jid-1', 0, 0);
-        $queue->put('SampleJobPerformClass', [], 'jid-2', 0, 0);
-
-        self::assertEquals(['jid-2'], $queue->pop()->cancel());
-    }
-
-    /**
-     * @test
-     */
     public function shouldCancelRemovesJobWithDependents(): void
     {
         $this->markTestSkipped('Unsupported feature');

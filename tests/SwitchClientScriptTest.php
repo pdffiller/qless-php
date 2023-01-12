@@ -18,7 +18,6 @@ class SwitchClientScriptTest extends QlessTestCase
 
         $job1 = $queue->pop();
 
-        $queue = $this->client->queues['test-queue'];
         $queue->put('Bar', [], 'jid2');
 
         $this->client->getLua()->useBaseScript();

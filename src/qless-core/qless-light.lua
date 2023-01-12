@@ -909,6 +909,7 @@ function Qless.queue(name)
       end
     end, add = function(now, jid)
       local priority = 0
+      priority = priority - (now / 10000000000)
       return redis.call('zadd',
         queue:prefix('work'), priority, jid)
     end, score = function(jid)

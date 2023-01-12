@@ -32,45 +32,4 @@ class JobCollectionLightTest extends JobCollectionTest
 
         parent::testGetsDepends();
     }
-
-    public function testGetsRunning(): void
-    {
-        $queue = $this->client->queues['foo'];
-
-        $this->populateQueue($queue);
-
-        $running = $queue->jobs->running();
-
-        self::assertEquals('job-3', $running['job-3']->jid, 'Running job is returned');
-        self::assertCount(1, $running, 'Only Running job is returned');
-    }
-
-    public function testGetsWaiting(): void
-    {
-        $queue = $this->client->queues['foo'];
-
-        $this->populateQueue($queue);
-
-        $waiting = $queue->jobs->waiting();
-
-        self::assertEquals('job-1', $waiting['job-1']->jid, 'Waiting job is returned');
-        self::assertEquals('job-2', $waiting['job-2']->jid, 'Waiting job is returned');
-        self::assertCount(2, $waiting, 'Only Waiting job is returned');
-    }
-
-    public function testGetsStalled(): void
-    {
-        $queue = $this->client->queues['foo'];
-        $queue->setHeartbeat(1);
-
-        $this->populateQueue($queue);
-        $queue->pop();
-        \sleep(2);
-
-        $stalled = $queue->jobs->stalled();
-
-        self::assertEquals('job-2', $stalled['job-2']->jid, 'Stalled job is returned');
-        self::assertEquals('job-3', $stalled['job-3']->jid, 'Stalled job is returned');
-        self::assertCount(2, $stalled, 'Only stalled jobs are returned');
-    }
 }
