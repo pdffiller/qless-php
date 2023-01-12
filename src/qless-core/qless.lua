@@ -70,6 +70,7 @@ Qless.job = function(jid)
 end
 
 Qless.recurring = function(jid)
+  -- keep it unchanged because it's still in use in: \Qless\Jobs\Collection::offsetGet
   assert(jid, 'Recurring(): no jid provided')
   local job = {}
   setmetatable(job, QlessRecurringJob)
@@ -743,7 +744,7 @@ function QlessJob:heartbeat(now, worker, data)
 end
 
 function QlessJob:priority(priority)
-  -- it does not trigger error because it's used when abstract job is creating
+  -- it does not trigger error because it's still in use in \Qless\Jobs\AbstractJob::__construct
   return priority;
 end
 
@@ -1569,6 +1570,7 @@ QlessQueue.counts = function(now, name)
 end
 
 function QlessRecurringJob:data()
+  -- it does not trigger error because it's still in use in: \Qless\Jobs\Collection::offsetGet
   return nil
 end
 
