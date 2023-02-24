@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.22.0] - 2023-02-24
+### Changes
+- PHP 8.2 support
+- Laravel 9 support
+
 ## [3.21.0] - 2022-11-09
 ### Changes
 - predis -> ^1.1.10 with ErrorResponse handling

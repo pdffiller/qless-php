@@ -24,7 +24,7 @@
         }
     ],
     "require": {
-        "php": ">=7.1 < 8.2",
+        "php": ">=7.1 < 8.3",
         "ext-json": "*",
         "ext-pcntl": "*",
         "ext-pcre": "*",
@@ -32,7 +32,7 @@
         "ext-sockets": "*",
         "monolog/monolog": "^1.23 || ^2.0",
         "predis/predis": "^1.1.10",
-        "psr/log": "^1",
+        "psr/log": "^1 || ^2 || ^3",
         "ramsey/uuid": "^3.7 || ^4",
         "seld/signal-handler": "1.1.*"
     },
