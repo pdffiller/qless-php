@@ -262,7 +262,7 @@ final class ForkingWorker extends AbstractWorker implements ResourceLimitedWorke
             $error .= $res;
         }
 
-        $error = unserialize($error, false);
+        $error = unserialize($error, []);
 
         if (is_array($error)) {
             $handler = new ErrorFormatter();
