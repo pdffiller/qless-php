@@ -177,7 +177,7 @@ class Collection implements ArrayAccess
      * @param  string $jid
      * @return bool
      */
-    public function offsetExists($jid)
+    public function offsetExists($jid): bool
     {
         return $this->client->get($jid) !== null;
     }
@@ -190,7 +190,7 @@ class Collection implements ArrayAccess
      *
      * @throws QlessException
      */
-    public function offsetGet($jid)
+    public function offsetGet($jid): mixed
     {
         $data = $this->client->get($jid);
 
@@ -215,7 +215,7 @@ class Collection implements ArrayAccess
      *
      * @throws UnsupportedFeatureException
      */
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): void
     {
         throw new UnsupportedFeatureException('Setting a job is not supported using Jobs collection.');
     }
@@ -225,7 +225,7 @@ class Collection implements ArrayAccess
      *
      * @throws UnsupportedFeatureException
      */
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
         throw new UnsupportedFeatureException('Deleting a job is not supported using Jobs collection.');
     }
