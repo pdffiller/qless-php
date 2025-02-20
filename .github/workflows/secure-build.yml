@@ -1,0 +1,13 @@
+name: Secure Build Workflow
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+jobs:
+  secure-build:
+    # The stable version specified here is intentional.
+    # Please consult with the Security team before making any changes.
+    uses: pdffiller/security_checks/.github/workflows/secure-build.yml@stable
+    secrets: inherit
