@@ -4,12 +4,20 @@ if #KEYS > 0 then error('No Keys should be provided') end
 local stringUtils = {}
 
 function stringUtils.trim(s)
+  if type(s) ~= 'string' then return s end
   return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
 function stringUtils.isEmptyOrSpaces(s)
+  if type(s) ~= 'string' then return true end
   local _trimmed = stringUtils.trim(s)
   return (_trimmed == '' or _trimmed == nil)
+end
+
+function stringUtils.isNumber(s)
+  if type(s) == 'number' then return true end
+  if type(s) ~= 'string' then return false end
+  return tonumber(s) ~= nil
 end
 -- StringUtils module end
 
@@ -17,12 +25,14 @@ end
 local tableUtils = {}
 
 function tableUtils.extend(self, other)
+  if type(other) ~= 'table' then return end
   for i, v in ipairs(other) do
     table.insert(self, v)
   end
 end
 
-function tableUtils.filterEmptyItems (items)
+function tableUtils.filterEmptyItems(items)
+  if type(items) ~= 'table' then return {} end
   local results = {}
   for _,item in ipairs(items) do
     if not stringUtils.isEmptyOrSpaces(item) then table.insert(results, item) end
@@ -1257,8 +1267,10 @@ function QlessQueue:prefix(group)
 end
 
 function QlessQueue:stats(now, date)
-  date = assert(tonumber(date),
-    'Stats(): Arg "date" missing or not a number: '.. (date or 'nil'))
+  if not stringUtils.isNumber(date) then
+    error('Stats(): Arg "date" missing or not a number: ' .. tostring(date))
+  end
+  date = tonumber(date)
 
   local bin = date - (date % 86400)
 
@@ -1339,8 +1351,10 @@ end
 
 function QlessQueue:pop(now, worker, count)
   assert(worker, 'Pop(): Arg "worker" missing')
-  count = assert(tonumber(count),
-    'Pop(): Arg "count" missing or not a number: ' .. tostring(count))
+  if not stringUtils.isNumber(count) then
+    error('Pop(): Arg "count" missing or not a number: ' .. tostring(count))
+  end
+  count = tonumber(count)
 
   local expires = now + tonumber(
     Qless.config.get(self.name .. '-heartbeat') or
@@ -1503,8 +1517,10 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
   assert(klass, 'Put(): Arg "klass" missing')
   local data = assert(cjson.decode(raw_data),
     'Put(): Arg "data" missing or not JSON: ' .. tostring(raw_data))
-  delay = assert(tonumber(delay),
-    'Put(): Arg "delay" not a number: ' .. tostring(delay))
+  if not stringUtils.isNumber(delay) then
+    error('Put(): Arg "delay" not a number: ' .. tostring(delay))
+  end
+  delay = tonumber(delay)
 
   -- Create a local copy of vararg
   local args = {...}
@@ -1682,14 +1698,19 @@ function QlessQueue:recur(now, jid, klass, raw_data, spec, ...)
   local data = assert(cjson.decode(raw_data),
     'RecurringJob On(): Arg "data" not JSON: ' .. tostring(raw_data))
 
-  -- Create a local copy of vararg
   local args = {...}
 
   if spec == 'interval' then
-    local interval = assert(tonumber(args[1]),
-      'Recur(): Arg "interval" not a number: ' .. tostring(args[1]))
-    local offset   = assert(tonumber(args[2]),
-      'Recur(): Arg "offset" not a number: '   .. tostring(args[2]))
+    if not stringUtils.isNumber(args[1]) then
+      error('Recur(): Arg "interval" not a number: ' .. tostring(args[1]))
+    end
+    local interval = tonumber(args[1])
+    
+    if not stringUtils.isNumber(args[2]) then
+      error('Recur(): Arg "offset" not a number: ' .. tostring(args[2]))
+    end
+    local offset = tonumber(args[2])
+
     if interval <= 0 then
       error('Recur(): Arg "interval" must be greater than 0')
     end
