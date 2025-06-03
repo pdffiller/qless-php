@@ -5,6 +5,8 @@ on:
       - main
       - master
       - develop
+  pull_request:
+    types: [ opened, synchronize, reopened ]
 jobs:
   secure-build:
     # The stable version specified here is intentional.
