@@ -14,10 +14,12 @@ function stringUtils.isEmptyOrSpaces(s)
   return (_trimmed == '' or _trimmed == nil)
 end
 
-function stringUtils.isNumber(s)
-  if type(s) == 'number' then return true end
-  if type(s) ~= 'string' then return false end
-  return tonumber(s) ~= nil
+function stringUtils.safeNumber(s, default)
+  if type(s) == 'number' then return s end
+  if type(s) ~= 'string' then return default end
+  -- Check if string is a hex string
+  if s:match("^[0-9a-fA-F]+$") then return default end
+  return tonumber(s) or default
 end
 -- StringUtils module end
 
@@ -1267,10 +1269,10 @@ function QlessQueue:prefix(group)
 end
 
 function QlessQueue:stats(now, date)
-  if not stringUtils.isNumber(date) then
+  date = stringUtils.safeNumber(date, now)
+  if not date then
     error('Stats(): Arg "date" missing or not a number: ' .. tostring(date))
   end
-  date = tonumber(date)
 
   local bin = date - (date % 86400)
 
@@ -1323,8 +1325,10 @@ function QlessQueue:stats(now, date)
 end
 
 function QlessQueue:peek(now, count)
-  count = assert(tonumber(count),
-    'Peek(): Arg "count" missing or not a number: ' .. tostring(count))
+  count = stringUtils.safeNumber(count, 1)
+  if not count then
+    error('Peek(): Arg "count" missing or not a number: ' .. tostring(count))
+  end
 
   local jids = self.locks.expired(now, 0, count)
 
@@ -1351,10 +1355,10 @@ end
 
 function QlessQueue:pop(now, worker, count)
   assert(worker, 'Pop(): Arg "worker" missing')
-  if not stringUtils.isNumber(count) then
+  count = stringUtils.safeNumber(count, 1)
+  if not count then
     error('Pop(): Arg "count" missing or not a number: ' .. tostring(count))
   end
-  count = tonumber(count)
 
   local expires = now + tonumber(
     Qless.config.get(self.name .. '-heartbeat') or
@@ -1517,10 +1521,10 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
   assert(klass, 'Put(): Arg "klass" missing')
   local data = assert(cjson.decode(raw_data),
     'Put(): Arg "data" missing or not JSON: ' .. tostring(raw_data))
-  if not stringUtils.isNumber(delay) then
+  delay = stringUtils.safeNumber(delay, 0)
+  if delay == nil then
     error('Put(): Arg "delay" not a number: ' .. tostring(delay))
   end
-  delay = tonumber(delay)
 
   -- Create a local copy of vararg
   local args = {...}
@@ -1664,8 +1668,10 @@ end
 
 function QlessQueue:unfail(now, group, count)
   assert(group, 'Unfail(): Arg "group" missing')
-  count = assert(tonumber(count or 25),
-    'Unfail(): Arg "count" not a number: ' .. tostring(count))
+  count = stringUtils.safeNumber(count, 25)
+  if not count then
+    error('Unfail(): Arg "count" not a number: ' .. tostring(count))
+  end
 
   local jids = redis.call('lrange', 'ql:f:' .. group, -count, -1)
 
@@ -1701,15 +1707,15 @@ function QlessQueue:recur(now, jid, klass, raw_data, spec, ...)
   local args = {...}
 
   if spec == 'interval' then
-    if not stringUtils.isNumber(args[1]) then
+    local interval = stringUtils.safeNumber(args[1])
+    if not interval then
       error('Recur(): Arg "interval" not a number: ' .. tostring(args[1]))
     end
-    local interval = tonumber(args[1])
     
-    if not stringUtils.isNumber(args[2]) then
+    local offset = stringUtils.safeNumber(args[2], 0)
+    if offset == nil then
       error('Recur(): Arg "offset" not a number: ' .. tostring(args[2]))
     end
-    local offset = tonumber(args[2])
 
     if interval <= 0 then
       error('Recur(): Arg "interval" must be greater than 0')
