@@ -4,12 +4,22 @@ if #KEYS > 0 then error('No Keys should be provided') end
 local stringUtils = {}
 
 function stringUtils.trim(s)
+  if type(s) ~= 'string' then return s end
   return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
 function stringUtils.isEmptyOrSpaces(s)
+  if type(s) ~= 'string' then return true end
   local _trimmed = stringUtils.trim(s)
   return (_trimmed == '' or _trimmed == nil)
+end
+
+function stringUtils.safeNumber(s, default)
+  if type(s) == 'number' then return s end
+  if type(s) ~= 'string' then return default end
+  -- Check if string is a hex string
+  if s:match("^[0-9a-fA-F]+$") then return default end
+  return tonumber(s) or default
 end
 -- StringUtils module end
 
@@ -17,12 +27,14 @@ end
 local tableUtils = {}
 
 function tableUtils.extend(self, other)
+  if type(other) ~= 'table' then return end
   for i, v in ipairs(other) do
     table.insert(self, v)
   end
 end
 
-function tableUtils.filterEmptyItems (items)
+function tableUtils.filterEmptyItems(items)
+  if type(items) ~= 'table' then return {} end
   local results = {}
   for _,item in ipairs(items) do
     if not stringUtils.isEmptyOrSpaces(item) then table.insert(results, item) end
@@ -96,14 +108,16 @@ end
 
 Qless.jobs = function(now, state, ...)
   assert(state, 'Jobs(): Arg "state" missing')
-
-  local offset = assert(tonumber(arg[2] or 0),
-    'Jobs(): Arg "offset" not a number: ' .. tostring(arg[2]))
-  local count  = assert(tonumber(arg[3] or 25),
-    'Jobs(): Arg "count" not a number: ' .. tostring(arg[3]))
+  
+  -- Create a local copy of vararg
+  local args = {...}
+  local offset = assert(tonumber(args[2] or 0),
+    'Jobs(): Arg "offset" not a number: ' .. tostring(args[2]))
+  local count  = assert(tonumber(args[3] or 25),
+    'Jobs(): Arg "count" not a number: ' .. tostring(args[3]))
 
   if state == 'complete' then
-    local name  = arg[1];
+    local name  = args[1];
 
     if (name == '') then
       return redis.call('zrevrange', 'ql:completed', offset, offset + count - 1)
@@ -113,7 +127,7 @@ Qless.jobs = function(now, state, ...)
     return queue.completed.peek(offset, count)
   end
 
-  local name  = assert(arg[1], 'Jobs(): Arg "queue" missing')
+  local name  = assert(args[1], 'Jobs(): Arg "queue" missing')
   local queue = Qless.queue(name)
   if state == 'running' then
     return queue.locks.peek(now, offset, count)
@@ -227,16 +241,19 @@ Qless.tag = function(now, command, ...)
   assert(command,
     'Tag(): Arg "command" must be "add", "remove", "get" or "top"')
 
+  -- Create a local copy of vararg
+  local args = {...}
+
   if command == 'add' then
-    local jid  = assert(arg[1], 'Tag(): Arg "jid" missing')
+    local jid  = assert(args[1], 'Tag(): Arg "jid" missing')
     local tags = redis.call('hget', QlessJob.ns .. jid, 'tags')
     if tags then
       tags = cjson.decode(tags)
       local _tags = {}
       for i,v in ipairs(tags) do _tags[v] = true end
 
-      for i=2,#arg do
-        local tag = arg[i]
+      for i=2,#args do
+        local tag = args[i]
         if not stringUtils.isEmptyOrSpaces(tag) then
           if _tags[tag] == nil or _tags[tag] == false then
             _tags[tag] = true
@@ -253,15 +270,15 @@ Qless.tag = function(now, command, ...)
       error('Tag(): Job ' .. jid .. ' does not exist')
     end
   elseif command == 'remove' then
-    local jid  = assert(arg[1], 'Tag(): Arg "jid" missing')
+    local jid  = assert(args[1], 'Tag(): Arg "jid" missing')
     local tags = redis.call('hget', QlessJob.ns .. jid, 'tags')
     if tags then
       tags = cjson.decode(tags)
       local _tags = {}
       for i,v in ipairs(tags) do _tags[v] = true end
 
-      for i=2,#arg do
-        local tag = arg[i]
+      for i=2,#args do
+        local tag = args[i]
         _tags[tag] = nil
         redis.call('zrem', 'ql:t:' .. tag, jid)
         redis.call('zincrby', 'ql:tags', -1, tag)
@@ -276,18 +293,18 @@ Qless.tag = function(now, command, ...)
       error('Tag(): Job ' .. jid .. ' does not exist')
     end
   elseif command == 'get' then
-    local tag    = assert(arg[1], 'Tag(): Arg "tag" missing')
-    local offset = assert(tonumber(arg[2] or 0),
-      'Tag(): Arg "offset" not a number: ' .. tostring(arg[2]))
-    local count  = assert(tonumber(arg[3] or 25),
-      'Tag(): Arg "count" not a number: ' .. tostring(arg[3]))
+    local tag    = assert(args[1], 'Tag(): Arg "tag" missing')
+    local offset = assert(tonumber(args[2] or 0),
+      'Tag(): Arg "offset" not a number: ' .. tostring(args[2]))
+    local count  = assert(tonumber(args[3] or 25),
+      'Tag(): Arg "count" not a number: ' .. tostring(args[3]))
     return {
       total = redis.call('zcard', 'ql:t:' .. tag),
       jobs  = redis.call('zrange', 'ql:t:' .. tag, offset, offset + count - 1)
     }
   elseif command == 'top' then
-    local offset = assert(tonumber(arg[1] or 0) , 'Tag(): Arg "offset" not a number: ' .. tostring(arg[1]))
-    local count  = assert(tonumber(arg[2] or 25), 'Tag(): Arg "count" not a number: ' .. tostring(arg[2]))
+    local offset = assert(tonumber(args[1] or 0) , 'Tag(): Arg "offset" not a number: ' .. tostring(args[1]))
+    local count  = assert(tonumber(args[2] or 25), 'Tag(): Arg "count" not a number: ' .. tostring(args[2]))
     return redis.call('zrevrangebyscore', 'ql:tags', '+inf', 2, 'limit', offset, count)
   else
     error('Tag(): First argument must be "add", "remove" or "get"')
@@ -295,13 +312,15 @@ Qless.tag = function(now, command, ...)
 end
 
 Qless.cancel = function(...)
+  -- Create a local copy of vararg
+  local args = {...}
   local dependents = {}
-  for _, jid in ipairs(arg) do
+  for _, jid in ipairs(args) do
     dependents[jid] = redis.call(
       'smembers', QlessJob.ns .. jid .. '-dependents') or {}
   end
 
-  for i, jid in ipairs(arg) do
+  for i, jid in ipairs(args) do
     for j, dep in ipairs(dependents[jid]) do
       if dependents[dep] == nil or dependents[dep] == false then
         error('Cancel(): ' .. jid .. ' is a dependency of ' .. dep ..
@@ -310,7 +329,7 @@ Qless.cancel = function(...)
     end
   end
 
-  for _, jid in ipairs(arg) do
+  for _, jid in ipairs(args) do
     local state, queue, failure, worker = unpack(redis.call(
       'hmget', QlessJob.ns .. jid, 'state', 'queue', 'failure', 'worker'))
 
@@ -372,7 +391,7 @@ Qless.cancel = function(...)
     end
   end
 
-  return arg
+  return args
 end
 
 Qless.config = {}
@@ -473,8 +492,10 @@ function QlessJob:complete(now, worker, queue, raw_data, ...)
   local data = assert(cjson.decode(raw_data),
     'Complete(): Arg "data" missing or not JSON: ' .. tostring(raw_data))
 
+  -- Create a local copy of vararg
+  local args = {...}
   local options = {}
-  for i = 1, #arg, 2 do options[arg[i]] = arg[i + 1] end
+  for i = 1, #args, 2 do options[args[i]] = args[i + 1] end
 
   local nextq   = options['next']
   local delay   = assert(tonumber(options['delay'] or 0))
@@ -1248,8 +1269,10 @@ function QlessQueue:prefix(group)
 end
 
 function QlessQueue:stats(now, date)
-  date = assert(tonumber(date),
-    'Stats(): Arg "date" missing or not a number: '.. (date or 'nil'))
+  date = stringUtils.safeNumber(date, now)
+  if not date then
+    error('Stats(): Arg "date" missing or not a number: ' .. tostring(date))
+  end
 
   local bin = date - (date % 86400)
 
@@ -1302,8 +1325,10 @@ function QlessQueue:stats(now, date)
 end
 
 function QlessQueue:peek(now, count)
-  count = assert(tonumber(count),
-    'Peek(): Arg "count" missing or not a number: ' .. tostring(count))
+  count = stringUtils.safeNumber(count, 1)
+  if not count then
+    error('Peek(): Arg "count" missing or not a number: ' .. tostring(count))
+  end
 
   local jids = self.locks.expired(now, 0, count)
 
@@ -1330,8 +1355,10 @@ end
 
 function QlessQueue:pop(now, worker, count)
   assert(worker, 'Pop(): Arg "worker" missing')
-  count = assert(tonumber(count),
-    'Pop(): Arg "count" missing or not a number: ' .. tostring(count))
+  count = stringUtils.safeNumber(count, 1)
+  if not count then
+    error('Pop(): Arg "count" missing or not a number: ' .. tostring(count))
+  end
 
   local expires = now + tonumber(
     Qless.config.get(self.name .. '-heartbeat') or
@@ -1494,14 +1521,18 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
   assert(klass, 'Put(): Arg "klass" missing')
   local data = assert(cjson.decode(raw_data),
     'Put(): Arg "data" missing or not JSON: ' .. tostring(raw_data))
-  delay = assert(tonumber(delay),
-    'Put(): Arg "delay" not a number: ' .. tostring(delay))
+  delay = stringUtils.safeNumber(delay, 0)
+  if delay == nil then
+    error('Put(): Arg "delay" not a number: ' .. tostring(delay))
+  end
 
-  if #arg % 2 == 1 then
-    error('Odd number of additional args: ' .. tostring(arg))
+  -- Create a local copy of vararg
+  local args = {...}
+  if #args % 2 == 1 then
+    error('Odd number of additional args: ' .. tostring(args))
   end
   local options = {}
-  for i = 1, #arg, 2 do options[arg[i]] = arg[i + 1] end
+  for i = 1, #args, 2 do options[args[i]] = args[i + 1] end
 
   local job = Qless.job(jid)
   local priority, tags, oldqueue, state, failure, retries, oldworker =
@@ -1637,8 +1668,10 @@ end
 
 function QlessQueue:unfail(now, group, count)
   assert(group, 'Unfail(): Arg "group" missing')
-  count = assert(tonumber(count or 25),
-    'Unfail(): Arg "count" not a number: ' .. tostring(count))
+  count = stringUtils.safeNumber(count, 25)
+  if not count then
+    error('Unfail(): Arg "count" not a number: ' .. tostring(count))
+  end
 
   local jids = redis.call('lrange', 'ql:f:' .. group, -count, -1)
 
@@ -1671,21 +1704,30 @@ function QlessQueue:recur(now, jid, klass, raw_data, spec, ...)
   local data = assert(cjson.decode(raw_data),
     'RecurringJob On(): Arg "data" not JSON: ' .. tostring(raw_data))
 
+  local args = {...}
+
   if spec == 'interval' then
-    local interval = assert(tonumber(arg[1]),
-      'Recur(): Arg "interval" not a number: ' .. tostring(arg[1]))
-    local offset   = assert(tonumber(arg[2]),
-      'Recur(): Arg "offset" not a number: '   .. tostring(arg[2]))
+    local interval = stringUtils.safeNumber(args[1])
+    if not interval then
+      error('Recur(): Arg "interval" not a number: ' .. tostring(args[1]))
+    end
+    
+    local offset = stringUtils.safeNumber(args[2], 0)
+    if offset == nil then
+      error('Recur(): Arg "offset" not a number: ' .. tostring(args[2]))
+    end
+
     if interval <= 0 then
       error('Recur(): Arg "interval" must be greater than 0')
     end
 
-    if #arg % 2 == 1 then
-      error('Odd number of additional args: ' .. tostring(arg))
+    if #args % 2 == 1 then
+      error('Odd number of additional args: ' .. tostring(args))
     end
 
     local options = {}
-    for i = 3, #arg, 2 do options[arg[i]] = arg[i + 1] end
+    for i = 3, #args, 2 do options[args[i]] = args[i + 1] end
+
     options.tags = assert(cjson.decode(options.tags or '{}'),
       'Recur(): Arg "tags" must be JSON string array: ' .. tostring(
         options.tags))
@@ -2164,8 +2206,10 @@ QlessAPI.get = function(now, jid)
 end
 
 QlessAPI.multiget = function(now, ...)
+  -- Create a local copy of vararg
+  local args = {...}
   local results = {}
-  for i, jid in ipairs(arg) do
+  for i, jid in ipairs(args) do
     table.insert(results, Qless.job(jid):data())
   end
   return cjson.encode(results)
@@ -2192,7 +2236,9 @@ QlessAPI.queues = function(now, queue)
 end
 
 QlessAPI.complete = function(now, jid, worker, queue, data, ...)
-  return Qless.job(jid):complete(now, worker, queue, data, unpack(arg))
+  -- Create a local copy of vararg
+  local args = {...}
+  return Qless.job(jid):complete(now, worker, queue, data, unpack(args))
 end
 
 QlessAPI.failed = function(now, group, start, limit)
@@ -2204,7 +2250,9 @@ QlessAPI.fail = function(now, jid, worker, group, message, data)
 end
 
 QlessAPI.jobs = function(now, state, ...)
-  return Qless.jobs(now, state, unpack(arg))
+  -- Create a local copy of vararg
+  local args = {...}
+  return Qless.jobs(now, state, unpack(args))
 end
 
 QlessAPI.retry = function(now, jid, queue, worker, delay, group, message)
@@ -2212,7 +2260,9 @@ QlessAPI.retry = function(now, jid, queue, worker, delay, group, message)
 end
 
 QlessAPI.depends = function(now, jid, command, ...)
-  return Qless.job(jid):depends(now, command, unpack(arg))
+  -- Create a local copy of vararg
+  local args = {...}
+  return Qless.job(jid):depends(now, command, unpack(args))
 end
 
 QlessAPI.heartbeat = function(now, jid, worker, data)
@@ -2245,7 +2295,9 @@ QlessAPI.tags = function(now, cursor, count)
 end
 
 QlessAPI.tag = function(now, command, ...)
-  return cjson.encode(Qless.tag(now, command, unpack(arg)))
+  -- Create a local copy of vararg
+  local args = {...}
+  return cjson.encode(Qless.tag(now, command, unpack(args)))
 end
 
 QlessAPI.subscription = function(now, queue, command, topic)
@@ -2317,13 +2369,17 @@ QlessAPI.timeout = function(now, ...)
 end
 
 QlessAPI.put = function(now, me, queue, jid, klass, data, delay, ...)
-  return Qless.queue(queue):put(now, me, jid, klass, data, delay, unpack(arg))
+  -- Create a local copy of vararg
+  local args = {...}
+  return Qless.queue(queue):put(now, me, jid, klass, data, delay, unpack(args))
 end
 
 QlessAPI.requeue = function(now, me, queue, jid, ...)
+  -- Create a local copy of vararg
+  local args = {...}
   local job = Qless.job(jid)
   assert(job:exists(), 'Requeue(): Job ' .. jid .. ' does not exist')
-  return QlessAPI.put(now, me, queue, jid, unpack(arg))
+  return QlessAPI.put(now, me, queue, jid, unpack(args))
 end
 
 QlessAPI.unfail = function(now, queue, group, count)
@@ -2331,7 +2387,9 @@ QlessAPI.unfail = function(now, queue, group, count)
 end
 
 QlessAPI.recur = function(now, queue, jid, klass, data, spec, ...)
-  return Qless.queue(queue):recur(now, jid, klass, data, spec, unpack(arg))
+  -- Create a local copy of vararg
+  local args = {...}
+  return Qless.queue(queue):recur(now, jid, klass, data, spec, unpack(args))
 end
 
 QlessAPI.unrecur = function(now, jid)
@@ -2347,15 +2405,21 @@ QlessAPI['recur.get'] = function(now, jid)
 end
 
 QlessAPI['recur.update'] = function(now, jid, ...)
-  return Qless.recurring(jid):update(now, unpack(arg))
+  -- Create a local copy of vararg
+  local args = {...}
+  return Qless.recurring(jid):update(now, unpack(args))
 end
 
 QlessAPI['recur.tag'] = function(now, jid, ...)
-  return Qless.recurring(jid):tag(unpack(arg))
+  -- Create a local copy of vararg
+  local args = {...}
+  return Qless.recurring(jid):tag(unpack(args))
 end
 
 QlessAPI['recur.untag'] = function(now, jid, ...)
-  return Qless.recurring(jid):untag(unpack(arg))
+  -- Create a local copy of vararg
+  local args = {...}
+  return Qless.recurring(jid):untag(unpack(args))
 end
 
 QlessAPI.length = function(now, queue)
@@ -2376,4 +2440,10 @@ local command = assert(QlessAPI[command_name], 'Unknown command ' .. command_nam
 local now = tonumber(table.remove(ARGV, 1))
 local now = assert(now, 'Arg "now" missing or not a number: ' .. (now or 'nil'))
 
-return command(now, unpack(ARGV))
+-- Create a local copy of ARGV to avoid modifying the read-only table
+local args = {}
+for i, v in ipairs(ARGV) do
+  args[i] = v
+end
+
+return command(now, unpack(args))

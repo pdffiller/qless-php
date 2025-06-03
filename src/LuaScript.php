@@ -57,7 +57,7 @@ class LuaScript
         $arguments = $this->normalizeCommandArgs($command, $args);
 
         try {
-            return call_user_func_array([$this->redis, 'evalsha'], $arguments);
+            return call_user_func_array([$this->redis, 'eval'], $arguments);
 
         } catch (\Exception $exception) {
             throw ExceptionFactory::fromErrorMessage($exception->getMessage());
