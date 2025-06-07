@@ -24,7 +24,7 @@
         }
     ],
     "require": {
-        "php": "^7.4 || ^8.1",
+        "php": "^7.1 || ^8.0",
         "ext-json": "*",
         "ext-pcntl": "*",
         "ext-pcre": "*",
@@ -32,10 +32,10 @@
         "ext-sockets": "*",
         "ext-intl": "*",
         "monolog/monolog": "^1.23 || ^2.0 || ^3.0",
-        "predis/predis": "^1.1.10  || ^3.0",
+        "predis/predis": "^1.1.10  || ^2.0",
         "psr/log": "^1 || ^2 || ^3",
         "ramsey/uuid": "^3.7 || ^4",
-        "seld/signal-handler": "1.1.*",
+        "seld/signal-handler": "1.1.*"
     },
     "conflict": {
         "contatta/qless-php": "*"

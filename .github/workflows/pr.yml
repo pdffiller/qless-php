@@ -7,6 +7,7 @@ on:
 
 jobs:
   run:
+    name: PHP ${{ matrix.php-versions }} (Redis ${{ matrix.redis-versions }})
     runs-on: ubuntu-latest
     container: shivammathur/node
     services:
@@ -19,13 +20,14 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     strategy:
+      fail-fast: false
       matrix:
         php-versions: ['7.1', '7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         redis-versions: ['5', '6', '7']
-    name: PHP ${{ matrix.php-versions }} (Redis ${{ matrix.redis-versions }})
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -35,10 +37,10 @@ jobs:
 
       - name: Get composer cache directory
         id: composercache
-        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
 
       - name: Cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ${{ steps.composercache.outputs.dir }}
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
