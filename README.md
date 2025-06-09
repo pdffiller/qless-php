@@ -1,8 +1,7 @@
 # qless-php
 
-[![PHP Version](https://img.shields.io/badge/supported->%3D7.1%20<8.2-blue?logo=php)](https://php.net/)
+[![PHP Version](https://img.shields.io/badge/supported->%3D7.1%20<=8.4-blue?logo=php)](https://php.net/)
 [![Workflow Status](https://github.com/pdffiller/qless-php/actions/workflows/pr.yml/badge.svg)](https://github.com/pdffiller/qless-php/actions/workflows/pr.yml)
-[![Infection MSI](https://badge.stryker-mutator.io/github.com/pdffiller/qless-php/master)](https://infection.github.io)
 
 PHP Bindings for qless.
 
@@ -947,7 +946,7 @@ qless-php is open-sourced software licensed under the MIT License.
 See the [`LICENSE.txt`](https://github.com/pdffiller/qless-php/blob/master/LICENSE.txt) file for more.
 
 
-© 2018-2022 PDFfiller<br>
+© 2018-2025 PDFfiller<br>
 © 2013-2015 Ryver, Inc <br>
 
 All rights reserved.

@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.23.0] - 2025-06-10
+### Changes
+- PHP 8.3, 8.4 support
+- Laravel 12 support
+- Add `monolog/monolog` 3.0 support
+- Add `predis/predis` 2.0 support
+- Use `DateTime()` instead of deprecated `strftime`
+
 ## [3.22.0] - 2023-02-24
 ### Changes
 - PHP 8.2 support
