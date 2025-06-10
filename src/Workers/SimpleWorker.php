@@ -44,7 +44,11 @@ final class SimpleWorker extends AbstractWorker implements ResourceLimitedWorker
      */
     protected function performWork(BaseJob $job): void
     {
-        $this->title(sprintf('Processing %s since %s', $job->jid, strftime('%F %T')));
+        $this->title(sprintf(
+            'Processing %s since %s',
+            $job->jid,
+            (new \DateTime())->format('Y-m-d H:i:s')
+        ));
 
         try {
             $this->performJob($job, $this->logContext);

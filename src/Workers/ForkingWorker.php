@@ -90,7 +90,13 @@ final class ForkingWorker extends AbstractWorker implements ResourceLimitedWorke
         $this->childStart();
         $this->watchdogStart($this->client->createSubscriber(['ql:log']));
 
-        $this->title(sprintf('Forked %d at %s', $this->childPID, strftime('%F %T')));
+        $this->title(
+            sprintf(
+                'Forked %d at %s',
+                $this->childPID,
+                (new \DateTime())->format('Y-m-d H:i:s')
+            )
+        );
 
         // Parent process, sit and wait
         while ($this->childProcesses > 0) {
@@ -340,7 +346,7 @@ final class ForkingWorker extends AbstractWorker implements ResourceLimitedWorke
         $this->who = 'child:' . $this->name;
         $this->logContext = ['type' => $this->who];
 
-        $this->title('Processing ' . $jid . ' since ' . strftime('%F %T'));
+        $this->title('Processing ' . $jid . ' since ' . (new \DateTime())->format('Y-m-d H:i:s'));
         $this->childPerform($this->job);
 
         socket_close($socket);
@@ -453,7 +459,13 @@ final class ForkingWorker extends AbstractWorker implements ResourceLimitedWorke
         $this->who = 'watchdog:' . $this->name;
         $this->logContext = ['type' => $this->who];
 
-        $this->title(sprintf('Watching events for %s since %s', $this->job->jid, strftime('%F %T')));
+        $this->title(
+            sprintf(
+                'Watching events for %s since %s',
+                $this->job->jid,
+                (new \DateTime())->format('Y-m-d H:i:s')
+            )
+        );
         $subscriber->watchdog($this->job->jid, $this->name, $this->childPID);
 
         socket_close($socket);
