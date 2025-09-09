@@ -12,6 +12,7 @@ use Qless\Exceptions\RuntimeException;
 use Qless\Exceptions\UnknownPropertyException;
 use Qless\Jobs\BaseJob;
 use Qless\Jobs\JobData;
+use Qless\Queues\DTO\BackoffStrategyDTO;
 use Qless\Support\PropertyAccessor;
 use Ramsey\Uuid\Uuid;
 
@@ -85,7 +86,8 @@ class Queue implements EventsManagerAwareInterface
         ?int $retries = null,
         ?int $priority = null,
         ?array $tags = null,
-        ?array $depends = null
+        ?array $depends = null,
+        ?BackoffStrategyDTO $backoffStrategyDTO = null
     ): string {
         try {
             $jid = $jid ?: str_replace('-', '', Uuid::uuid4()->toString());
@@ -120,7 +122,9 @@ class Queue implements EventsManagerAwareInterface
             'retries',
             is_null($retries) ? 5 : $retries,
             'depends',
-            json_encode($depends ?: [], JSON_UNESCAPED_SLASHES)
+            json_encode($depends ?: [], JSON_UNESCAPED_SLASHES),
+            'backoff',
+            json_encode($backoffStrategyDTO ? $backoffStrategyDTO->toArray() : [], JSON_UNESCAPED_SLASHES)
         );
 
         $this->getEventsManager()->fire(new QueueEvent\AfterEnqueue($this, $jid, $data->toArray(), $className));
