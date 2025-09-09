@@ -1605,7 +1605,7 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
     table.insert(job_fields, 'backoff')
     table.insert(job_fields, cjson.encode(options['backoff']))
   end
-  redis.call('hmset', QlessJob.ns .. jid, job_fields)
+  redis.call('hmset', QlessJob.ns .. jid, unpack(job_fields))
 
   for i, j in ipairs(depends) do
     local state = redis.call('hget', QlessJob.ns .. j, 'state')
