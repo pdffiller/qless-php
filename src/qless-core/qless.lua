@@ -1603,7 +1603,7 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
   }
   if options['backoff'] then
     table.insert(job_fields, 'backoff')
-    table.insert(job_fields, cjson.encode(options['backoff']))
+    table.insert(job_fields, options['backoff'])
   end
   redis.call('hmset', QlessJob.ns .. jid, unpack(job_fields))
 
@@ -1963,7 +1963,7 @@ function QlessQueue:invalidate_locks(now, count)
         redis.call('zadd', 'ql:failed-jobs-list', now, jid)
         clearOldFailedJobs(now)
       else
-        local backoff_json = redis.call('hget', Qless.ns .. jid, 'backoff')
+        local backoff_json = redis.call('hget', QlessJob.ns .. jid, 'backoff')
         local backoff_config = {}
         if backoff_json then
           backoff_config = cjson.decode(backoff_json)
@@ -1980,12 +1980,11 @@ function QlessQueue:invalidate_locks(now, count)
         if initial_delay == 0 then
           table.insert(jids, jid)
         else
-            local job = Qless.job(jid)
-            local job_history = job:history()
-            local retry_count = #job_history - 1
-            if retry_count < 0 then retry_count = 0 end
+            local total_retries  = tonumber(redis.call('hget', QlessJob.ns .. jid, 'retries') or 5)
+            local retries_left = tonumber(redis.call('hget', QlessJob.ns .. jid, 'remaining') or total_retries)
 
-            local delay = initial_delay * (backoff_factor ^ retry_count)
+            local attempt_index = total_retries - retries_left
+            local delay = initial_delay * (backoff_factor ^ attempt_index)
 
             self.locks.remove(jid)
             self.scheduled.add(now + delay, jid)
