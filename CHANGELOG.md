@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Changes
+- Add PHP 8.5 support
+- Drop PHP 7.1-7.4 support and declare PHP 8.0+ as the minimum supported version
 
 ## [3.23.0] - 2025-06-10
 ### Changes
@@ -332,7 +335,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
  - Initial stable release
 
-[Unreleased]: https://github.com/pdffiller/qless-php/compare/v3.21.0...HEAD
+[4.0.0]: https://github.com/pdffiller/qless-php/compare/v3.24.0...v4.0.0
+[3.24.0]: https://github.com/pdffiller/qless-php/compare/v3.23.0...v3.24.0
+[3.23.0]: https://github.com/pdffiller/qless-php/compare/v3.22.0...v3.23.0
 [3.21.0]: https://github.com/pdffiller/qless-php/compare/v3.20.0...v3.21.0
 [3.20.0]: https://github.com/pdffiller/qless-php/compare/v3.19.0...v3.20.0
 [3.19.0]: https://github.com/pdffiller/qless-php/compare/v3.18.2...v3.19.0

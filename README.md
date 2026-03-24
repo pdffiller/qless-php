@@ -1,6 +1,6 @@
 # qless-php
 
-[![PHP Version](https://img.shields.io/badge/supported->%3D7.1%20<=8.4-blue?logo=php)](https://php.net/)
+[![PHP Version](https://img.shields.io/badge/supported->%3D8.0%20<=8.5-blue?logo=php)](https://php.net/)
 [![Workflow Status](https://github.com/pdffiller/qless-php/actions/workflows/pr.yml/badge.svg)](https://github.com/pdffiller/qless-php/actions/workflows/pr.yml)
 
 PHP Bindings for qless.
@@ -104,7 +104,7 @@ Prerequisite PHP extensions are:
 - [`pcre`](http://php.net/manual/en/book.pcre.php)
 - [`sockets`](http://php.net/manual/en/book.sockets.php)
 
-Supported PHP versions are: **7.1**, **7.2**, **7.3**, **8.0** and **8.1**.
+Supported PHP versions are: **8.0**, **8.1**, **8.2**, **8.3**, **8.4** and **8.5**.
 
 Qless PHP can be installed via Composer:
 
