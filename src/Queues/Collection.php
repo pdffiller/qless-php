@@ -100,7 +100,7 @@ class Collection implements ArrayAccess
      * @param  mixed $offset
      * @return bool
      */
-    public function offsetExists($offset)
+    public function offsetExists($offset): bool
     {
         $queues = json_decode($this->client->queues(), true) ?: [];
 
@@ -119,7 +119,7 @@ class Collection implements ArrayAccess
      * @param  string $offset
      * @return Queue
      */
-    public function offsetGet($offset)
+    public function offsetGet($offset): Queue
     {
         return new Queue($offset, $this->client);
     }
@@ -129,7 +129,7 @@ class Collection implements ArrayAccess
      *
      * @throws UnsupportedFeatureException
      */
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): void
     {
         throw new UnsupportedFeatureException('Setting a queue is not supported using Queues collection.');
     }
@@ -139,7 +139,7 @@ class Collection implements ArrayAccess
      *
      * @throws QlessException If the queue is not empty.
      */
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
         $this[$offset]->forget();
     }
