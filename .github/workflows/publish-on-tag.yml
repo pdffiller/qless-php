@@ -1,0 +1,18 @@
+name: Build & push to Artifactory
+
+# Automatically publishes this package to Artifactory (composer-local) whenever a
+# new tag is pushed. Reuses the shared, centrally-maintained publish workflow so the
+# publish logic lives in one place only (no per-repo duplication).
+# The manual "Republish old tags to Artifactory" action in airslateinc/everyday-automation
+# remains available for back-fill / exceptional cases.
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build-and-push:
+    uses: airslateinc/publish-composer-package/.github/workflows/workflow.yml@v1
+    secrets:
+      COMPOSER_TOKEN: ${{ secrets.COMPOSER_TOKEN }}
