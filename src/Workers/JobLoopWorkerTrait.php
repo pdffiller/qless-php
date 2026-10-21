@@ -19,7 +19,7 @@ trait JobLoopWorkerTrait
 
     abstract public function reserve(): ?BaseJob;
 
-    abstract public function setCurrentJob(BaseJob $job = null): void;
+    abstract public function setCurrentJob(?BaseJob $job = null): void;
 
     abstract public function getInterval(): int;
 

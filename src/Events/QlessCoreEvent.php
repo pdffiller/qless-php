@@ -72,14 +72,14 @@ final class QlessCoreEvent
      */
     public function __construct(
         string $type,
-        string $jid = null,
-        string $worker = null,
-        string $queue = null,
-        string $toQueue = null,
-        string $group = null,
-        string $message = null,
-        string $option = null,
-        $value = null
+        ?string $jid = null,
+        ?string $worker = null,
+        ?string $queue = null,
+        ?string $toQueue = null,
+        ?string $group = null,
+        ?string $message = null,
+        ?string $option = null,
+        mixed $value = null
     ) {
         $this->type = $type;
         $this->jid = $jid;

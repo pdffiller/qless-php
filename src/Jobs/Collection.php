@@ -174,28 +174,30 @@ class Collection implements ArrayAccess
     /**
      * {@inheritdoc}
      *
-     * @param  string $jid
+     * @param  string $offset
+     *
      * @return bool
      */
-    public function offsetExists($jid)
+    public function offsetExists(mixed $offset): bool
     {
-        return $this->client->get($jid) !== null;
+        return $this->client->get($offset) !== null;
     }
 
     /**
      * {@inheritdoc}
      *
-     * @param  string $jid
+     * @param  string $offset
+     *
      * @return BaseJob|RecurringJob|null
      *
      * @throws QlessException
      */
-    public function offsetGet($jid)
+    public function offsetGet($offset): BaseJob|RecurringJob|null
     {
-        $data = $this->client->get($jid);
+        $data = $this->client->get($offset);
 
         if (empty($data)) {
-            $data = $this->client->call('recur.get', $jid);
+            $data = $this->client->call('recur.get', $offset);
             if (empty($data)) {
                 return null;
             }
@@ -215,7 +217,7 @@ class Collection implements ArrayAccess
      *
      * @throws UnsupportedFeatureException
      */
-    public function offsetSet($offset, $value)
+    public function offsetSet(mixed $offset, mixed $value): void
     {
         throw new UnsupportedFeatureException('Setting a job is not supported using Jobs collection.');
     }
@@ -225,7 +227,7 @@ class Collection implements ArrayAccess
      *
      * @throws UnsupportedFeatureException
      */
-    public function offsetUnset($offset)
+    public function offsetUnset(mixed $offset): void
     {
         throw new UnsupportedFeatureException('Deleting a job is not supported using Jobs collection.');
     }

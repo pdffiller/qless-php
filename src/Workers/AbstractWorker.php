@@ -108,7 +108,7 @@ abstract class AbstractWorker implements WorkerInterface, EventsManagerAwareInte
      * @param  BaseJob|null $job
      * @return void
      */
-    final public function setCurrentJob(BaseJob $job = null): void
+    final public function setCurrentJob(?BaseJob $job = null): void
     {
         $this->job = $job;
     }

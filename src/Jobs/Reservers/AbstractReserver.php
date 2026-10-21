@@ -79,7 +79,7 @@ abstract class AbstractReserver implements ReserverInterface
      */
     public function __construct(
         Collection $collection,
-        $queues = null,
+        array|string|null $queues = null,
         ?string $spec = null,
         ?string $worker = null
     ) {

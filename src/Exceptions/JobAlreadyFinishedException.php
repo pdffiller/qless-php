@@ -10,7 +10,7 @@ use Throwable;
  */
 class JobAlreadyFinishedException extends LogicException
 {
-    public function __construct(?string $message = null, int $code = 0, Throwable $previous = null)
+    public function __construct(?string $message = null, int $code = 0, ?Throwable $previous = null)
     {
         $message = $message ?? sprintf('Job already finished');
         parent::__construct($message, $code, $previous);

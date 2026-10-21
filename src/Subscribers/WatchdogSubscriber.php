@@ -54,7 +54,7 @@ class WatchdogSubscriber implements LoggerAwareInterface
      * @param array             $channels
      * @param SystemFacade|null $system
      */
-    public function __construct(Redis $redis, array $channels, SystemFacade $system = null)
+    public function __construct(Redis $redis, array $channels, ?SystemFacade $system = null)
     {
         $this->redis = $redis;
         $this->channels = $channels;

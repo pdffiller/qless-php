@@ -33,7 +33,7 @@ class QlessException extends RuntimeException
         ?string $area = null,
         ?string $jid = null,
         int $code = 0,
-        Throwable $previous = null
+        ?Throwable $previous = null
     ) {
         $this->area = $area;
         $this->jid = $jid;

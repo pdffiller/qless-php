@@ -72,7 +72,7 @@ class Collection implements ArrayAccess
      * @param  mixed $offset
      * @return bool
      */
-    public function offsetExists($offset)
+    public function offsetExists($offset): bool
     {
         $workers = json_decode($this->client->workers(), true) ?: [];
 
@@ -91,7 +91,7 @@ class Collection implements ArrayAccess
      * @param  string $offset
      * @return array
      */
-    public function offsetGet($offset)
+    public function offsetGet($offset): array
     {
         $worker = json_decode($this->client->workers($offset), true) ?: [];
 
@@ -107,7 +107,7 @@ class Collection implements ArrayAccess
      *
      * @throws UnsupportedFeatureException
      */
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): void
     {
         throw new UnsupportedFeatureException('Setting a worker is not supported using Workers collection.');
     }
@@ -117,7 +117,7 @@ class Collection implements ArrayAccess
      *
      * @throws UnsupportedFeatureException
      */
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
         throw new UnsupportedFeatureException('Deleting a worker is not supported using Workers collection.');
     }
